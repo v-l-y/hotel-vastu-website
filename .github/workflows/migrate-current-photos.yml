@@ -1,0 +1,40 @@
+name: Migrate Current Hotel Photos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/migrate-current-photos.yml"
+      - "scripts/migrate-current-images.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install image optimizer
+        run: npm install --no-save --package-lock=false sharp@0.34.4
+      - name: Download and refine current-site photos
+        run: node scripts/migrate-current-images.mjs
+      - name: Commit refined hotel photos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add images/
+          if git diff --cached --quiet; then
+            echo "No image changes to commit."
+            exit 0
+          fi
+          git commit -m "Migrate and optimize current hotel photos"
+          git push origin HEAD:main
