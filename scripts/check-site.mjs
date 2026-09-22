@@ -155,6 +155,23 @@ for(const asset of ["images/facilities/banquet-events.webp","images/facilities/c
   if(!facilities.includes(asset)) fail("facilities.html","missing current-site photo "+asset);
 }
 
+// Gallery experience guard: real migrated photos, filters/lightbox and image sitemap must stay wired.
+const gallery=read("gallery.html");
+for(const token of ["data-gallery-grid","data-gallery-dialog","js/gallery.js","images/rooms/classic-room.webp","images/rooms/club-room.webp","images/rooms/premium-room.webp","images/facilities/banquet-events.webp","images/facilities/corporate-stay.webp"]){
+  if(!gallery.includes(token)) fail("gallery.html","missing gallery token "+token);
+}
+if(!exists("js/gallery.js")) fail("gallery.html","missing js/gallery.js");
+if(!sitemap.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')) fail("sitemap.xml","image namespace missing");
+for(const imageUrl of [
+  "https://hotelvastu.com/images/rooms/classic-room.webp",
+  "https://hotelvastu.com/images/rooms/club-room.webp",
+  "https://hotelvastu.com/images/rooms/premium-room.webp",
+  "https://hotelvastu.com/images/facilities/banquet-events.webp",
+  "https://hotelvastu.com/images/facilities/corporate-stay.webp"
+]){
+  if(!sitemap.includes(imageUrl)) fail("sitemap.xml","missing image sitemap URL "+imageUrl);
+}
+
 // Temporary representative visual guard: missing real hotel photos must stay clearly labelled.
 for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["contact.html","images/temp/reception-temp.svg"],["hotel-near-rps-more.html","images/temp/exterior-temp.svg"]]){
   if(!exists(asset)) fail(page,"missing temporary visual "+asset);
