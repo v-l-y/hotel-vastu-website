@@ -28,23 +28,19 @@ Do not expose repository-only Markdown documents if your deployment process lets
 
 ## 3. Critical redirect preservation
 
-The existing website has this known public URL:
+The existing website has these current public room URLs:
 
-`/room/classic-room`
+- `/room/classic-room`
+- `/room/club-room`
+- `/room/premium-room`
 
-The included `.htaccess` permanently redirects it to:
+The included `.htaccess` permanently redirects them to:
 
-`/classic-room.html`
+- `/classic-room.html`
+- `/club-room.html`
+- `/premium-room.html`
 
-Verify after deployment:
-
-`https://hotelvastu.com/room/classic-room`
-
-must return a **301** redirect to:
-
-`https://hotelvastu.com/classic-room.html`
-
-Do not remove this redirect after launch.
+Verify after deployment that all three old room URLs return **301** redirects to their matching new static pages. Do not remove these redirects after launch.
 
 ## 4. Canonical host
 
@@ -63,9 +59,9 @@ If the production server does not use Apache, recreate the same redirects in the
 
 Before calling the site fully production-ready:
 
-- Add original hotel exterior/hero image.
-- Add original Classic Room image.
-- Add original Luxury Room image if that room type remains published.
+- Review the migrated/refined current-site hero and room photography.
+- Confirm Classic, Club and Premium remain the active room types.
+- Keep Luxury noindex unless the hotel explicitly restores that room type.
 - Add original restaurant image if restaurant imagery is available.
 - Confirm WhatsApp before adding any WhatsApp CTA.
 - Confirm email before publishing it.
@@ -81,7 +77,8 @@ Open and verify:
 - `/`
 - `/rooms.html`
 - `/classic-room.html`
-- `/luxury-room.html`
+- `/club-room.html`
+- `/premium-room.html`
 - `/restaurant.html`
 - `/gallery.html`
 - `/about.html`
