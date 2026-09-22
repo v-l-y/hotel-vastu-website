@@ -72,7 +72,7 @@ Before production cutover, replace these visuals with original hotel photography
 
 Open `index.html` directly or serve the folder using any static HTTP server.
 
-No framework, database, Bootstrap, jQuery or build step is required.
+No framework, database, Bootstrap, jQuery or build step is required.\n\n### Static QA\n\nWith Node.js 18+ installed, run:\n\n```bash\nnpm run check\n```\n\nThe check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, the legacy Classic Room redirect and key business-data tokens. The same check also runs in GitHub Actions on `main`.
 
 ## NAP source of truth
 
