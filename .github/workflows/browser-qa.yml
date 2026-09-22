@@ -52,5 +52,9 @@ jobs:
             console.log(name,score);
             if(score<min){console.error(name+" score "+score+" below "+min);failed=true;}
           }
+          for(const id of ["first-contentful-paint","largest-contentful-paint","speed-index","total-blocking-time","cumulative-layout-shift","interactive"]){
+            const audit=report.audits[id];
+            console.log("metric",id,audit?.score,audit?.numericValue,audit?.displayValue||"");
+          }
           if(failed)process.exit(1);
           NODE
