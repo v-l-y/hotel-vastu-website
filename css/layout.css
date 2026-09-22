@@ -63,7 +63,7 @@
 .footer a{transition:color .2s ease}
 .footer a:hover{color:#e8cfa6}
 .footer-links{display:grid;gap:10px}
-.footer-bottom{margin-top:46px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);font-size:.79rem;letter-spacing:.015em}
+.footer-bottom{margin-top:46px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);font-size:.79rem;letter-spacing:.015em}.footer p a,.footer-bottom a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .visual-page-hero{position:relative;min-height:560px;display:flex;align-items:flex-end;padding:calc(var(--header) + 110px) 0 82px;color:#fff;background:linear-gradient(180deg,rgba(20,14,11,.10) 0%,rgba(20,14,11,.32) 42%,rgba(20,14,11,.84) 100%),var(--hero-image) center/cover no-repeat}
 .visual-page-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,14,11,.30),transparent 60%);pointer-events:none}
 .visual-page-hero-copy{position:relative;z-index:1;max-width:980px}
