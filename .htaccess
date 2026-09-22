@@ -3,6 +3,7 @@ ErrorDocument 404 /404.html
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteRule ^room/classic-room/?$ /classic-room.html [R=301,L]
 RewriteCond %{HTTPS} !=on [OR]
 RewriteCond %{HTTP_HOST} ^www\.hotelvastu\.com$ [NC]
 RewriteRule ^ https://hotelvastu.com%{REQUEST_URI} [R=301,L]
