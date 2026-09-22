@@ -8,7 +8,7 @@ Only publicly verified or hotel-confirmed facts should be indexable.
 
 Current verified baseline used by the site:
 - Hotel Vastu Premium
-- RPS More Vijay Complex, RPS Kali Mandir Road, beside Vastu Estates Colony, opposite Hanuman Mandir, Danapur, Patna, Bihar 801503
+- Google Business Profile address: near RPS Law College, RPS Nagar, Kaliket Nagar, Patna, Bihar 801503, India
 - Classic Room page on current hotel website
 - Luxury room listing
 - Air-conditioned family accommodation
@@ -74,9 +74,9 @@ Open `index.html` directly or serve the folder using any static HTTP server.
 
 No framework, database, Bootstrap, jQuery or build step is required.
 
-## NAP verification note
+## NAP source of truth
 
-Public listings currently disagree on the formatted street address. Keep the existing detailed address provisional until the hotel confirms the exact Google Business Profile NAP. Do not assume the verified phone is also a WhatsApp number.
+The connected local-business result matches Hotel Vastu Premium by name and public phone. The website now uses the Google Business Profile address documented in `BUSINESS-DATA.md`. Do not assume the verified phone is also a WhatsApp number.
 
 ## Apache / Hostinger deployment
 
@@ -88,3 +88,7 @@ The repository includes a root `.htaccess` that:
 - adds basic security headers.
 
 If the production host is not Apache-compatible, recreate the same redirects, caching and headers in that platform's configuration instead of relying on `.htaccess`.
+
+## Business detail maintenance
+
+Read `BUSINESS-DATA.md` before changing name, address, phone, room status or other public hotel facts.
