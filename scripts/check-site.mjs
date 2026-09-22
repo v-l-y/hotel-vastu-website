@@ -137,6 +137,20 @@ for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room
 }
 if(!htaccess.includes("RewriteRule ^facilities/?$ /facilities.html [R=301,L]")) fail(".htaccess","legacy Facilities 301 redirect missing");
 
+// Luxury design system guard: preserve premium booking and image-led hero experience.
+const premiumHome=read("index.html");
+for(const token of ["data-home-booking","js/home-booking.js","availability-bar","hero-actions","facility-showcase"]){
+  if(!premiumHome.includes(token)) fail("index.html","missing luxury homepage token "+token);
+}
+if(!exists("js/home-booking.js")) fail("index.html","missing js/home-booking.js");
+for(const file of ["rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","about.html","gallery.html"]){
+  if(!read(file).includes("visual-page-hero")) fail(file,"missing visual luxury page hero");
+}
+for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{"]){
+  const combinedCss=read("css/layout.css")+"\n"+read("css/components.css");
+  if(!combinedCss.includes(token)) fail("design-system","missing luxury CSS token "+token);
+}
+
 // Current room inventory guard: first-party Hotel Vastu menu is Classic / Club / Premium.
 for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
   if(!exists(file)) fail("rooms","missing current room page "+file);
