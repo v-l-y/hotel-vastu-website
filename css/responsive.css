@@ -57,7 +57,7 @@
   .section{padding:78px 0}
   .site-header{backdrop-filter:blur(12px)}
   .brand-logo img{width:148px}.site-header.is-scrolled .brand-logo img{width:142px}.footer-brand-logo img{width:180px}
-  .hero{min-height:690px;padding:calc(var(--header) + 60px) 0 96px;background:linear-gradient(90deg,rgba(22,16,12,.88) 0%,rgba(22,16,12,.70) 38%,rgba(22,16,12,.22) 78%),url("../images/hotel/about.webp") center/cover}
+  .hero{min-height:690px;padding:calc(var(--header) + 60px) 0 96px}
   .hero h1{font-size:clamp(3rem,13vw,4.25rem);line-height:.96}
   .hero p{font-size:1rem}
   .hero-actions .btn{width:100%}
