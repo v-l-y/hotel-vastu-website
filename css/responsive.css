@@ -6,6 +6,11 @@
   .facility-photo-card{grid-column:span 1}
 }
 @media(max-width:900px){
+  .room-detail-grid{grid-template-columns:1fr;gap:34px}
+  .room-booking-panel{position:static}
+  .room-photo-mosaic{grid-template-columns:1fr 1fr;margin-top:44px}
+  .room-photo-mosaic .room-photo-main{grid-column:1/-1}
+  .room-photo-mosaic .room-photo-main img{min-height:430px}
   .visual-page-hero{min-height:500px;padding:calc(var(--header) + 90px) 0 66px}
   .visual-page-hero h1{font-size:clamp(3.1rem,9vw,5rem)}
   .availability-shell{margin-top:-26px}
@@ -31,6 +36,11 @@
   .page-hero h1{font-size:clamp(3rem,8vw,4.8rem)}
 }
 @media(max-width:680px){
+  .room-highlights{grid-template-columns:1fr}
+  .room-photo-mosaic{grid-template-columns:1fr;gap:14px;margin-top:34px}
+  .room-photo-mosaic .room-photo-main{grid-column:auto}
+  .room-photo-mosaic .room-photo-main img,.room-photo-mosaic figure img{min-height:280px}
+  .room-booking-panel{padding:28px 24px}
   .visual-page-hero{min-height:430px;padding:calc(var(--header) + 72px) 0 52px;background-position:center}
   .visual-page-hero h1{font-size:clamp(2.9rem,13vw,4.15rem)}
   .visual-page-hero .lead{font-size:1rem}
