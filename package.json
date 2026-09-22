@@ -1,0 +1,12 @@
+{
+  "name": "hotel-vastu-website",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static SEO-first website for Hotel Vastu Premium",
+  "scripts": {
+    "check": "node scripts/check-site.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
