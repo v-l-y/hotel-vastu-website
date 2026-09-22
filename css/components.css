@@ -153,3 +153,14 @@
 .room-photo-mosaic figure:hover img{transform:scale(1.025)}
 .room-photo-mosaic .room-photo-main img{min-height:520px}
 .room-photo-mosaic figcaption{position:absolute;left:14px;bottom:14px;padding:8px 11px;border-radius:999px;background:rgba(25,18,14,.75);color:#fff;font-size:.68rem;font-weight:850;letter-spacing:.04em;backdrop-filter:blur(8px)}
+
+#booking .content-grid>div:first-child{padding:38px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow)}
+#booking .content-grid>div:first-child>h2{margin:0 0 8px;font-size:clamp(2.4rem,4vw,3.7rem);line-height:1}
+#booking .contact-card{background:linear-gradient(180deg,#fff,#fbf6ee)}
+#booking .contact-card h2{font-size:2rem}
+#booking .contact-card address{margin-bottom:22px;color:var(--ink-2);font-family:var(--serif);font-size:1.1rem;line-height:1.75}
+#booking .contact-card .btn{width:100%}
+.room-grid .card .card-body{display:flex;flex-direction:column;align-items:flex-start;min-height:245px}
+.room-grid .card .card-body .btn{margin-top:auto}
+.room-grid .card .media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.room-grid .card:hover .media img{transform:scale(1.035)}
