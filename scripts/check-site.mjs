@@ -43,6 +43,15 @@ for(const file of htmlFiles){
   const isNoindex=robots.includes("noindex")||file==="404.html";
   (isNoindex?noindex:indexable).add(file);
 
+  const themeColor=meta(html,"theme-color");
+  if(themeColor!=="#211a16") fail(file,"theme-color must match luxury palette #211a16");
+  const logoRefs=(html.match(/src=["']images\/branding\/hotel-vastu-logo\.png["']/gi)||[]).length;
+  if(logoRefs<2) fail(file,"header and footer must both use semantic original logo images");
+  if(!html.includes('class="brand brand-logo"')) fail(file,"header semantic logo wrapper missing");
+  if(!html.includes('class="footer-brand-logo"')) fail(file,"footer semantic logo wrapper missing");
+  if(!html.includes("Comfortable stays near RPS More, Patna.")) fail(file,"canonical footer tagline missing");
+  if(html.includes("Comfortable stays at RPS More")) fail(file,"stale footer tagline remains");
+
   const title=html.match(/<title>([^<]+)<\/title>/i)?.[1]?.trim();
   if(!title) fail(file,"missing <title>");
   else { if(title.length>65) warn(file,"title is "+title.length+" characters"); const prior=seenTitles.get(title); if(prior) fail(file,"duplicate title also used by "+prior); else seenTitles.set(title,file); }
@@ -66,10 +75,14 @@ for(const file of htmlFiles){
     const ogDescription=propertyMeta(html,"og:description");
     const ogUrl=propertyMeta(html,"og:url");
     const ogSite=propertyMeta(html,"og:site_name");
+    const ogImage=propertyMeta(html,"og:image");
     if(!ogTitle) fail(file,"missing og:title");
     if(!ogDescription) fail(file,"missing og:description");
     if(!ogUrl) fail(file,"missing og:url");
     if(!ogSite) fail(file,"missing og:site_name");
+    if(!ogImage) fail(file,"missing og:image");
+    if(ogImage&&!ogImage.startsWith("https://hotelvastu.com/")) fail(file,"og:image must use canonical hotelvastu.com host");
+    if(ogImage&&/\.svg(?:\?|$)/i.test(ogImage)) fail(file,"og:image must be a raster social preview image");
     if(title&&ogTitle&&title!==ogTitle) fail(file,"og:title does not match <title>");
     if(description&&ogDescription&&description!==ogDescription) fail(file,"og:description does not match meta description");
     if(canonical&&ogUrl&&canonical!==ogUrl) fail(file,"og:url does not match canonical");
@@ -137,11 +150,11 @@ for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room
 }
 if(!htaccess.includes("RewriteRule ^facilities/?$ /facilities.html [R=301,L]")) fail(".htaccess","legacy Facilities 301 redirect missing");
 
-// Original logo guard: keep the current first-party Hotel Vastu logo site-wide.
+// Original logo guard: keep the current first-party Hotel Vastu logo semantic and site-wide.
 if(!exists("images/branding/hotel-vastu-logo.png")) fail("branding","missing refined original Hotel Vastu logo");
 const logoCss=read("css/layout.css");
-if(!logoCss.includes('../images/branding/hotel-vastu-logo.png')) fail("branding","original logo not wired into shared layout");
 if(logoCss.includes(".brand::before{")) fail("branding","legacy generated V mark must not return");
+if(logoCss.includes('background:url("../images/branding/hotel-vastu-logo.png")')) fail("branding","logo must not regress to CSS background rendering");
 
 // Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
@@ -178,6 +191,7 @@ for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
   if(!sitemapFiles.has(file)) fail("sitemap.xml","missing current room "+file);
 }
 if(sitemapFiles.has("luxury-room.html")) fail("sitemap.xml","non-current Luxury Room must not be indexed");
+if(read("luxury-room.html").includes('"@type":"HotelRoom"')) fail("luxury-room.html","legacy noindex room must not publish HotelRoom structured data");
 
 // Current Facilities guard: preserve the live /facilities route and its confirmed photos.
 if(!exists("facilities.html")) fail("facilities","missing facilities.html");
@@ -208,7 +222,7 @@ for(const imageUrl of [
 }
 
 // Temporary representative visual guard: missing real hotel photos must stay clearly labelled.
-for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["contact.html","images/temp/reception-temp.svg"],["hotel-near-rps-more.html","images/temp/exterior-temp.svg"]]){
+for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["contact.html","images/temp/reception-temp.svg"],["hotel-near-rps-more.html","images/temp/exterior-temp.svg"],["hotel-near-danapur-railway-station.html","images/temp/exterior-temp.svg"],["deluxe-room.html","images/temp/room-temp.svg"],["luxury-room.html","images/temp/room-temp.svg"],["suite-room.html","images/temp/room-temp.svg"]]){
   if(!exists(asset)) fail(page,"missing temporary visual "+asset);
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
