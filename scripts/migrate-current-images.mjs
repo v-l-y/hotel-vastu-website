@@ -57,3 +57,22 @@ await sharp("images/hotel/hero.webp")
   .toFile("images/hotel/og-hotel-vastu.webp");
 
 console.log("Image migration complete.");
+
+const logoUrl="https://hotelvastu.com/assets/logo-BfCtKmSj.png";
+{
+  const res=await fetch(logoUrl,{headers:{"user-agent":"HotelVastuLogoMigration/1.0"}});
+  if(!res.ok)throw new Error(`Failed ${res.status} ${logoUrl}`);
+  const bytes=Buffer.from(await res.arrayBuffer());
+  const meta=await sharp(bytes).metadata();
+  console.log("Migrating original logo",meta.width+"x"+meta.height,meta.format,bytes.length+" bytes");
+  await fs.mkdir("images/branding",{recursive:true});
+  await sharp(bytes)
+    .rotate()
+    .trim({background:{r:255,g:255,b:255,alpha:0}})
+    .resize({width:520,withoutEnlargement:true})
+    .sharpen({sigma:0.35})
+    .png({compressionLevel:9,adaptiveFiltering:true})
+    .toFile("images/branding/hotel-vastu-logo.png");
+  const stat=await fs.stat("images/branding/hotel-vastu-logo.png");
+  console.log(" refined logo",stat.size+" bytes");
+}
