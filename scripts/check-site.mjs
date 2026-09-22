@@ -119,7 +119,26 @@ for(const cssDir of ["css"]){
   }
 }
 
-try{JSON.parse(read("site.webmanifest"));}catch(e){fail("site.webmanifest","invalid JSON: "+e.message);}
+let manifest=null;
+try{manifest=JSON.parse(read("site.webmanifest"));}catch(e){fail("site.webmanifest","invalid JSON: "+e.message);}
+
+// Manifest/branding guard: browser/PWA branding must use the original Hotel Vastu logo artwork.
+if(manifest){
+  if(manifest.theme_color!=="#211a16") fail("site.webmanifest","theme_color must be #211a16");
+  if(manifest.background_color!=="#fffdfa") fail("site.webmanifest","background_color must be #fffdfa");
+  const iconMap=new Map((manifest.icons||[]).map(icon=>[icon.sizes,icon]));
+  for(const [sizes,src] of [["192x192","/images/branding/hotel-vastu-icon-192.png"],["512x512","/images/branding/hotel-vastu-icon-512.png"]]){
+    const icon=iconMap.get(sizes);
+    if(!icon||icon.src!==src||icon.type!=="image/png") fail("site.webmanifest","missing branded "+sizes+" PNG icon");
+    const rel=src.replace(/^\//,"");
+    if(!exists(rel)) fail("site.webmanifest","missing manifest icon file "+rel);
+  }
+}
+if(exists("favicon.svg")) fail("branding","obsolete custom V favicon.svg must not return");
+for(const file of htmlFiles){
+  const html=read(file);
+  if(!html.includes('href="images/branding/hotel-vastu-icon-192.png" type="image/png" sizes="192x192"')) fail(file,"branded PNG favicon link missing");
+}
 
 const sitemap=read("sitemap.xml");
 const locs=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
@@ -145,6 +164,21 @@ const robots=read("robots.txt");
 if(!robots.includes("Sitemap: https://hotelvastu.com/sitemap.xml")) fail("robots.txt","canonical sitemap declaration missing");
 
 const htaccess=read(".htaccess");
+
+// Production cache guard: fixed filenames need short cache windows to avoid stale redesign assets.
+for(const token of [
+  'ExpiresByType text/html "access plus 0 seconds"',
+  'ExpiresByType text/css "access plus 1 hour"',
+  'ExpiresByType application/javascript "access plus 1 hour"',
+  'ExpiresByType application/manifest+json "access plus 1 hour"',
+  'ExpiresByType image/png "access plus 7 days"',
+  'ExpiresByType image/svg+xml "access plus 7 days"',
+  'ExpiresByType image/webp "access plus 7 days"',
+  'ExpiresByType image/avif "access plus 7 days"',
+  'Header set Cache-Control "no-cache, must-revalidate"'
+]){
+  if(!htaccess.includes(token)) fail(".htaccess","missing cache policy token: "+token);
+}
 for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room","club-room.html"],["premium-room","premium-room.html"]]){
   if(!htaccess.includes(`RewriteRule ^room/${oldPath}/?$ /${newPath} [R=301,L]`)) fail(".htaccess",`legacy ${oldPath} 301 redirect missing`);
 }
@@ -228,6 +262,14 @@ for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"]
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
   if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
 }
+
+// Documentation consistency guard.
+const readme=read("README.md");
+if(readme.includes("\\n\\n### Static QA")) fail("README.md","literal escaped newlines remain in Static QA section");
+if(!readme.includes("hotel-vastu-icon-192.png")||!readme.includes("hotel-vastu-icon-512.png")) fail("README.md","current branded icons are undocumented");
+const deployment=read("DEPLOYMENT.md");
+if(deployment.includes("images/ after original hotel photos are added")) fail("DEPLOYMENT.md","stale pre-migration image instruction remains");
+if(!deployment.includes("Cache behavior")) fail("DEPLOYMENT.md","cache behavior section missing");
 
 const home=read("index.html");
 for(const room of ["classic-room.html","club-room.html","premium-room.html"]){
