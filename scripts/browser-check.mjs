@@ -19,7 +19,7 @@ async function reviewContext(label,options){
     const errors=[];
     page.on("pageerror",error=>errors.push("pageerror: "+error.message));
     page.on("console",msg=>{if(msg.type()==="error")errors.push("console: "+msg.text())});
-    page.on("requestfailed",req=>errors.push("request failed: "+req.url()+" "+(req.failure()?.errorText||"")));
+    page.on("requestfailed",req=>errors.push("request failed: "+req.url()+" "+(req.failure()?.errorText||"")));page.on("response",res=>{if(res.status()>=400)errors.push(`HTTP ${res.status()}: ${res.url()}`)});
     const response=await page.goto(`${base}/${file}`,{waitUntil:"networkidle"});
     if(!response?.ok())errors.push("HTTP "+(response?.status()??"no response"));
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1);
@@ -27,7 +27,7 @@ async function reviewContext(label,options){
     const results=await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
     for(const violation of results.violations){
       if(["serious","critical"].includes(violation.impact||"")){
-        errors.push(`axe ${violation.id}: ${violation.help} (${violation.nodes.length})`);
+        const nodes=violation.nodes.slice(0,8).map(node=>`${node.target.join(" ")} => ${node.failureSummary||""}`).join(" || ");errors.push(`axe ${violation.id}: ${violation.help} (${violation.nodes.length}) ${nodes}`);
       }
     }
     if(errors.length)failures.push(`${label} ${file}: ${errors.join(" | ")}`);
