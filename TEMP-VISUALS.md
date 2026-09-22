@@ -2,11 +2,10 @@
 
 These files are intentionally temporary and must not be treated as photographs of the actual Hotel Vastu Premium property:
 
-- `images/temp/restaurant-temp.svg` — used on `restaurant.html`
-- `images/temp/reception-temp.svg` — used on `contact.html`
-- `images/temp/exterior-temp.svg` — used on `hotel-near-rps-more.html` and `hotel-near-danapur-railway-station.html`
+- `images/temp/restaurant-temp.svg` — used on `restaurant.html` because the previous live Restaurant page does not render a first-party restaurant photograph.
+- `images/temp/room-temp.svg` — used on the noindex Deluxe, Luxury and Suite room placeholder/legacy pages.
 
-- `images/temp/room-temp.svg` — used on the noindex Deluxe, Luxury and Suite room placeholder/legacy pages
+The previous Contact and local-location representative heroes have been removed because verified first-party Hotel Vastu imagery is now available and used instead.
 
 Each visible temporary image carries a **Representative visual** badge through shared CSS, including representative visual heroes.
 
