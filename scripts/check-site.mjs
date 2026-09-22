@@ -155,6 +155,14 @@ for(const asset of ["images/facilities/banquet-events.webp","images/facilities/c
   if(!facilities.includes(asset)) fail("facilities.html","missing current-site photo "+asset);
 }
 
+// Temporary representative visual guard: missing real hotel photos must stay clearly labelled.
+for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["contact.html","images/temp/reception-temp.svg"],["hotel-near-rps-more.html","images/temp/exterior-temp.svg"]]){
+  if(!exists(asset)) fail(page,"missing temporary visual "+asset);
+  const html=read(page);
+  if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
+  if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");
+}
+
 const home=read("index.html");
 for(const room of ["classic-room.html","club-room.html","premium-room.html"]){
   if(!home.includes(`href="${room}"`)) fail("index.html","missing current room link "+room);
