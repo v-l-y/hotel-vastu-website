@@ -1,11 +1,6 @@
 name: Migrate Current Hotel Photos
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/migrate-current-photos.yml"
-      - "scripts/migrate-current-images.mjs"
   workflow_dispatch:
 
 permissions:
