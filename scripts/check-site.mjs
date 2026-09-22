@@ -239,7 +239,7 @@ for(const token of ["scrollIntoView","prefers-reduced-motion","requestAnimationF
 }
 if(!exists("scripts/browser-check.mjs")) fail("browser-qa","browser QA script missing");
 if(!exists(".github/workflows/browser-qa.yml")) fail("browser-qa","browser QA workflow missing");
-for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js","scripts/browser-check.mjs"]){
+for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js"]){
   try{new Function(read(file));}catch(e){fail(file,"JavaScript syntax error: "+e.message);}
 }
 
