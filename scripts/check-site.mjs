@@ -132,9 +132,21 @@ const robots=read("robots.txt");
 if(!robots.includes("Sitemap: https://hotelvastu.com/sitemap.xml")) fail("robots.txt","canonical sitemap declaration missing");
 
 const htaccess=read(".htaccess");
-if(!htaccess.includes("RewriteRule ^room/classic-room/?$ /classic-room.html [R=301,L]")) fail(".htaccess","legacy Classic Room 301 redirect missing");
+for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room","club-room.html"],["premium-room","premium-room.html"]]){
+  if(!htaccess.includes(`RewriteRule ^room/${oldPath}/?$ /${newPath} [R=301,L]`)) fail(".htaccess",`legacy ${oldPath} 301 redirect missing`);
+}
+
+// Current room inventory guard: first-party Hotel Vastu menu is Classic / Club / Premium.
+for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
+  if(!exists(file)) fail("rooms","missing current room page "+file);
+  if(!sitemapFiles.has(file)) fail("sitemap.xml","missing current room "+file);
+}
+if(sitemapFiles.has("luxury-room.html")) fail("sitemap.xml","non-current Luxury Room must not be indexed");
 
 const home=read("index.html");
+for(const room of ["classic-room.html","club-room.html","premium-room.html"]){
+  if(!home.includes(`href="${room}"`)) fail("index.html","missing current room link "+room);
+}
 for(const expected of ["+918002007466","RPS Law College","ChIJDxeajLFX7TkRZBzzwB6YHzg"]){
   if(!home.includes(expected)) fail("index.html","business source-of-truth token missing: "+expected);
 }
