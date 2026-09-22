@@ -135,6 +135,7 @@ const htaccess=read(".htaccess");
 for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room","club-room.html"],["premium-room","premium-room.html"]]){
   if(!htaccess.includes(`RewriteRule ^room/${oldPath}/?$ /${newPath} [R=301,L]`)) fail(".htaccess",`legacy ${oldPath} 301 redirect missing`);
 }
+if(!htaccess.includes("RewriteRule ^facilities/?$ /facilities.html [R=301,L]")) fail(".htaccess","legacy Facilities 301 redirect missing");
 
 // Current room inventory guard: first-party Hotel Vastu menu is Classic / Club / Premium.
 for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
@@ -142,6 +143,17 @@ for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
   if(!sitemapFiles.has(file)) fail("sitemap.xml","missing current room "+file);
 }
 if(sitemapFiles.has("luxury-room.html")) fail("sitemap.xml","non-current Luxury Room must not be indexed");
+
+// Current Facilities guard: preserve the live /facilities route and its confirmed photos.
+if(!exists("facilities.html")) fail("facilities","missing facilities.html");
+if(!sitemapFiles.has("facilities.html")) fail("sitemap.xml","missing facilities.html");
+for(const asset of ["images/facilities/banquet-events.webp","images/facilities/corporate-stay.webp"]){
+  if(!exists(asset)) fail("facilities","missing current-site asset "+asset);
+}
+const facilities=read("facilities.html");
+for(const asset of ["images/facilities/banquet-events.webp","images/facilities/corporate-stay.webp"]){
+  if(!facilities.includes(asset)) fail("facilities.html","missing current-site photo "+asset);
+}
 
 const home=read("index.html");
 for(const room of ["classic-room.html","club-room.html","premium-room.html"]){
