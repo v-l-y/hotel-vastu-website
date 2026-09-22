@@ -1,0 +1,36 @@
+name: Final Site Polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/final-polish.mjs"
+      - ".github/workflows/final-polish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Apply final consistency polish
+        run: node scripts/final-polish.mjs
+      - name: Commit polished pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*.html' css/layout.css css/responsive.css
+          if git diff --cached --quiet; then
+            echo "No polish changes to commit."
+            exit 0
+          fi
+          git commit -m "Finish all-green site polish"
+          git push origin HEAD:main
