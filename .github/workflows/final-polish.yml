@@ -1,11 +1,6 @@
 name: Final Site Polish
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "scripts/final-polish.mjs"
-      - ".github/workflows/final-polish.yml"
   workflow_dispatch:
 
 permissions:
