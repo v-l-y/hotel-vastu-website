@@ -46,14 +46,14 @@ Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinat
 
 The UI has graceful visual fallbacks until original photos are supplied.
 
-Expected files:
-- `images/hotel/hero.webp`
-- `images/hotel/exterior.webp`
-- `images/rooms/classic-room.webp`
-- `images/rooms/luxury-room.webp`
-- `images/restaurant/restaurant.webp`
+The repository currently ships lightweight SVG placeholders so previews do not generate broken image requests:
+- `images/hotel/hero.svg`
+- `images/hotel/exterior.svg`
+- `images/rooms/classic-room.svg`
+- `images/rooms/luxury-room.svg`
+- `images/restaurant/restaurant.svg`
 
-Use original hotel photography, preferably WebP/AVIF, with meaningful filenames and proper dimensions.
+Before production cutover, replace these visuals with original hotel photography. Prefer WebP/AVIF, use meaningful filenames and proper dimensions, then update the shared CSS image paths. Do not hotlink or copy third-party OTA thumbnails.
 
 ## Before production launch
 
