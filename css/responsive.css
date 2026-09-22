@@ -6,6 +6,10 @@
   .facility-photo-card{grid-column:span 1}
 }
 @media(max-width:900px){
+  .availability-shell{margin-top:-26px}
+  .availability-bar{grid-template-columns:1fr 1fr;padding:18px;gap:16px}
+  .availability-field{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--line)}
+  .availability-submit{margin-left:0;min-width:0;width:100%}
   .menu-btn{display:block}
   .nav-links{display:none;position:absolute;top:var(--header);left:0;right:0;padding:22px 24px 28px;background:rgba(255,253,249,.99);color:var(--ink);border-top:1px solid var(--line);box-shadow:0 22px 45px rgba(33,26,22,.14);flex-direction:column;align-items:flex-start;gap:8px}
   .nav-links.open{display:flex}
@@ -25,6 +29,10 @@
   .page-hero h1{font-size:clamp(3rem,8vw,4.8rem)}
 }
 @media(max-width:680px){
+  .availability-shell{margin-top:-24px}
+  .availability-bar{grid-template-columns:1fr;border-radius:18px;gap:12px;padding:18px}
+  .availability-field{padding:0 0 12px}
+  .availability-submit{height:50px}
   .container{width:min(var(--container),calc(100% - 28px))}
   .section{padding:78px 0}
   .site-header{backdrop-filter:blur(12px)}
@@ -34,7 +42,7 @@
   .hero h1{font-size:clamp(3rem,13vw,4.25rem);line-height:.96}
   .hero p{font-size:1rem}
   .hero-actions .btn{width:100%}
-  .quick-facts{grid-template-columns:1fr 1fr;margin-top:-44px}
+  .quick-facts{grid-template-columns:1fr 1fr;margin-top:22px}
   .quick-facts div{padding:20px 12px}
   .room-grid,.feature-grid,.amenity-grid,.footer-grid,.booking-grid,.facility-showcase{grid-template-columns:1fr}
   .booking-grid .full{grid-column:auto}
