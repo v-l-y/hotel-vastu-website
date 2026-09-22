@@ -24,7 +24,7 @@ async function reviewContext(label,options){
     if(!response?.ok())errors.push("HTTP "+(response?.status()??"no response"));
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1);
     if(overflow)errors.push("horizontal overflow");
-    const results=await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
+    await page.evaluate(()=>document.querySelectorAll(".lux-reveal").forEach(el=>el.classList.add("is-visible")));await page.waitForTimeout(850);const results=await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
     for(const violation of results.violations){
       if(["serious","critical"].includes(violation.impact||"")){
         const nodes=violation.nodes.slice(0,8).map(node=>`${node.target.join(" ")} => ${node.failureSummary||""}`).join(" || ");errors.push(`axe ${violation.id}: ${violation.help} (${violation.nodes.length}) ${nodes}`);
