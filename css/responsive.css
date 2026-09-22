@@ -6,6 +6,8 @@
   .facility-photo-card{grid-column:span 1}
 }
 @media(max-width:900px){
+  .visual-page-hero{min-height:500px;padding:calc(var(--header) + 90px) 0 66px}
+  .visual-page-hero h1{font-size:clamp(3.1rem,9vw,5rem)}
   .availability-shell{margin-top:-26px}
   .availability-bar{grid-template-columns:1fr 1fr;padding:18px;gap:16px}
   .availability-field{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--line)}
@@ -29,6 +31,9 @@
   .page-hero h1{font-size:clamp(3rem,8vw,4.8rem)}
 }
 @media(max-width:680px){
+  .visual-page-hero{min-height:430px;padding:calc(var(--header) + 72px) 0 52px;background-position:center}
+  .visual-page-hero h1{font-size:clamp(2.9rem,13vw,4.15rem)}
+  .visual-page-hero .lead{font-size:1rem}
   .availability-shell{margin-top:-24px}
   .availability-bar{grid-template-columns:1fr;border-radius:18px;gap:12px;padding:18px}
   .availability-field{padding:0 0 12px}
