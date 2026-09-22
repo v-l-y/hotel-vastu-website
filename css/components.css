@@ -120,3 +120,11 @@
 
 @media(prefers-reduced-motion:reduce){.photo-refined img,.photo-refined:hover img{transform:none;transition:none}}
 @media(max-width:620px){.gallery-dialog-nav{width:40px;height:40px}.gallery-dialog-prev{left:8px}.gallery-dialog-next{right:8px}.gallery-dialog-close{right:8px;top:8px}.gallery-dialog figcaption{padding-left:52px;padding-right:52px}.cta-band{padding:34px 24px}}
+.availability-shell{position:relative;z-index:8;margin-top:-34px}
+.availability-bar{display:grid;grid-template-columns:1.1fr 1.1fr .8fr 1fr auto;gap:0;align-items:end;padding:18px 18px 18px 24px;border:1px solid rgba(215,202,184,.9);border-radius:22px;background:rgba(255,253,249,.98);box-shadow:0 24px 70px rgba(48,35,26,.16);backdrop-filter:blur(16px)}
+.availability-field{padding:0 18px;border-right:1px solid var(--line)}
+.availability-field:first-child{padding-left:0}
+.availability-field label{display:block;margin-bottom:7px;color:var(--gold-dark);font-size:.66rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase}
+.availability-field input,.availability-field select{width:100%;height:42px;padding:0;border:0;background:transparent;color:var(--ink);font-family:var(--serif);font-size:1.05rem;font-weight:600;outline:0}
+.availability-field input:focus,.availability-field select:focus{box-shadow:none}
+.availability-submit{min-width:148px;margin-left:16px;height:52px}
