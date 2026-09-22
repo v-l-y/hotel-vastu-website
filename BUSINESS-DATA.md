@@ -14,8 +14,10 @@ Use this file before changing any public business details in HTML, JSON-LD, site
 
 ## Room status
 
-- **Classic Room:** confirmed by the existing Hotel Vastu website.
-- **Luxury Room:** supported by public property listings.
+- **Classic Room:** current first-party Hotel Vastu website room type.
+- **Club Room:** current first-party Hotel Vastu website room type.
+- **Premium Room:** current first-party Hotel Vastu website room type.
+- **Luxury Room:** not present in the current first-party room menu; keep noindex.
 - **Deluxe Room:** unconfirmed; keep noindex until hotel confirmation.
 - **Suite Room:** unconfirmed; keep noindex until hotel confirmation.
 
@@ -41,7 +43,7 @@ Use this file before changing any public business details in HTML, JSON-LD, site
 - Awards
 - Geo coordinates
 - Review/rating schema
-- New room categories
+- New room categories not present on the current first-party website
 
 ## NAP rule
 
