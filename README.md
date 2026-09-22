@@ -86,7 +86,7 @@ With Node.js 18+ installed, run:
 npm run check
 ```
 
-The check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, legacy redirects, branding, smooth scrolling, premium page structure and key business-data tokens. The same check also runs in GitHub Actions on `main`.
+The static check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, legacy redirects, branding, smooth scrolling, premium page structure and key business-data tokens. GitHub Actions also runs Browser QA in Chromium on desktop/mobile, Axe WCAG checks, booking-date interaction checks, gallery/mobile-nav checks and a Lighthouse quality gate.
 
 ## NAP source of truth
 
@@ -112,3 +112,8 @@ Read `BUSINESS-DATA.md` before changing name, address, phone, room status or oth
 - `BUSINESS-DATA.md` — canonical hotel business facts
 - `DEPLOYMENT.md` — production/Hostinger deployment runbook
 - `SEO-CHECKLIST.md` — Google Search Console and local SEO launch checklist
+
+
+## Maintenance workflows
+
+Image discovery, current-photo migration and final-polish workflows are manual-only. Normal pushes to `main` never let those maintenance jobs rewrite pages or assets automatically. The photo migration script resolves the current live Vite bundle and image hashes dynamically before downloading first-party assets.
