@@ -1,7 +1,7 @@
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:0 24px;border:1px solid transparent;border-radius:999px;font-size:.78rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;transition:transform .22s ease,box-shadow .22s ease,background .22s ease,border-color .22s ease,color .22s ease}
 .btn:hover{transform:translateY(-2px)}
-.btn-primary{background:linear-gradient(135deg,var(--gold),#a77d48);color:#fff;box-shadow:0 12px 26px rgba(161,116,63,.22)}
-.btn-primary:hover{box-shadow:0 16px 34px rgba(161,116,63,.30)}
+.btn-primary{background:linear-gradient(135deg,#8a6338,#76502a);color:#fff;box-shadow:0 12px 26px rgba(118,80,42,.24)}
+.btn-primary:hover{background:linear-gradient(135deg,#76502a,#6f4a29);box-shadow:0 16px 34px rgba(111,74,41,.30)}
 .btn-dark{background:var(--ink);color:#fff;box-shadow:var(--shadow-soft)}
 .btn-dark:hover{background:#2d231d}
 .btn-outline{border-color:var(--line-strong);background:rgba(255,255,255,.55);color:var(--ink)}
