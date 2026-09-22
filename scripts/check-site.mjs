@@ -143,7 +143,8 @@ for(const token of ["data-home-booking","js/home-booking.js","availability-bar",
   if(!premiumHome.includes(token)) fail("index.html","missing luxury homepage token "+token);
 }
 if(!exists("js/home-booking.js")) fail("index.html","missing js/home-booking.js");
-for(const file of ["rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","about.html","gallery.html"]){
+for(const file of ["classic-room.html","club-room.html","premium-room.html"]){const html=read(file);for(const token of ["room-detail-grid","room-highlights","room-booking-panel","room-photo-mosaic"]){if(!html.includes(token))fail(file,"missing editorial room token "+token);}}
+for(const file of ["rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","about.html","gallery.html","restaurant.html","contact.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
   if(!read(file).includes("visual-page-hero")) fail(file,"missing visual luxury page hero");
 }
 for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{"]){
@@ -191,7 +192,7 @@ for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"]
   if(!exists(asset)) fail(page,"missing temporary visual "+asset);
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
-  if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");
+  if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
 }
 
 const home=read("index.html");
