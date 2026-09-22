@@ -1,11 +1,6 @@
 name: Discover Live Hotel Images
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/discover-live-images.yml"
-      - "scripts/discover-live-images.mjs"
   workflow_dispatch:
 
 permissions:
