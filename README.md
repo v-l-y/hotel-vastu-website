@@ -48,6 +48,7 @@ Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinat
 Current first-party room photography has been migrated from the live Hotel Vastu website, technically refined, resized and compressed to WebP:
 
 - `images/hotel/hero.webp`
+- `images/hotel/about.webp`
 - `images/hotel/og-hotel-vastu.webp`
 - `images/rooms/classic-room.webp` + gallery images
 - `images/rooms/club-room.webp` + gallery images
