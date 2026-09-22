@@ -1,0 +1,39 @@
+name: Migrate Rendered Hotel Photos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/migrate-rendered-hotel-photos.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install photo migration dependencies
+        run: npm install --no-save --package-lock=false playwright@1.55.0 sharp@0.34.4
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Migrate rendered Hotel Vastu photos
+        run: node scripts/migrate-rendered-hotel-photos.mjs
+      - name: Commit migrated photos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add images/
+          if git diff --cached --quiet; then
+            echo "No new photos to commit."
+            exit 0
+          fi
+          git commit -m "Migrate all rendered Hotel Vastu photos"
+          git push origin HEAD:main
