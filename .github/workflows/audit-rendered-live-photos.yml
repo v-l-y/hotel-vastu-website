@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/audit-rendered-live-photos.yml"
+      - "scripts/audit-live-rendered-images.mjs"
   workflow_dispatch:
 
 permissions:
