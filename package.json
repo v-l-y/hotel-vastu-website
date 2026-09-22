@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Static SEO-first website for Hotel Vastu Premium",
   "scripts": {
+    "build:css": "node scripts/build-css.mjs",
     "check": "node scripts/check-site.mjs"
   },
   "engines": {

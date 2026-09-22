@@ -18,11 +18,13 @@ jobs:
           node-version: "24"
       - name: Apply final consistency polish
         run: node scripts/final-polish.mjs
+      - name: Rebuild production CSS bundle
+        run: node scripts/build-css.mjs
       - name: Commit polished pages
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add '*.html' css/layout.css css/responsive.css
+          git add '*.html' css/layout.css css/responsive.css css/site.css
           if git diff --cached --quiet; then
             echo "No polish changes to commit."
             exit 0
