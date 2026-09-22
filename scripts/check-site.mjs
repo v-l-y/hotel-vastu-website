@@ -12,6 +12,8 @@ const exists=(file)=>fs.existsSync(path.join(root,file));
 const htmlFiles=fs.readdirSync(root).filter(f=>f.endsWith(".html")).sort();
 const indexable=new Set();
 const noindex=new Set();
+const seenTitles=new Map();
+const seenCanonicals=new Map();
 
 function attr(html,tag,name){
   const re=new RegExp("<"+tag+"[^>]*\\b"+name+"=[\\\"']([^\\\"']+)[\\\"'][^>]*>","i");
@@ -38,7 +40,7 @@ for(const file of htmlFiles){
 
   const title=html.match(/<title>([^<]+)<\/title>/i)?.[1]?.trim();
   if(!title) fail(file,"missing <title>");
-  else if(title.length>65) warn(file,"title is "+title.length+" characters");
+  else { if(title.length>65) warn(file,"title is "+title.length+" characters"); const prior=seenTitles.get(title); if(prior) fail(file,"duplicate title also used by "+prior); else seenTitles.set(title,file); }
 
   const description=meta(html,"description");
   if(!isNoindex&&!description) fail(file,"missing meta description");
@@ -51,6 +53,16 @@ for(const file of htmlFiles){
     ??html.match(/<link[^>]*href=[\"']([^\"']+)[\"'][^>]*rel=[\"']canonical[\"']/i)?.[1];
   if(!isNoindex&&!canonical) fail(file,"missing canonical URL");
   if(canonical&&!canonical.startsWith("https://hotelvastu.com/")) fail(file,"canonical uses unexpected host");
+  if(canonical){const prior=seenCanonicals.get(canonical);if(prior)fail(file,"duplicate canonical also used by "+prior);else seenCanonicals.set(canonical,file);}
+  if(!isNoindex&&canonical){const expected=file==="index.html"?"https://hotelvastu.com/":"https://hotelvastu.com/"+file;if(canonical!==expected)fail(file,"canonical mismatch; expected "+expected);}
+
+  if(!isNoindex){
+    for(const property of ["og:title","og:description","og:url","og:site_name"]){
+      const re=new RegExp("<meta[^>]*\\bproperty=[\\\"\']"+property+"[\\\"\'][^>]*\\bcontent=[\\\"\']([^\\\"\']+)[\\\"\'][^>]*>","i");
+      const rev=new RegExp("<meta[^>]*\\bcontent=[\\\"\']([^\\\"\']+)[\\\"\'][^>]*\\bproperty=[\\\"\']"+property+"[\\\"\'][^>]*>","i");
+      if(!(html.match(re)||html.match(rev))) fail(file,"missing "+property);
+    }
+  }
 
   for(const m of html.matchAll(/<(?:a|link|script|img)[^>]*\b(?:href|src)=[\"']([^\"']+)[\"']/gi)){
     const target=localTarget(file,m[1]);
