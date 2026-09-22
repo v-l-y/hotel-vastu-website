@@ -64,3 +64,9 @@
 .footer a:hover{color:#e8cfa6}
 .footer-links{display:grid;gap:10px}
 .footer-bottom{margin-top:46px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);font-size:.79rem;letter-spacing:.015em}
+.visual-page-hero{position:relative;min-height:560px;display:flex;align-items:flex-end;padding:calc(var(--header) + 110px) 0 82px;color:#fff;background:linear-gradient(180deg,rgba(20,14,11,.10) 0%,rgba(20,14,11,.32) 42%,rgba(20,14,11,.84) 100%),var(--hero-image) center/cover no-repeat}
+.visual-page-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,14,11,.30),transparent 60%);pointer-events:none}
+.visual-page-hero-copy{position:relative;z-index:1;max-width:980px}
+.visual-page-hero .eyebrow{color:#ead5b5}
+.visual-page-hero h1{max-width:900px;margin:.06em 0 .22em;color:#fff;font-size:clamp(3.4rem,6.4vw,6.2rem);line-height:.94;text-wrap:balance}
+.visual-page-hero .lead{max-width:760px;color:rgba(255,255,255,.80);font-size:1.08rem}
