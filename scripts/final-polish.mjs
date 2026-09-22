@@ -16,6 +16,7 @@ for(const file of htmlFiles){
 
   html=html
     .replaceAll('<meta name="theme-color" content="#17201b">','<meta name="theme-color" content="#211a16">')
+    .replaceAll('<link rel="icon" href="favicon.svg" type="image/svg+xml">','<link rel="icon" href="images/branding/hotel-vastu-icon-192.png" type="image/png" sizes="192x192">')
     .replaceAll(headerOld,headerNew)
     .replaceAll(footerOld,footerNew)
     .replaceAll('Comfortable stays at RPS More, Danapur, Patna.',canonicalTagline)
