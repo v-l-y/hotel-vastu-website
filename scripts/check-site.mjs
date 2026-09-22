@@ -137,19 +137,33 @@ for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room
 }
 if(!htaccess.includes("RewriteRule ^facilities/?$ /facilities.html [R=301,L]")) fail(".htaccess","legacy Facilities 301 redirect missing");
 
-// Luxury design system guard: preserve premium booking and image-led hero experience.
+// Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
 for(const token of ["data-home-booking","js/home-booking.js","availability-bar","hero-actions","facility-showcase"]){
   if(!premiumHome.includes(token)) fail("index.html","missing luxury homepage token "+token);
 }
 if(!exists("js/home-booking.js")) fail("index.html","missing js/home-booking.js");
-for(const file of ["classic-room.html","club-room.html","premium-room.html"]){const html=read(file);for(const token of ["room-detail-grid","room-highlights","room-booking-panel","room-photo-mosaic"]){if(!html.includes(token))fail(file,"missing editorial room token "+token);}}
-for(const file of ["rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","about.html","gallery.html","restaurant.html","contact.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
-  if(!read(file).includes("visual-page-hero")) fail(file,"missing visual luxury page hero");
+for(const file of ["classic-room.html","club-room.html","premium-room.html"]){
+  const html=read(file);
+  for(const token of ["room-detail-grid","room-highlights","room-booking-panel","room-photo-mosaic"]){
+    if(!html.includes(token)) fail(file,"missing editorial room token "+token);
+  }
 }
-for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{"]){
-  const combinedCss=read("css/layout.css")+"\n"+read("css/components.css");
-  if(!combinedCss.includes(token)) fail("design-system","missing luxury CSS token "+token);
+for(const file of htmlFiles){
+  const html=read(file);
+  if(file!=="index.html"&&!html.includes("visual-page-hero")) fail(file,"missing visual luxury page hero");
+  if(!html.includes('href="facilities.html">Facilities</a>')) fail(file,"missing Facilities navigation");
+}
+const combinedCss=read("css/base.css")+"\n"+read("css/layout.css")+"\n"+read("css/components.css");
+for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{","scroll-padding-top","scroll-margin-top",".site-header.is-scrolled"]){
+  if(!combinedCss.includes(token)) fail("design-system","missing luxury/smooth-scroll CSS token "+token);
+}
+const mainJs=read("js/main.js");
+for(const token of ["scrollIntoView","prefers-reduced-motion","requestAnimationFrame","is-scrolled"]){
+  if(!mainJs.includes(token)) fail("js/main.js","missing smooth-scroll token "+token);
+}
+for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js"]){
+  try{new Function(read(file));}catch(e){fail(file,"JavaScript syntax error: "+e.message);}
 }
 
 // Current room inventory guard: first-party Hotel Vastu menu is Classic / Club / Premium.
