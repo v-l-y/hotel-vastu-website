@@ -165,6 +165,15 @@ if(!robots.includes("Sitemap: https://hotelvastu.com/sitemap.xml")) fail("robots
 
 const htaccess=read(".htaccess");
 
+// Security header guard.
+for(const token of [
+  'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+  'Header always set Content-Security-Policy "default-src \'self\';',
+  'Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"'
+]){
+  if(!htaccess.includes(token)) fail(".htaccess","missing security policy token: "+token);
+}
+
 // Production cache guard: fixed filenames need short cache windows to avoid stale redesign assets.
 for(const token of [
   'ExpiresByType text/html "access plus 0 seconds"',
@@ -211,11 +220,26 @@ const combinedCss=read("css/base.css")+"\n"+read("css/layout.css")+"\n"+read("cs
 for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{","scroll-padding-top","scroll-margin-top",".site-header.is-scrolled"]){
   if(!combinedCss.includes(token)) fail("design-system","missing luxury/smooth-scroll CSS token "+token);
 }
+// Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
+for(const file of ["js/booking.js","js/home-booking.js"]){
+  const source=read(file);
+  if(source.includes("toISOString()")) fail(file,"date validation must use local calendar dates, not UTC toISOString()");
+  for(const token of ["getFullYear()","getMonth()+1","getDate()","setDate("]){
+    if(!source.includes(token)) fail(file,"missing local-calendar date token "+token);
+  }
+}
+
+// Accessibility contrast guard for the primary CTA.
+const componentCss=read("css/components.css");
+if(!componentCss.includes("linear-gradient(135deg,#8a6338,#76502a)")||!componentCss.includes("color:#fff")) fail("css/components.css","primary CTA must keep the WCAG-AA dark-gold treatment");
+
 const mainJs=read("js/main.js");
 for(const token of ["scrollIntoView","prefers-reduced-motion","requestAnimationFrame","is-scrolled"]){
   if(!mainJs.includes(token)) fail("js/main.js","missing smooth-scroll token "+token);
 }
-for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js"]){
+if(!exists("scripts/browser-check.mjs")) fail("browser-qa","browser QA script missing");
+if(!exists(".github/workflows/browser-qa.yml")) fail("browser-qa","browser QA workflow missing");
+for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js","scripts/browser-check.mjs"]){
   try{new Function(read(file));}catch(e){fail(file,"JavaScript syntax error: "+e.message);}
 }
 
@@ -261,6 +285,27 @@ for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"]
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
   if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
+}
+
+// Maintenance workflow guard: source-mutating jobs must be manual-only.
+for(const file of [".github/workflows/final-polish.yml",".github/workflows/migrate-current-photos.yml",".github/workflows/discover-live-images.yml"]){
+  const workflow=read(file);
+  if(!workflow.includes("workflow_dispatch:")) fail(file,"manual workflow_dispatch trigger missing");
+  if(/\n\s*push:\s*\n/.test(workflow)) fail(file,"maintenance workflow must not auto-run on push");
+}
+if(!read("scripts/discover-live-images.mjs").includes("index-[^/]+\\.js")) fail("scripts/discover-live-images.mjs","live bundle discovery must resolve the current hashed entry dynamically");
+
+// Content hierarchy guard for key indexable browse/local pages.
+for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
+  const html=read(file);
+  const h2=(html.match(/<h2\b/gi)||[]).length;
+  if(h2<1) fail(file,"expected at least one H2 for useful content hierarchy");
+}
+if(read("hotel-near-danapur-railway-station.html").includes("3.7 km")) fail("hotel-near-danapur-railway-station.html","fixed third-party distance claim must not return");
+
+// Dead asset guard.
+for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/rooms/club-banner.webp"]){
+  if(exists(asset)) fail("assets","unused legacy asset must stay removed: "+asset);
 }
 
 // Documentation consistency guard.
