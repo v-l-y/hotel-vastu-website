@@ -16,7 +16,7 @@ Upload the repository contents to the web root, including hidden files:
 - HTML pages
 - `css/`
 - `js/`
-- `images/` after original hotel photos are added
+- `images/` including migrated/refined first-party photos and clearly labelled temporary representative visuals
 - `favicon.svg`
 - `site.webmanifest`
 - `robots.txt`
@@ -62,7 +62,7 @@ Before calling the site fully production-ready:
 - Review the migrated/refined current-site hero and room photography.
 - Confirm Classic, Club and Premium remain the active room types.
 - Keep Luxury noindex unless the hotel explicitly restores that room type.
-- Add original restaurant image if restaurant imagery is available.
+- Replace the temporary restaurant visual with a verified first-party restaurant photo when available.
 - Confirm WhatsApp before adding any WhatsApp CTA.
 - Confirm email before publishing it.
 - Confirm check-in/check-out and cancellation policies before publishing them.
@@ -79,6 +79,7 @@ Open and verify:
 - `/classic-room.html`
 - `/club-room.html`
 - `/premium-room.html`
+- `/facilities.html`
 - `/restaurant.html`
 - `/gallery.html`
 - `/about.html`
@@ -95,7 +96,7 @@ Also verify:
 - Directions open the exact Google Business Profile place.
 - Mobile navigation opens/closes correctly.
 - Booking dates cannot be set in the past.
-- No broken image requests remain once real photos are installed.
+- No broken image requests remain; temporary representative visuals are clearly labelled until verified replacements are available.
 
 ## 7. Do not publish stale placeholders
 
@@ -109,7 +110,17 @@ Production pages must not claim:
 - an unverified WhatsApp/email,
 - unconfirmed check-in/check-out rules.
 
-## 8. Rollback
+## 8. Cache behavior
+
+The repository uses short cache windows because CSS/JS/image filenames are stable rather than content-hashed:
+
+- HTML: revalidate on every visit.
+- CSS/JavaScript/manifest: approximately 1 hour.
+- PNG/SVG/WebP/AVIF images: approximately 7 days.
+
+After a production upload, hard-refresh once and verify the current header/logo/styles before considering deployment complete.
+
+## 9. Rollback
 
 If a major issue occurs:
 
