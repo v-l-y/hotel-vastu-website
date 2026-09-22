@@ -271,29 +271,34 @@ for(const asset of ["images/facilities/banquet-events.webp","images/facilities/c
   if(!facilities.includes(asset)) fail("facilities.html","missing current-site photo "+asset);
 }
 
-// Gallery experience guard: real migrated photos, filters/lightbox and image sitemap must stay wired.
+// Gallery experience guard: the complete verified first-party hotel photo set must stay wired.
 const gallery=read("gallery.html");
-for(const token of ["data-gallery-grid","data-gallery-dialog","js/gallery.js","images/rooms/classic-room.webp","images/rooms/club-room.webp","images/rooms/premium-room.webp","images/facilities/banquet-events.webp","images/facilities/corporate-stay.webp"]){
+const firstPartyPhotoAssets=["images/hotel/home-banner-1.webp","images/hotel/home-banner-2.webp","images/hotel/home-about-1.webp","images/hotel/home-about-2.webp","images/hotel/home-video-cover.webp","images/hotel/about.webp","images/hotel/about-room.webp","images/hotel/about-interior.webp","images/hotel/about-facility.webp","images/hotel/contact.webp","images/hotel/hero.webp","images/rooms/classic-room.webp","images/rooms/classic-room-1.webp","images/rooms/classic-room-2.webp","images/rooms/club-banner.webp","images/rooms/club-room.webp","images/rooms/club-room-1.webp","images/rooms/club-room-2.webp","images/rooms/premium-banner.webp","images/rooms/premium-room.webp","images/rooms/premium-room-1.webp","images/rooms/premium-room-2.webp","images/facilities/banquet-events.webp","images/facilities/corporate-stay.webp"];
+for(const token of ["data-gallery-grid","data-gallery-dialog","js/gallery.js",'data-gallery-filter="hotel"']){
   if(!gallery.includes(token)) fail("gallery.html","missing gallery token "+token);
+}
+for(const asset of firstPartyPhotoAssets){
+  if(!exists(asset)) fail("gallery.html","missing first-party photo asset "+asset);
+  if(!gallery.includes(asset)) fail("gallery.html","first-party hotel photo missing from complete gallery: "+asset);
 }
 if(!exists("js/gallery.js")) fail("gallery.html","missing js/gallery.js");
 if(!sitemap.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')) fail("sitemap.xml","image namespace missing");
-for(const imageUrl of [
-  "https://hotelvastu.com/images/rooms/classic-room.webp",
-  "https://hotelvastu.com/images/rooms/club-room.webp",
-  "https://hotelvastu.com/images/rooms/premium-room.webp",
-  "https://hotelvastu.com/images/facilities/banquet-events.webp",
-  "https://hotelvastu.com/images/facilities/corporate-stay.webp"
-]){
+for(const asset of firstPartyPhotoAssets){
+  const imageUrl="https://hotelvastu.com/"+asset;
   if(!sitemap.includes(imageUrl)) fail("sitemap.xml","missing image sitemap URL "+imageUrl);
 }
+if(!read("club-room.html").includes("/images/rooms/club-banner.webp")) fail("club-room.html","original Club Room banner must remain the hero");
+for(const file of ["contact.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
+  if(read(file).includes("temp-visual-hero")) fail(file,"verified first-party photo is available; representative hero must not return");
+}
 
-// Temporary representative visual guard: missing real hotel photos must stay clearly labelled.
-for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["contact.html","images/temp/reception-temp.svg"],["hotel-near-rps-more.html","images/temp/exterior-temp.svg"],["hotel-near-danapur-railway-station.html","images/temp/exterior-temp.svg"],["deluxe-room.html","images/temp/room-temp.svg"],["luxury-room.html","images/temp/room-temp.svg"],["suite-room.html","images/temp/room-temp.svg"]]){
+// Temporary representative visual guard: keep labels only where no first-party photo is available.
+for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["deluxe-room.html","images/temp/room-temp.svg"],["luxury-room.html","images/temp/room-temp.svg"],["suite-room.html","images/temp/room-temp.svg"]]){
   if(!exists(asset)) fail(page,"missing temporary visual "+asset);
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
-  if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
+  if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");
+  if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
 }
 
 // Dynamic image migration guard: do not pin Vite content hashes in maintenance tooling.
@@ -304,12 +309,13 @@ for(const staleHash of ["DzljoJNY","KKyyZ1OO","B3IF7IY_","BfCtKmSj"]){
 }
 
 // Maintenance workflow guard: source-mutating jobs must be manual-only.
-for(const file of [".github/workflows/final-polish.yml",".github/workflows/migrate-current-photos.yml",".github/workflows/discover-live-images.yml"]){
+for(const file of [".github/workflows/final-polish.yml",".github/workflows/migrate-current-photos.yml",".github/workflows/discover-live-images.yml",".github/workflows/audit-live-images.yml",".github/workflows/audit-rendered-live-photos.yml",".github/workflows/migrate-rendered-hotel-photos.yml"]){
   const workflow=read(file);
   if(!workflow.includes("workflow_dispatch:")) fail(file,"manual workflow_dispatch trigger missing");
   if(/\n\s*push:\s*\n/.test(workflow)) fail(file,"maintenance workflow must not auto-run on push");
 }
 if(!read("scripts/discover-live-images.mjs").includes("index-[^/]+\\.js")) fail("scripts/discover-live-images.mjs","live bundle discovery must resolve the current hashed entry dynamically");
+if(!exists("scripts/migrate-rendered-hotel-photos.mjs")) fail("photo-migration","rendered first-party photo migration script missing");
 
 // Content hierarchy guard for key indexable browse/local pages.
 for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
@@ -320,7 +326,7 @@ for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel
 if(read("hotel-near-danapur-railway-station.html").includes("3.7 km")) fail("hotel-near-danapur-railway-station.html","fixed third-party distance claim must not return");
 
 // Dead asset guard.
-for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/rooms/club-banner.webp"]){
+for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/temp/reception-temp.svg","images/temp/exterior-temp.svg"]){
   if(exists(asset)) fail("assets","unused legacy asset must stay removed: "+asset);
 }
 
