@@ -137,6 +137,12 @@ for(const [oldPath,newPath] of [["classic-room","classic-room.html"],["club-room
 }
 if(!htaccess.includes("RewriteRule ^facilities/?$ /facilities.html [R=301,L]")) fail(".htaccess","legacy Facilities 301 redirect missing");
 
+// Original logo guard: keep the current first-party Hotel Vastu logo site-wide.
+if(!exists("images/branding/hotel-vastu-logo.png")) fail("branding","missing refined original Hotel Vastu logo");
+const logoCss=read("css/layout.css");
+if(!logoCss.includes('../images/branding/hotel-vastu-logo.png')) fail("branding","original logo not wired into shared layout");
+if(logoCss.includes(".brand::before{")) fail("branding","legacy generated V mark must not return");
+
 // Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
 for(const token of ["data-home-booking","js/home-booking.js","availability-bar","hero-actions","facility-showcase"]){
