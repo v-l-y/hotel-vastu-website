@@ -1,0 +1,17 @@
+:root{
+  --ink:#17201b;
+  --ink-2:#26332c;
+  --cream:#f7f3eb;
+  --paper:#fffdf9;
+  --gold:#b68a4c;
+  --gold-dark:#8b6532;
+  --muted:#68716b;
+  --line:#e7dfd1;
+  --success:#2e6d4b;
+  --danger:#9b3c34;
+  --shadow:0 20px 55px rgba(23,32,27,.12);
+  --radius:18px;
+  --radius-sm:10px;
+  --container:1180px;
+  --header:78px;
+}
