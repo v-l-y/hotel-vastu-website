@@ -6,6 +6,7 @@
   .facility-photo-card{grid-column:span 1}
 }
 @media(max-width:900px){
+  .legacy-room-grid{grid-template-columns:1fr}
   .room-detail-grid{grid-template-columns:1fr;gap:34px}
   .room-booking-panel{position:static}
   .room-photo-mosaic{grid-template-columns:1fr 1fr;margin-top:44px}
@@ -36,6 +37,8 @@
   .page-hero h1{font-size:clamp(3rem,8vw,4.8rem)}
 }
 @media(max-width:680px){
+  .policy-card,.status-card,.legacy-room-copy,.legacy-room-note{padding:26px 22px}
+  #booking .content-grid>div:first-child{padding:28px 22px}
   .room-highlights{grid-template-columns:1fr}
   .room-photo-mosaic{grid-template-columns:1fr;gap:14px;margin-top:34px}
   .room-photo-mosaic .room-photo-main{grid-column:auto}
