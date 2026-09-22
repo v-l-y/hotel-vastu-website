@@ -4,35 +4,63 @@ const pages=[
 ];
 
 const seen=new Set();
+const fetchedAssets=new Set();
 
-function absolutize(raw,base){
+function abs(raw,base){
   try{return new URL(raw,base).href}catch{return null}
+}
+function uniquePush(arr,value){
+  if(value&&!seen.has(value)){seen.add(value);arr.push(value)}
+}
+function collectFromText(text,base){
+  const out=[];
+  const patterns=[
+    /https?:\/\/[^"'\s)<>{}]+/gi,
+    /["'](\/[^"'\s]+\.(?:avif|webp|jpe?g|png|gif|svg)(?:\?[^"']*)?)["']/gi,
+    /["']([^"'\s]+\.(?:avif|webp|jpe?g|png|gif)(?:\?[^"']*)?)["']/gi,
+    /["'](\/[^"'\s]*(?:api|media|upload|storage|image)[^"'\s]*)["']/gi
+  ];
+  for(const re of patterns){
+    for(const m of text.matchAll(re)){
+      const raw=m[1]||m[0];
+      const value=abs(raw.replace(/[),;]+$/,""),base);
+      if(value&&/^https?:/i.test(value)) uniquePush(out,value);
+    }
+  }
+  return out;
 }
 
 for(const page of pages){
-  const res=await fetch(page,{headers:{"user-agent":"Mozilla/5.0 HotelVastuMigration/1.0"}});
+  const res=await fetch(page,{headers:{"user-agent":"Mozilla/5.0 HotelVastuMigration/2.0"}});
   console.log("\nPAGE",page,"STATUS",res.status);
   const html=await res.text();
-  const urls=[];
+  console.log("HTML_LENGTH",html.length);
 
-  for(const match of html.matchAll(/<(?:img|source)\b[^>]*(?:src|srcset)=["']([^"']+)["'][^>]*>/gi)){
-    const value=match[1];
-    for(const part of value.split(",")){
-      const raw=part.trim().split(/\s+/)[0];
-      const abs=absolutize(raw,page);
-      if(abs&&!seen.has(abs)){seen.add(abs);urls.push(abs)}
+  const assetUrls=[];
+  for(const m of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)=["']([^"']+)["'][^>]*>/gi)){
+    uniquePush(assetUrls,abs(m[1],page));
+  }
+  console.log("PAGE_ASSETS");
+  assetUrls.forEach(u=>console.log(" ASSET",u));
+
+  const htmlCandidates=collectFromText(html,page);
+  console.log("HTML_CANDIDATES");
+  htmlCandidates.forEach(u=>console.log(" CANDIDATE",u));
+
+  for(const asset of assetUrls){
+    if(fetchedAssets.has(asset)) continue;
+    fetchedAssets.add(asset);
+    if(!/^https?:\/\/hotelvastu\.com\//i.test(asset)) continue;
+    if(!/\.(?:js|css)(?:\?|$)/i.test(asset)) continue;
+    try{
+      const ar=await fetch(asset,{headers:{"user-agent":"Mozilla/5.0 HotelVastuMigration/2.0"}});
+      const text=await ar.text();
+      console.log("\nFETCH_ASSET",asset,"STATUS",ar.status,"LENGTH",text.length);
+      const candidates=collectFromText(text,asset)
+        .filter(u=>/\.(?:avif|webp|jpe?g|png|gif)(?:\?|$)/i.test(u)||/(?:\/api\/|media|upload|storage|image)/i.test(u));
+      candidates.slice(0,120).forEach(u=>console.log(" BUNDLE_CANDIDATE",u));
+    }catch(err){
+      console.log("ASSET_FETCH_ERROR",asset,String(err));
     }
-  }
-
-  for(const match of html.matchAll(/url\((?:["']?)([^)"']+)(?:["']?)\)/gi)){
-    const abs=absolutize(match[1].trim(),page);
-    if(abs&&!seen.has(abs)){seen.add(abs);urls.push(abs)}
-  }
-
-  const likelyImages=urls.filter(u=>/\.(?:avif|webp|jpe?g|png|gif|svg)(?:\?|$)/i.test(u));
-  if(!likelyImages.length){
-    console.log("NO_DIRECT_IMAGE_URLS_FOUND");
-  }else{
-    likelyImages.forEach((u,i)=>console.log(String(i+1).padStart(2,"0"),u));
   }
 }
