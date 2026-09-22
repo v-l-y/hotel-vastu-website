@@ -199,6 +199,12 @@ const logoCss=read("css/layout.css");
 if(logoCss.includes(".brand::before{")) fail("branding","legacy generated V mark must not return");
 if(logoCss.includes('background:url("../images/branding/hotel-vastu-logo.png")')) fail("branding","logo must not regress to CSS background rendering");
 
+// Hero asset resolution guard: CSS custom-property URLs resolve from the stylesheet, so use root-absolute image paths.
+for(const file of htmlFiles){
+  const html=read(file);
+  if(/--hero-image:url\(['"]?images\//.test(html)) fail(file,"visual hero image URL must be root-absolute /images/... to avoid /css/images 404s");
+}
+
 // Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
 for(const token of ["data-home-booking","js/home-booking.js","availability-bar","hero-actions","facility-showcase"]){
@@ -228,6 +234,9 @@ for(const file of ["js/booking.js","js/home-booking.js"]){
     if(!source.includes(token)) fail(file,"missing local-calendar date token "+token);
   }
 }
+
+// Muted text contrast guard: #70665e is AA-safe on the cream surface used by .lead.
+if(!read("css/variables.css").includes("--muted:#70665e;")) fail("css/variables.css","muted text color must keep AA contrast on cream backgrounds");
 
 // Accessibility contrast guard for the primary CTA.
 const componentCss=read("css/components.css");
@@ -285,6 +294,13 @@ for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"]
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
   if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
+}
+
+// Dynamic image migration guard: do not pin Vite content hashes in maintenance tooling.
+const migrationSource=read("scripts/migrate-current-images.mjs");
+if(!migrationSource.includes("resolveUnique(")||!migrationSource.includes("fetchLiveBundle(")) fail("scripts/migrate-current-images.mjs","live image migration must resolve the current bundle dynamically");
+for(const staleHash of ["DzljoJNY","KKyyZ1OO","B3IF7IY_","BfCtKmSj"]){
+  if(migrationSource.includes(staleHash)) fail("scripts/migrate-current-images.mjs","hardcoded live asset hash must not return: "+staleHash);
 }
 
 // Maintenance workflow guard: source-mutating jobs must be manual-only.
