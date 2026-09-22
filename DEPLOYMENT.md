@@ -53,7 +53,7 @@ Expected canonical homepage:
 
 `https://hotelvastu.com/`
 
-If the production server does not use Apache, recreate the same redirects in the host configuration.
+If the production server does not use Apache, recreate the same redirects in the host configuration. Also reproduce the repository security headers, including Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, Referrer-Policy and Permissions-Policy.
 
 ## 5. Required pre-launch hotel inputs
 
@@ -91,6 +91,8 @@ Open and verify:
 - a nonexistent URL to confirm `404.html`
 
 Also verify:
+
+- GitHub Static Site QA and Browser QA are both green; Browser QA includes Axe accessibility checks and the Lighthouse quality gate.
 
 - Call links open the dialer with +91 80020 07466.
 - Directions open the exact Google Business Profile place.
