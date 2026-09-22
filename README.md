@@ -77,3 +77,14 @@ No framework, database, Bootstrap, jQuery or build step is required.
 ## NAP verification note
 
 Public listings currently disagree on the formatted street address. Keep the existing detailed address provisional until the hotel confirms the exact Google Business Profile NAP. Do not assume the verified phone is also a WhatsApp number.
+
+## Apache / Hostinger deployment
+
+The repository includes a root `.htaccess` that:
+- redirects HTTP to HTTPS,
+- redirects `www.hotelvastu.com` to the canonical `hotelvastu.com` host,
+- serves `404.html` for missing pages,
+- enables compression and browser caching when the corresponding Apache modules are available,
+- adds basic security headers.
+
+If the production host is not Apache-compatible, recreate the same redirects, caching and headers in that platform's configuration instead of relying on `.htaccess`.
