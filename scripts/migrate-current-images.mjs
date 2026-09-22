@@ -4,6 +4,8 @@ import sharp from "sharp";
 
 const base="https://hotelvastu.com/assets/";
 const jobs=[
+  ["1-w7sk1Faz.jpeg","images/facilities/banquet-events.webp",1200,800,86],
+  ["2-BSgCX3q9.jpg","images/facilities/corporate-stay.webp",1200,800,86],
   ["about-main-B4uPe_oU.webp","images/hotel/about.webp",1200,800,86],
   ["classic-banner-DzljoJNY.jpg","images/hotel/hero.webp",1600,900,86],
   ["classic-room-CvOVV3gC.jpg","images/rooms/classic-room.webp",1200,800,86],
