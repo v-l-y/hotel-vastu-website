@@ -76,3 +76,22 @@ const logoUrl="https://hotelvastu.com/assets/logo-BfCtKmSj.png";
   const stat=await fs.stat("images/branding/hotel-vastu-logo.png");
   console.log(" refined logo",stat.size+" bytes");
 }
+
+{
+  const source="images/branding/hotel-vastu-logo.png";
+  const bg={r:255,g:253,b:250,alpha:1};
+  for(const size of [192,512]){
+    const inner=Math.round(size*0.82);
+    const resized=await sharp(source)
+      .resize({width:inner,height:inner,fit:"contain",background:bg})
+      .png()
+      .toBuffer();
+    await sharp({
+      create:{width:size,height:size,channels:4,background:bg}
+    })
+      .composite([{input:resized,gravity:"centre"}])
+      .png({compressionLevel:9,adaptiveFiltering:true})
+      .toFile(`images/branding/hotel-vastu-icon-${size}.png`);
+  }
+  console.log("Generated original-logo PWA/favicon icons.");
+}
