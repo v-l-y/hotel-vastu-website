@@ -50,6 +50,9 @@ Current first-party room photography has been migrated from the live Hotel Vastu
 - `images/hotel/hero.webp`
 - `images/hotel/about.webp`
 - `images/hotel/og-hotel-vastu.webp`
+- `images/branding/hotel-vastu-logo.png`
+- `images/branding/hotel-vastu-icon-192.png`
+- `images/branding/hotel-vastu-icon-512.png`
 - `images/rooms/classic-room.webp` + gallery images
 - `images/rooms/club-room.webp` + gallery images
 - `images/rooms/premium-room.webp` + gallery images
@@ -59,7 +62,7 @@ The migration uses the hotel's own current website assets, not OTA thumbnails or
 ## Before production launch
 
 1. Reconfirm the public phone before launch; WhatsApp and email are still unconfirmed.
-2. Review the migrated/refined current-site photos and add any additional hotel exterior/restaurant/parking photos if desired.
+2. Review the migrated/refined current-site photos and representative temporary visuals; replace temporary restaurant/reception/exterior imagery when verified first-party photos become available.
 3. Confirm exact Google Maps URL and geo coordinates.
 4. Reconfirm current room rates/policies before publishing fixed pricing; current room types are Classic, Club and Premium.
 5. Confirm check-in/check-out policy directly with the hotel.
@@ -73,7 +76,17 @@ The migration uses the hotel's own current website assets, not OTA thumbnails or
 
 Open `index.html` directly or serve the folder using any static HTTP server.
 
-No framework, database, Bootstrap, jQuery or build step is required.\n\n### Static QA\n\nWith Node.js 18+ installed, run:\n\n```bash\nnpm run check\n```\n\nThe check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, the legacy Classic Room redirect and key business-data tokens. The same check also runs in GitHub Actions on `main`.
+No framework, database, Bootstrap, jQuery or build step is required.
+
+### Static QA
+
+With Node.js 18+ installed, run:
+
+```bash
+npm run check
+```
+
+The check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, legacy redirects, branding, smooth scrolling, premium page structure and key business-data tokens. The same check also runs in GitHub Actions on `main`.
 
 ## NAP source of truth
 
