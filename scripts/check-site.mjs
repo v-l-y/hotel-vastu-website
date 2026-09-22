@@ -24,6 +24,11 @@ function meta(html,name){
   const rev=new RegExp("<meta[^>]*\\bcontent=[\\\"']([^\\\"']*)[\\\"'][^>]*\\bname=[\\\"']"+name+"[\\\"'][^>]*>","i");
   return html.match(re)?.[1]??html.match(rev)?.[1]??null;
 }
+function propertyMeta(html,name){
+  const re=new RegExp("<meta[^>]*\\bproperty=[\\\"']"+name+"[\\\"'][^>]*\\bcontent=[\\\"']([^\\\"']*)[\\\"'][^>]*>","i");
+  const rev=new RegExp("<meta[^>]*\\bcontent=[\\\"']([^\\\"']*)[\\\"'][^>]*\\bproperty=[\\\"']"+name+"[\\\"'][^>]*>","i");
+  return html.match(re)?.[1]??html.match(rev)?.[1]??null;
+}
 function localTarget(from,raw){
   if(!raw||raw.startsWith("#")||/^(https?:|tel:|mailto:|data:|javascript:)/i.test(raw)) return null;
   const clean=raw.split("#")[0].split("?")[0];
@@ -57,11 +62,24 @@ for(const file of htmlFiles){
   if(!isNoindex&&canonical){const expected=file==="index.html"?"https://hotelvastu.com/":"https://hotelvastu.com/"+file;if(canonical!==expected)fail(file,"canonical mismatch; expected "+expected);}
 
   if(!isNoindex){
-    for(const property of ["og:title","og:description","og:url","og:site_name"]){
-      const re=new RegExp("<meta[^>]*\\bproperty=[\\\"\']"+property+"[\\\"\'][^>]*\\bcontent=[\\\"\']([^\\\"\']+)[\\\"\'][^>]*>","i");
-      const rev=new RegExp("<meta[^>]*\\bcontent=[\\\"\']([^\\\"\']+)[\\\"\'][^>]*\\bproperty=[\\\"\']"+property+"[\\\"\'][^>]*>","i");
-      if(!(html.match(re)||html.match(rev))) fail(file,"missing "+property);
-    }
+    const ogTitle=propertyMeta(html,"og:title");
+    const ogDescription=propertyMeta(html,"og:description");
+    const ogUrl=propertyMeta(html,"og:url");
+    const ogSite=propertyMeta(html,"og:site_name");
+    if(!ogTitle) fail(file,"missing og:title");
+    if(!ogDescription) fail(file,"missing og:description");
+    if(!ogUrl) fail(file,"missing og:url");
+    if(!ogSite) fail(file,"missing og:site_name");
+    if(title&&ogTitle&&title!==ogTitle) fail(file,"og:title does not match <title>");
+    if(description&&ogDescription&&description!==ogDescription) fail(file,"og:description does not match meta description");
+    if(canonical&&ogUrl&&canonical!==ogUrl) fail(file,"og:url does not match canonical");
+  }
+
+  for(const img of html.matchAll(/<img\\b[^>]*>/gi)){
+    const tag=img[0];
+    if(!/\\balt=[\\\"'][^\\\"']*[\\\"']/i.test(tag)) fail(file,"img missing alt attribute");
+    if(!/\\bwidth=[\\\"']?\\d+/i.test(tag)) fail(file,"img missing intrinsic width");
+    if(!/\\bheight=[\\\"']?\\d+/i.test(tag)) fail(file,"img missing intrinsic height");
   }
 
   for(const m of html.matchAll(/<(?:a|link|script|img)[^>]*\b(?:href|src)=[\"']([^\"']+)[\"']/gi)){
