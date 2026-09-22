@@ -54,8 +54,7 @@
   .container{width:min(var(--container),calc(100% - 28px))}
   .section{padding:78px 0}
   .site-header{backdrop-filter:blur(12px)}
-  .brand{font-size:1.28rem}
-  .brand::before{width:34px;height:34px}
+  .brand{width:148px;height:46px}.site-header.is-scrolled .brand{width:142px}.footer h3{width:206px;height:62px;background-size:180px auto}
   .hero{min-height:690px;padding:calc(var(--header) + 60px) 0 96px;background-position:58% center}
   .hero h1{font-size:clamp(3rem,13vw,4.25rem);line-height:.96}
   .hero p{font-size:1rem}
