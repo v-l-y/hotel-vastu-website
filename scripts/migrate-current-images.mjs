@@ -11,7 +11,6 @@ const jobs=[
   ["classic-room-CvOVV3gC.jpg","images/rooms/classic-room.webp",1200,800,86],
   ["classic-room-1-HuwfF5oj.jpg","images/rooms/classic-room-1.webp",1200,800,84],
   ["classic-room-2-L97g_-BQ.jpg","images/rooms/classic-room-2.webp",1200,800,84],
-  ["club-banner-KKyyZ1OO.jpg","images/rooms/club-banner.webp",1600,900,86],
   ["club-room-CTKNxkaI.jpg","images/rooms/club-room.webp",1200,800,86],
   ["club-room-1-Fh2f68TO.jpg","images/rooms/club-room-1.webp",1200,800,84],
   ["club-room-2-BB5k85GI.jpg","images/rooms/club-room-2.webp",1200,800,84],
