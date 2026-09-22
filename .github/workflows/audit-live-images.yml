@@ -1,10 +1,7 @@
 name: Audit Live Image Inventory
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/audit-live-images.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
