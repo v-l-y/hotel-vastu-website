@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: "24"
       - name: Install browser QA dependencies
-        run: npm install --no-save --package-lock=false playwright@1.55.0 @axe-core/playwright@4.10.2
+        run: npm install --no-save --package-lock=false playwright@1.55.0 @axe-core/playwright@4.10.2 lighthouse@12.2.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static server
@@ -37,3 +37,20 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:4173
         run: node scripts/browser-check.mjs
+
+      - name: Run Lighthouse quality gate
+        run: |
+          CHROME_PATH="$(node -e "const { chromium }=require('playwright'); process.stdout.write(chromium.executablePath())")"
+          npx lighthouse http://127.0.0.1:4173/index.html             --chrome-path="$CHROME_PATH"             --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"             --only-categories=performance,accessibility,best-practices,seo             --output=json             --output-path=/tmp/lighthouse.json             --quiet
+          node - <<'NODE'
+          const fs=require("fs");
+          const report=JSON.parse(fs.readFileSync("/tmp/lighthouse.json","utf8"));
+          const thresholds={performance:.85,accessibility:.95,"best-practices":.90,seo:.90};
+          let failed=false;
+          for(const [name,min] of Object.entries(thresholds)){
+            const score=report.categories[name]?.score ?? 0;
+            console.log(name,score);
+            if(score<min){console.error(name+" score "+score+" below "+min);failed=true;}
+          }
+          if(failed)process.exit(1);
+          NODE
