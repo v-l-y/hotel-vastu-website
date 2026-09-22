@@ -1,0 +1,39 @@
+name: Browser QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install browser QA dependencies
+        run: npm install --no-save --package-lock=false playwright@1.55.0 @axe-core/playwright@4.10.2
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/hotel-vastu-server.log 2>&1 &
+          echo $! > /tmp/hotel-vastu-server.pid
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/index.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/hotel-vastu-server.log
+          exit 1
+      - name: Run browser and accessibility QA
+        env:
+          BASE_URL: http://127.0.0.1:4173
+        run: node scripts/browser-check.mjs
