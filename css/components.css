@@ -132,3 +132,24 @@
 .lux-reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease var(--reveal-delay,0ms),transform .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms)}
 .lux-reveal.is-visible{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.lux-reveal{opacity:1;transform:none;transition:none}}
+
+.room-detail-section{background:linear-gradient(180deg,#fffdfa,#f7f2ea)}
+.room-detail-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:54px;align-items:start}
+.room-detail-copy h2{max-width:760px;margin:.08em 0 .35em;font-size:clamp(2.7rem,4.2vw,4.45rem);line-height:1}
+.room-detail-copy .lead{max-width:780px}
+.room-highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:32px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--line)}
+.room-highlights>div{padding:22px;background:#fff}
+.room-highlights span{display:block;margin-bottom:7px;color:var(--gold-dark);font-size:.65rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase}
+.room-highlights strong{display:block;font-family:var(--serif);font-size:1.2rem;font-weight:600;color:var(--ink)}
+.room-booking-panel{position:sticky;top:calc(var(--header) + 28px);padding:34px;border:1px solid rgba(234,216,186,.16);border-radius:var(--radius);background:radial-gradient(circle at 90% 0%,rgba(192,154,102,.2),transparent 34%),linear-gradient(145deg,#211a16,#33261f);color:#fff;box-shadow:var(--shadow-lg)}
+.room-booking-panel .eyebrow{color:#e7cfaa}
+.room-booking-panel h2{margin:.1em 0 .3em;color:#fff;font-size:2.55rem;line-height:1}
+.room-booking-panel p{color:rgba(255,255,255,.72)}
+.room-booking-panel .btn-outline{border-color:rgba(255,255,255,.42);color:#fff;background:transparent}
+.room-booking-panel .btn-outline:hover{background:#fff;color:var(--ink)}
+.room-photo-mosaic{display:grid;grid-template-columns:1.55fr .85fr;gap:18px;margin-top:62px}
+.room-photo-mosaic figure{position:relative;margin:0;overflow:hidden;border-radius:var(--radius);background:#241b16;box-shadow:var(--shadow)}
+.room-photo-mosaic figure img{width:100%;height:100%;min-height:360px;object-fit:cover;display:block;transition:transform .55s cubic-bezier(.2,.7,.2,1)}
+.room-photo-mosaic figure:hover img{transform:scale(1.025)}
+.room-photo-mosaic .room-photo-main img{min-height:520px}
+.room-photo-mosaic figcaption{position:absolute;left:14px;bottom:14px;padding:8px 11px;border-radius:999px;background:rgba(25,18,14,.75);color:#fff;font-size:.68rem;font-weight:850;letter-spacing:.04em;backdrop-filter:blur(8px)}
