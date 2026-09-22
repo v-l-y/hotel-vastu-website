@@ -1,10 +1,6 @@
 name: Migrate Rendered Hotel Photos
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/migrate-rendered-hotel-photos.yml"
   workflow_dispatch:
 
 permissions:
