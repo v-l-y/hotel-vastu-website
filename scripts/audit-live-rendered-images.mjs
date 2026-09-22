@@ -16,21 +16,28 @@ const page=await browser.newPage({viewport:{width:1440,height:1000}});
 for(const [path,label] of pages){
   const url=new URL(path,"https://hotelvastu.com").href;
   const res=await page.goto(url,{waitUntil:"networkidle",timeout:60000}).catch(()=>null);
-  console.log("\nPAGE",label,url,"status",res?.status?.()??"n/a");
   const images=await page.evaluate(()=>{
-    const set=new Set();
+    const rows=[];
     for(const img of document.querySelectorAll("img")){
       const src=img.currentSrc||img.src;
-      if(src)set.add(src);
+      if(src && /^https:\/\/hotelvastu\.com\/assets\/.+\.(?:png|jpe?g|webp|avif)(?:\?|$)/i.test(src)){
+        rows.push({src,alt:img.alt||"",width:img.naturalWidth||0,height:img.naturalHeight||0});
+      }
     }
     for(const el of document.querySelectorAll("*")){
       const bg=getComputedStyle(el).backgroundImage;
-      if(bg&&bg!=="none"){
-        for(const m of bg.matchAll(/url\(["']?([^"')]+)["']?\)/g)) set.add(m[1]);
+      if(!bg||bg==="none")continue;
+      for(const m of bg.matchAll(/url\(["']?([^"')]+)["']?\)/g)){
+        const src=m[1];
+        if(/^https:\/\/hotelvastu\.com\/assets\/.+\.(?:png|jpe?g|webp|avif)(?:\?|$)/i.test(src)){
+          rows.push({src,alt:"[background]",width:0,height:0});
+        }
       }
     }
-    return [...set];
+    const bySrc=new Map();
+    for(const row of rows)if(!bySrc.has(row.src))bySrc.set(row.src,row);
+    return [...bySrc.values()];
   });
-  for(const src of images)console.log("IMG",src);
+  console.log("PAGE_JSON "+JSON.stringify({label,url,status:res?.status?.()??null,images}));
 }
 await browser.close();
