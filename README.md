@@ -92,3 +92,9 @@ If the production host is not Apache-compatible, recreate the same redirects, ca
 ## Business detail maintenance
 
 Read `BUSINESS-DATA.md` before changing name, address, phone, room status or other public hotel facts.
+
+## Launch documentation
+
+- `BUSINESS-DATA.md` — canonical hotel business facts
+- `DEPLOYMENT.md` — production/Hostinger deployment runbook
+- `SEO-CHECKLIST.md` — Google Search Console and local SEO launch checklist
