@@ -1,15 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://hotelvastu.com/</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/rooms.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/facilities.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/classic-room.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/club-room.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/premium-room.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/restaurant.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/gallery.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/about.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/contact.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/hotel-near-rps-more.html</loc><lastmod>2026-09-22</lastmod></url>
-  <url><loc>https://hotelvastu.com/hotel-near-danapur-railway-station.html</loc><lastmod>2026-09-22</lastmod></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://hotelvastu.com/</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/hero.webp</image:loc><image:title>Hotel Vastu Premium in Patna</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/about.webp</image:loc><image:title>Hotel Vastu Premium current website photo</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/rooms.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/facilities.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/facilities/banquet-events.webp</image:loc><image:title>Banquet and event space at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/facilities/corporate-stay.webp</image:loc><image:title>Corporate stay facilities at Hotel Vastu Premium</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/classic-room.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room.webp</image:loc><image:title>Classic Room at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room-1.webp</image:loc><image:title>Classic Room interior at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room-2.webp</image:loc><image:title>Classic Room additional view</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/club-room.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room.webp</image:loc><image:title>Club Room at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room-1.webp</image:loc><image:title>Club Room interior at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room-2.webp</image:loc><image:title>Club Room additional view</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/premium-room.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room.webp</image:loc><image:title>Premium Room at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room-1.webp</image:loc><image:title>Premium Room interior at Hotel Vastu Premium</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room-2.webp</image:loc><image:title>Premium Room additional view</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/restaurant.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/gallery.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room.webp</image:loc><image:title>Classic Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room.webp</image:loc><image:title>Club Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room.webp</image:loc><image:title>Premium Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/facilities/banquet-events.webp</image:loc><image:title>Banquet and events</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/about.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/contact.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/hotel-near-rps-more.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
+  <url>
+    <loc>https://hotelvastu.com/hotel-near-danapur-railway-station.html</loc>
+    <lastmod>2026-09-22</lastmod>
+  </url>
 </urlset>
