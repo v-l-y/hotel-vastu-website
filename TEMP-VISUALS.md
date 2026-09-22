@@ -4,9 +4,11 @@ These files are intentionally temporary and must not be treated as photographs o
 
 - `images/temp/restaurant-temp.svg` — used on `restaurant.html`
 - `images/temp/reception-temp.svg` — used on `contact.html`
-- `images/temp/exterior-temp.svg` — used on `hotel-near-rps-more.html`
+- `images/temp/exterior-temp.svg` — used on `hotel-near-rps-more.html` and `hotel-near-danapur-railway-station.html`
 
-Each visible temporary image carries a **Representative visual** badge through shared CSS.
+- `images/temp/room-temp.svg` — used on the noindex Deluxe, Luxury and Suite room placeholder/legacy pages
+
+Each visible temporary image carries a **Representative visual** badge through shared CSS, including representative visual heroes.
 
 ## Replacement rule
 
