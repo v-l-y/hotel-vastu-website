@@ -1,10 +1,15 @@
-const r=await fetch("https://hotelvastu.com/assets/index-IDoo_XgH.js");
+const site="https://hotelvastu.com/";
+const home=await fetch(site,{headers:{"user-agent":"HotelVastuAssetDiscovery/2.0"}});
+if(!home.ok)throw new Error(`Homepage fetch failed: ${home.status}`);
+const html=await home.text();
+const scripts=[...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map(m=>m[1]);
+const entry=scripts.find(src=>/\/assets\/index-[^/]+\.js(?:\?|$)/.test(src));
+if(!entry)throw new Error("Could not locate current Vite index bundle from live homepage");
+const bundleUrl=new URL(entry,site).href;
+console.log("Current bundle:",bundleUrl);
+const r=await fetch(bundleUrl,{headers:{"user-agent":"HotelVastuAssetDiscovery/2.0"}});
+if(!r.ok)throw new Error(`Bundle fetch failed: ${r.status}`);
 const t=await r.text();
-for(const needle of ["logo","Logo","navbar","brand"]){
- console.log("\n###",needle);
- let p=0,c=0; const lower=t.toLowerCase(), n=needle.toLowerCase();
- while((p=lower.indexOf(n,p))>=0){
-   c++; console.log("MATCH",c,"AT",p,t.slice(Math.max(0,p-900),Math.min(t.length,p+2200)).replace(/\s+/g," "));
-   p+=needle.length; if(c>=20)break;
- }
-}
+const assets=[...new Set([...t.matchAll(/(?:\/assets\/)?([A-Za-z0-9][A-Za-z0-9_-]*\.(?:png|jpe?g|webp|avif))/g)].map(m=>m[1]))].sort();
+console.log("Discovered image assets:",assets.length);
+for(const asset of assets)console.log(asset);
