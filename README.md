@@ -9,8 +9,7 @@ Only publicly verified or hotel-confirmed facts should be indexable.
 Current verified baseline used by the site:
 - Hotel Vastu Premium
 - Google Business Profile address: near RPS Law College, RPS Nagar, Kaliket Nagar, Patna, Bihar 801503, India
-- Classic Room page on current hotel website
-- Luxury room listing
+- Current first-party room menu: Classic Room, Club Room, Premium Room
 - Air-conditioned family accommodation
 - Free Wi-Fi
 - Restaurant / Asian breakfast
@@ -26,7 +25,9 @@ Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinat
 - `index.html`
 - `rooms.html`
 - `classic-room.html`
-- `luxury-room.html`
+- `club-room.html`
+- `premium-room.html`
+- `luxury-room.html` — noindex legacy/unconfirmed
 - `deluxe-room.html` — noindex until confirmed
 - `suite-room.html` — noindex until confirmed
 - `restaurant.html`
@@ -44,23 +45,22 @@ Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinat
 
 ## Image paths
 
-The UI has graceful visual fallbacks until original photos are supplied.
+Current first-party room photography has been migrated from the live Hotel Vastu website, technically refined, resized and compressed to WebP:
 
-The repository currently ships lightweight SVG placeholders so previews do not generate broken image requests:
-- `images/hotel/hero.svg`
-- `images/hotel/exterior.svg`
-- `images/rooms/classic-room.svg`
-- `images/rooms/luxury-room.svg`
-- `images/restaurant/restaurant.svg`
+- `images/hotel/hero.webp`
+- `images/hotel/og-hotel-vastu.webp`
+- `images/rooms/classic-room.webp` + gallery images
+- `images/rooms/club-room.webp` + gallery images
+- `images/rooms/premium-room.webp` + gallery images
 
-Before production cutover, replace these visuals with original hotel photography. Prefer WebP/AVIF, use meaningful filenames and proper dimensions, then update the shared CSS image paths. Do not hotlink or copy third-party OTA thumbnails.
+The migration uses the hotel's own current website assets, not OTA thumbnails or stock photography.
 
 ## Before production launch
 
 1. Reconfirm the public phone before launch; WhatsApp and email are still unconfirmed.
-2. Add original hotel photos.
+2. Review the migrated/refined current-site photos and add any additional hotel exterior/restaurant/parking photos if desired.
 3. Confirm exact Google Maps URL and geo coordinates.
-4. Confirm all room categories, occupancy and current rates.
+4. Reconfirm current room rates/policies before publishing fixed pricing; current room types are Classic, Club and Premium.
 5. Confirm check-in/check-out policy directly with the hotel.
 6. Enable the booking form with a real endpoint or confirmed WhatsApp number.
 7. Validate Hotel JSON-LD with Google Rich Results Test.
