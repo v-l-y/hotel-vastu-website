@@ -16,6 +16,7 @@ Current verified baseline used by the site:
 - Free private parking
 - Room service
 - 24-hour front desk
+- Public hotel phone: +91 80020 07466
 
 Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinates, guest reviews, awards, founding dates or room categories.
 
@@ -53,7 +54,7 @@ Use original hotel photography, preferably WebP/AVIF, with meaningful filenames 
 
 ## Before production launch
 
-1. Confirm the official phone, WhatsApp and email.
+1. Reconfirm the public phone before launch; WhatsApp and email are still unconfirmed.
 2. Add original hotel photos.
 3. Confirm exact Google Maps URL and geo coordinates.
 4. Confirm all room categories, occupancy and current rates.
@@ -69,3 +70,7 @@ Use original hotel photography, preferably WebP/AVIF, with meaningful filenames 
 Open `index.html` directly or serve the folder using any static HTTP server.
 
 No framework, database, Bootstrap, jQuery or build step is required.
+
+## NAP verification note
+
+Public listings currently disagree on the formatted street address. Keep the existing detailed address provisional until the hotel confirms the exact Google Business Profile NAP. Do not assume the verified phone is also a WhatsApp number.
