@@ -43,11 +43,31 @@
   </url>
   <url>
     <loc>https://hotelvastu.com/gallery.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-09-23</lastmod>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/home-banner-1.webp</image:loc><image:title>Hotel Vastu Premium homepage banner</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/home-banner-2.webp</image:loc><image:title>Hotel Vastu Premium second homepage banner</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/home-about-1.webp</image:loc><image:title>Hotel Vastu Premium about photograph</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/home-about-2.webp</image:loc><image:title>Hotel Vastu Premium about detail</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/home-video-cover.webp</image:loc><image:title>Hotel Vastu Premium homepage visual</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/about.webp</image:loc><image:title>Hotel Vastu Premium hotel view</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/about-room.webp</image:loc><image:title>Hotel Vastu Premium room photograph</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/about-interior.webp</image:loc><image:title>Hotel Vastu Premium interior photograph</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/about-facility.webp</image:loc><image:title>Hotel Vastu Premium facility photograph</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/contact.webp</image:loc><image:title>Hotel Vastu Premium contact-page photograph</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/hotel/hero.webp</image:loc><image:title>Classic Room banner</image:title></image:image>
     <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room.webp</image:loc><image:title>Classic Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room-1.webp</image:loc><image:title>Classic Room interior</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/classic-room-2.webp</image:loc><image:title>Classic Room additional view</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-banner.webp</image:loc><image:title>Club Room banner</image:title></image:image>
     <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room.webp</image:loc><image:title>Club Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room-1.webp</image:loc><image:title>Club Room interior</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/club-room-2.webp</image:loc><image:title>Club Room additional view</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-banner.webp</image:loc><image:title>Premium Room banner</image:title></image:image>
     <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room.webp</image:loc><image:title>Premium Room</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room-1.webp</image:loc><image:title>Premium Room interior</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/rooms/premium-room-2.webp</image:loc><image:title>Premium Room additional view</image:title></image:image>
     <image:image><image:loc>https://hotelvastu.com/images/facilities/banquet-events.webp</image:loc><image:title>Banquet and events</image:title></image:image>
+    <image:image><image:loc>https://hotelvastu.com/images/facilities/corporate-stay.webp</image:loc><image:title>Corporate stay facilities</image:title></image:image>
   </url>
   <url>
     <loc>https://hotelvastu.com/about.html</loc>
