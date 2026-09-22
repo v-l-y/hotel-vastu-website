@@ -3,6 +3,7 @@ ErrorDocument 404 /404.html
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteRule ^facilities/?$ /facilities.html [R=301,L]
 RewriteRule ^room/classic-room/?$ /classic-room.html [R=301,L]
 RewriteRule ^room/club-room/?$ /club-room.html [R=301,L]
 RewriteRule ^room/premium-room/?$ /premium-room.html [R=301,L]
