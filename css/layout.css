@@ -70,3 +70,5 @@
 .visual-page-hero .eyebrow{color:#ead5b5}
 .visual-page-hero h1{max-width:900px;margin:.06em 0 .22em;color:#fff;font-size:clamp(3.4rem,6.4vw,6.2rem);line-height:.94;text-wrap:balance}
 .visual-page-hero .lead{max-width:760px;color:rgba(255,255,255,.80);font-size:1.08rem}
+
+.temp-visual-hero::before{content:"Representative visual";position:absolute;right:max(24px,calc((100vw - var(--container))/2));bottom:24px;z-index:2;padding:7px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(24,17,13,.72);color:#fff;font-size:.64rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(8px)}
