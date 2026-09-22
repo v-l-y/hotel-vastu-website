@@ -164,3 +164,17 @@
 .room-grid .card .card-body .btn{margin-top:auto}
 .room-grid .card .media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .room-grid .card:hover .media img{transform:scale(1.035)}
+
+.policy-shell{width:min(900px,100%);margin:auto;display:grid;gap:18px}
+.policy-card{padding:30px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow-soft)}
+.policy-card h2{margin:0 0 9px;font-size:clamp(1.8rem,3vw,2.5rem)}
+.policy-card p:last-child{margin-bottom:0}
+.status-shell{width:min(960px,100%);margin:auto;text-align:center}
+.status-card{padding:44px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow)}
+.status-card .notice{max-width:700px;margin:20px auto 0}
+.status-actions{justify-content:center;margin-top:24px}
+.legacy-room-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:stretch}
+.legacy-room-copy{padding:34px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow-soft)}
+.legacy-room-copy h2{font-size:clamp(2.2rem,4vw,3.4rem)}
+.legacy-room-note{display:flex;align-items:center;justify-content:center;min-height:100%;padding:34px;border-radius:var(--radius);background:linear-gradient(145deg,#211a16,#34261e);color:#fff;box-shadow:var(--shadow-lg)}
+.legacy-room-note p{color:rgba(255,255,255,.72)}
