@@ -8,6 +8,9 @@
 - [ ] `robots.txt` is publicly accessible.
 - [ ] `sitemap.xml` is publicly accessible.
 - [ ] Classic Room old URL returns 301 to the new URL.
+- [ ] Club Room old URL returns 301 to the new URL.
+- [ ] Premium Room old URL returns 301 to the new URL.
+- [ ] Luxury Room remains `noindex` unless it becomes a current first-party room type.
 - [ ] Deluxe Room remains `noindex` until confirmed.
 - [ ] Suite Room remains `noindex` until confirmed.
 - [ ] Privacy and Booking Information remain `noindex,follow`.
@@ -22,6 +25,8 @@
    - homepage
    - rooms page
    - Classic Room
+   - Club Room
+   - Premium Room
    - contact page
    - Hotel near RPS More page
 4. Request indexing after the production deployment is stable.
@@ -33,7 +38,7 @@ Validate production URLs in Google's Rich Results Test / Schema validator:
 
 - Homepage: Hotel + WebSite + FAQ data.
 - Inner pages: BreadcrumbList.
-- Classic/Luxury room pages: HotelRoom.
+- Classic/Club/Premium room pages: HotelRoom.
 
 Do not add AggregateRating/Review schema just to mirror a changing Google rating.
 
@@ -62,8 +67,9 @@ Recommended minimum set:
 - hotel exterior / entrance
 - reception
 - Classic Room
-- Classic Room bathroom
-- other confirmed room types
+- Club Room
+- Premium Room
+- additional current first-party room views
 - restaurant/dining
 - parking / access
 
