@@ -39,8 +39,8 @@
 .dark-section .amenity span{color:rgba(255,255,255,.68)}
 
 .breadcrumbs{padding-top:calc(var(--header) + 28px);font-size:.8rem;font-weight:800;letter-spacing:.04em;color:var(--muted)}
-.breadcrumbs a{color:var(--gold-dark)}
-.breadcrumbs a:hover{text-decoration:underline;text-underline-offset:4px}
+.breadcrumbs a{color:var(--gold-dark);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.breadcrumbs a:hover{text-decoration-thickness:2px}
 
 .notice{padding:18px 20px;border:1px solid #e4ceb0;border-radius:var(--radius-sm);background:#fff6e7;color:#604a2f}
 
