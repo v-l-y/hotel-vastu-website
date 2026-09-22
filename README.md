@@ -9,6 +9,7 @@ Only publicly verified or hotel-confirmed facts should be indexable.
 Current verified baseline used by the site:
 - Hotel Vastu Premium
 - RPS More Vijay Complex, RPS Kali Mandir Road, beside Vastu Estates Colony, opposite Hanuman Mandir, Danapur, Patna, Bihar 801503
+- Classic Room page on current hotel website
 - Luxury room listing
 - Air-conditioned family accommodation
 - Free Wi-Fi
@@ -24,6 +25,7 @@ Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinat
 
 - `index.html`
 - `rooms.html`
+- `classic-room.html`
 - `luxury-room.html`
 - `deluxe-room.html` — noindex until confirmed
 - `suite-room.html` — noindex until confirmed
@@ -47,6 +49,7 @@ The UI has graceful visual fallbacks until original photos are supplied.
 Expected files:
 - `images/hotel/hero.webp`
 - `images/hotel/exterior.webp`
+- `images/rooms/classic-room.webp`
 - `images/rooms/luxury-room.webp`
 - `images/restaurant/restaurant.webp`
 
