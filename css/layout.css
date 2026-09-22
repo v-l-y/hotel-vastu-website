@@ -1,6 +1,6 @@
-.site-header{position:fixed;inset:0 0 auto;z-index:1000;background:rgba(255,253,249,.94);backdrop-filter:blur(16px);color:var(--ink);border-bottom:1px solid rgba(33,26,22,.07);box-shadow:0 6px 22px rgba(33,26,22,.04);transition:background .25s ease,box-shadow .25s ease,border-color .25s ease}.site-header.is-scrolled{background:rgba(255,253,249,.985);border-color:rgba(33,26,22,.11);box-shadow:0 12px 36px rgba(33,26,22,.09)}.site-header.is-scrolled .brand{width:158px}
+.site-header{position:fixed;inset:0 0 auto;z-index:1000;background:rgba(255,253,249,.94);backdrop-filter:blur(16px);color:var(--ink);border-bottom:1px solid rgba(33,26,22,.07);box-shadow:0 6px 22px rgba(33,26,22,.04);transition:background .25s ease,box-shadow .25s ease,border-color .25s ease}.site-header.is-scrolled{background:rgba(255,253,249,.985);border-color:rgba(33,26,22,.11);box-shadow:0 12px 36px rgba(33,26,22,.09)}.site-header.is-scrolled .brand-logo img{width:158px}
 .nav{min-height:var(--header);display:flex;align-items:center;justify-content:space-between;gap:22px}
-.brand{display:block;width:168px;height:52px;font-size:0;line-height:0;background:url("../images/branding/hotel-vastu-logo.png") center/contain no-repeat;filter:drop-shadow(0 4px 12px rgba(33,26,22,.08));transition:width .24s ease,filter .24s ease}
+.brand{display:inline-flex;align-items:center;line-height:0}.brand-logo img{display:block;width:168px;height:auto;max-height:52px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(33,26,22,.08));transition:width .24s ease,filter .24s ease}
 
 
 .nav-links{display:flex;align-items:center;gap:21px}
@@ -57,7 +57,7 @@
 .footer::before{content:"";position:absolute;left:-120px;bottom:-170px;width:430px;height:430px;border:1px solid rgba(192,154,102,.08);border-radius:50%}
 .footer .container{position:relative;z-index:1}
 .footer-grid{display:grid;grid-template-columns:1.45fr .9fr 1.1fr;gap:58px}
-.footer h3{font-size:0;line-height:0;width:226px;height:68px;margin:0 0 18px;padding:10px 14px;border:1px solid rgba(234,216,186,.14);border-radius:16px;background:#fffdfa url("../images/branding/hotel-vastu-logo.png") center/198px auto no-repeat;box-shadow:0 12px 34px rgba(0,0,0,.14)}
+.footer-brand-logo{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-bottom:18px;padding:10px 14px;border:1px solid rgba(234,216,186,.14);border-radius:16px;background:#fffdfa;box-shadow:0 12px 34px rgba(0,0,0,.14)}.footer-brand-logo img{display:block;width:198px;height:auto;max-width:100%;object-fit:contain}
 .footer strong{display:block;margin-bottom:16px;color:#e8d3b2;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
 .footer p{max-width:460px}
 .footer a{transition:color .2s ease}
