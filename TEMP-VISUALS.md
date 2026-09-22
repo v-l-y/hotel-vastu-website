@@ -2,10 +2,9 @@
 
 These files are intentionally temporary and must not be treated as photographs of the actual Hotel Vastu Premium property:
 
-- `images/temp/restaurant-temp.svg` — used on `restaurant.html` because the previous live Restaurant page does not render a first-party restaurant photograph.
 - `images/temp/room-temp.svg` — used on the noindex Deluxe, Luxury and Suite room placeholder/legacy pages.
 
-The previous Contact and local-location representative heroes have been removed because verified first-party Hotel Vastu imagery is now available and used instead.
+The Restaurant page now uses verified first-party Hotel Vastu interior photography with an explicit contextual badge; it no longer uses a fake restaurant illustration. Contact and local-location representative heroes have also been removed because verified first-party imagery is available.
 
 Each visible temporary image carries a **Representative visual** badge through shared CSS, including representative visual heroes.
 

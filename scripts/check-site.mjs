@@ -205,6 +205,28 @@ for(const file of htmlFiles){
   if(/--hero-image:url\(['"]?images\//.test(html)) fail(file,"visual hero image URL must be root-absolute /images/... to avoid /css/images 404s");
 }
 
+// Production CSS bundle guard: source CSS remains split while key conversion pages serve one render-blocking bundle.
+const cssBundleSources=["css/variables.css","css/base.css","css/components.css","css/layout.css","css/responsive.css"];
+const expectedCssBundle=cssBundleSources.map(file=>`/* ${file} */\n${read(file).trim()}`).join("\n\n")+"\n";
+if(!exists("css/site.css")) fail("css/site.css","production CSS bundle missing");
+else if(read("css/site.css")!==expectedCssBundle) fail("css/site.css","bundle is stale; run npm run build:css");
+for(const file of ["index.html","contact.html"]){
+  const html=read(file);
+  if(!html.includes('href="css/site.css"')) fail(file,"conversion page must load css/site.css");
+  if(html.includes('href="css/variables.css"')||html.includes('href="css/base.css"')||html.includes('href="css/components.css"')||html.includes('href="css/layout.css"')||html.includes('href="css/responsive.css"')) fail(file,"conversion page must not load split CSS in production");
+}
+
+// Honest direct-booking guard.
+const contactPage=read("contact.html");
+const bookingSource=read("js/booking.js");
+for(const token of ["Stay planner","does not send or store personal details","Prepare booking details"]){
+  if(!contactPage.includes(token)) fail("contact.html","missing truthful stay-planner token "+token);
+}
+for(const token of ["Nothing has been sent or stored","tel:+918002007466","Call hotel to book"]){
+  if(!bookingSource.includes(token)) fail("js/booking.js","missing direct-booking completion token "+token);
+}
+if(!read("js/main.js").includes('["Book / Enquire","Send enquiry","Send an enquiry","Enquire now"]')) fail("js/main.js","shared stay-planner CTA normalization missing");
+
 // Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
 for(const token of ["data-home-booking","js/home-booking.js","availability-bar","hero-actions","facility-showcase"]){
@@ -293,13 +315,18 @@ for(const file of ["contact.html","hotel-near-rps-more.html","hotel-near-danapur
 }
 
 // Temporary representative visual guard: keep labels only where no first-party photo is available.
-for(const [page,asset] of [["restaurant.html","images/temp/restaurant-temp.svg"],["deluxe-room.html","images/temp/room-temp.svg"],["luxury-room.html","images/temp/room-temp.svg"],["suite-room.html","images/temp/room-temp.svg"]]){
+for(const [page,asset] of [["deluxe-room.html","images/temp/room-temp.svg"],["luxury-room.html","images/temp/room-temp.svg"],["suite-room.html","images/temp/room-temp.svg"]]){
   if(!exists(asset)) fail(page,"missing temporary visual "+asset);
   const html=read(page);
   if(!html.includes(asset)) fail(page,"temporary visual not wired: "+asset);
   if(!html.includes("temp-visual")) fail(page,"temporary visual must use temp-visual badge");
   if(!html.includes("temp-visual-hero")) fail(page,"temporary marketing page must keep labelled representative hero");
 }
+
+const restaurantPage=read("restaurant.html");
+if(restaurantPage.includes("images/temp/restaurant-temp.svg")||restaurantPage.includes("temp-visual-hero")) fail("restaurant.html","restaurant must not use a fake representative visual when first-party hotel photography is available");
+if(!restaurantPage.includes("images/hotel/about-interior.webp")||!restaurantPage.includes("context-photo-hero")) fail("restaurant.html","restaurant contextual first-party photo treatment missing");
+if(exists("images/temp/restaurant-temp.svg")) fail("assets","unused restaurant temporary illustration must stay removed");
 
 // Dynamic image migration guard: do not pin Vite content hashes in maintenance tooling.
 const migrationSource=read("scripts/migrate-current-images.mjs");
@@ -326,7 +353,7 @@ for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel
 if(read("hotel-near-danapur-railway-station.html").includes("3.7 km")) fail("hotel-near-danapur-railway-station.html","fixed third-party distance claim must not return");
 
 // Dead asset guard.
-for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/temp/reception-temp.svg","images/temp/exterior-temp.svg"]){
+for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/temp/reception-temp.svg","images/temp/exterior-temp.svg","images/temp/restaurant-temp.svg"]){
   if(exists(asset)) fail("assets","unused legacy asset must stay removed: "+asset);
 }
 
@@ -337,6 +364,8 @@ if(!readme.includes("hotel-vastu-icon-192.png")||!readme.includes("hotel-vastu-i
 const deployment=read("DEPLOYMENT.md");
 if(deployment.includes("images/ after original hotel photos are added")) fail("DEPLOYMENT.md","stale pre-migration image instruction remains");
 if(!deployment.includes("Cache behavior")) fail("DEPLOYMENT.md","cache behavior section missing");
+if(deployment.includes("favicon.svg")) fail("DEPLOYMENT.md","stale favicon.svg deployment instruction must not return");
+if(!deployment.includes("hotel-vastu-icon-192.png")||!deployment.includes("hotel-vastu-icon-512.png")) fail("DEPLOYMENT.md","current branded icon deployment instructions missing");
 
 const home=read("index.html");
 for(const room of ["classic-room.html","club-room.html","premium-room.html"]){

@@ -16,8 +16,9 @@ Upload the repository contents to the web root, including hidden files:
 - HTML pages
 - `css/`
 - `js/`
-- `images/` including migrated/refined first-party photos and clearly labelled temporary representative visuals
-- `favicon.svg`
+- `images/` including migrated/refined first-party photos and clearly labelled legacy placeholder visuals
+- `images/branding/hotel-vastu-icon-192.png`
+- `images/branding/hotel-vastu-icon-512.png`
 - `site.webmanifest`
 - `robots.txt`
 - `sitemap.xml`
@@ -62,9 +63,11 @@ Before calling the site fully production-ready:
 - Review the migrated/refined current-site hero and room photography.
 - Confirm Classic, Club and Premium remain the active room types.
 - Keep Luxury noindex unless the hotel explicitly restores that room type.
-- Replace the temporary restaurant visual with a verified first-party restaurant photo when available.
+- Add a dedicated verified first-party restaurant photo when available; until then the page uses genuine hotel interior photography with a clear context label.
+- Keep the verified public phone as the direct-booking confirmation path.
 - Confirm WhatsApp before adding any WhatsApp CTA.
 - Confirm email before publishing it.
+- Do not add a transmitting enquiry endpoint until the hotel confirms the receiving channel.
 - Confirm check-in/check-out and cancellation policies before publishing them.
 - Keep Deluxe/Suite noindex until the hotel confirms those room types.
 
@@ -98,7 +101,7 @@ Also verify:
 - Directions open the exact Google Business Profile place.
 - Mobile navigation opens/closes correctly.
 - Booking dates cannot be set in the past.
-- No broken image requests remain; temporary representative visuals are clearly labelled until verified replacements are available.
+- No broken image requests remain; the restaurant contextual photo is clearly labelled and legacy unconfirmed-room placeholders remain clearly marked.
 
 ## 7. Do not publish stale placeholders
 

@@ -31,6 +31,22 @@ Use this file before changing any public business details in HTML, JSON-LD, site
 - Room service
 - 24-hour front desk
 
+## Additional current first-party website features
+
+These are presented on the current first-party Hotel Vastu website and may be shown with explicit availability-confirmation language:
+
+- Banquet / event space
+- Corporate-stay support
+- Club and Premium room pages may mention work-desk / refrigerator conveniences; confirm the current room setup before booking
+
+Do not promote time-sensitive service details beyond what the current first-party site supports without reconfirmation.
+
+## Booking/contact channel
+
+- The verified public phone **+91 80020 07466** is the canonical direct-booking confirmation path.
+- The website stay planner is intentionally client-side: it prepares a booking summary but does **not** transmit or store personal details.
+- Do not add a fake form endpoint, WhatsApp CTA or email submission flow. Add transmission only after the hotel confirms a dedicated receiving channel.
+
 ## Do not publish without confirmation
 
 - WhatsApp number

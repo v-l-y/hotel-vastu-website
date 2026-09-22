@@ -62,11 +62,11 @@ The migration uses the hotel's own current website assets, not OTA thumbnails or
 ## Before production launch
 
 1. Reconfirm the public phone before launch; WhatsApp and email are still unconfirmed.
-2. Review the migrated/refined current-site photos and representative temporary visuals; replace temporary restaurant/reception/exterior imagery when verified first-party photos become available.
+2. Review the migrated/refined current-site photos. Restaurant uses genuine first-party hotel interior photography with a context label until a dedicated dining photo is confirmed; legacy unconfirmed room pages keep clearly labelled placeholders.
 3. Confirm exact Google Maps URL and geo coordinates.
 4. Reconfirm current room rates/policies before publishing fixed pricing; current room types are Classic, Club and Premium.
 5. Confirm check-in/check-out policy directly with the hotel.
-6. Enable the booking form with a real endpoint or confirmed WhatsApp number.
+6. Keep the verified public phone as the canonical direct-booking path. The stay planner intentionally does not transmit personal details; add a receiving endpoint only after the hotel confirms email, WhatsApp or another dedicated channel.
 7. Validate Hotel JSON-LD with Google Rich Results Test.
 8. Submit `https://hotelvastu.com/sitemap.xml` in Google Search Console.
 9. Ensure HTTPS and redirect all alternate hosts to `https://hotelvastu.com/`.
@@ -76,7 +76,7 @@ The migration uses the hotel's own current website assets, not OTA thumbnails or
 
 Open `index.html` directly or serve the folder using any static HTTP server.
 
-No framework, database, Bootstrap, jQuery or build step is required.
+No framework, database, Bootstrap or jQuery is required. Source CSS stays split for maintenance; run `npm run build:css` after CSS edits to refresh the committed `css/site.css` production bundle used by the highest-traffic pages.
 
 ### Static QA
 
@@ -86,7 +86,7 @@ With Node.js 18+ installed, run:
 npm run check
 ```
 
-The static check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, legacy redirects, branding, smooth scrolling, premium page structure and key business-data tokens. GitHub Actions also runs Browser QA in Chromium on desktop/mobile, Axe WCAG checks, booking-date interaction checks, gallery/mobile-nav checks and a Lighthouse quality gate.
+The static check validates internal links/assets, titles, canonical URLs, JSON-LD, sitemap/noindex separation, robots.txt, legacy redirects, branding, CSS-bundle freshness, truthful booking behavior, smooth scrolling, premium page structure and key business-data tokens. GitHub Actions also runs Browser QA in Chromium on desktop/mobile, Axe WCAG checks, booking-date interaction checks, gallery/mobile-nav checks and a Lighthouse quality gate.
 
 ## NAP source of truth
 

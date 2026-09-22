@@ -62,9 +62,27 @@ const nextState=await home.evaluate(()=>{
 });
 if(nextState.actual!==nextState.expected)failures.push(`booking: checkout min ${nextState.actual} != next local day ${nextState.expected}`);
 
+const contactPlanner=await bookingContext.newPage();
+await contactPlanner.goto(`${base}/contact.html#booking`,{waitUntil:"networkidle"});
+await contactPlanner.locator("#name").fill("Test Guest");
+await contactPlanner.locator("#phone").fill("9999999999");
+const plannerToday=await contactPlanner.evaluate(()=>{const d=new Date();const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`});
+await contactPlanner.locator("#checkin").fill(plannerToday);
+await contactPlanner.locator("#checkin").dispatchEvent("change");
+const plannerCheckout=await contactPlanner.locator("#checkout").getAttribute("min");
+await contactPlanner.locator("#checkout").fill(plannerCheckout);
+await contactPlanner.getByRole("button",{name:"Prepare booking details"}).click();
+const plannerStatus=contactPlanner.locator("[data-form-status]");
+if(await plannerStatus.isHidden())failures.push("booking planner did not reveal the prepared summary");
+const plannerText=await plannerStatus.textContent();
+if(!plannerText?.includes("Nothing has been sent or stored"))failures.push("booking planner transmission disclaimer missing");
+if(!plannerText?.includes("Call hotel to book"))failures.push("booking planner direct-call completion action missing");
+await contactPlanner.close();
+
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
 await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
+if((await mobile.locator('a[href="contact.html#booking"]').last().textContent())?.trim()!=="Plan your stay")failures.push("shared booking CTA did not normalize to Plan your stay");
 await mobile.locator("[data-menu-button]").click();
 if(!await mobile.locator("[data-nav-links]").evaluate(el=>el.classList.contains("open")))failures.push("mobile nav did not open");
 
