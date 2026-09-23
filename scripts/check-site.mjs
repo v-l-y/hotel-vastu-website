@@ -327,7 +327,24 @@ const responsiveCss=read("css/responsive.css");
 if(!responsiveCss.includes('url("../images/hotel/home-banner-1.webp") center/cover')) fail("css/responsive.css","mobile homepage hero must retain real hotel photography");
 if(!responsiveCss.includes(".hero-actions{display:none}")) fail("css/responsive.css","mobile hero utility actions must not duplicate the fixed quick-action bar");
 const uxMainJs=read("js/main.js");
-if(!uxMainJs.includes('"Close navigation"')||!uxMainJs.includes('button.textContent=open?"×":"☰"')) fail("js/main.js","mobile navigation button must expose synchronized open/close state");
+if(!uxMainJs.includes('"Close navigation"')||!uxMainJs.includes('hotelIcon(open?"close":"menu","ui-icon menu-icon")')||!uxMainJs.includes('event.composedPath')) fail("js/main.js","mobile navigation button must expose synchronized accessible SVG open/close state and safe outside-click handling");
+
+// Vercel production parity guard: when deployed on Vercel, mirror Apache redirects, security and cache policy.
+if(!exists("vercel.json")) fail("vercel.json","Vercel production configuration missing");
+else{
+  let vercel=null;
+  try{vercel=JSON.parse(read("vercel.json"));}catch(e){fail("vercel.json","invalid JSON: "+e.message);}
+  if(vercel){
+    const redirects=JSON.stringify(vercel.redirects||[]);
+    for(const token of ["/room/classic-room","/classic-room.html","/room/club-room","/club-room.html","/room/premium-room","/premium-room.html","/facilities","/facilities.html"]){
+      if(!redirects.includes(token)) fail("vercel.json","missing legacy redirect token "+token);
+    }
+    const headers=JSON.stringify(vercel.headers||[]);
+    for(const token of ["Content-Security-Policy","X-Content-Type-Options","X-Frame-Options","Referrer-Policy","Permissions-Policy","Cache-Control"]){
+      if(!headers.includes(token)) fail("vercel.json","missing production header token "+token);
+    }
+  }
+}
 
 // Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
 for(const file of ["js/booking.js","js/home-booking.js"]){
