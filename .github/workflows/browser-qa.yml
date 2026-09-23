@@ -38,23 +38,32 @@ jobs:
           BASE_URL: http://127.0.0.1:4173
         run: node scripts/browser-check.mjs
 
-      - name: Run Lighthouse quality gate
+      - name: Run site-wide Lighthouse quality gates
         run: |
           CHROME_PATH="$(node -e "const { chromium }=require('playwright'); process.stdout.write(chromium.executablePath())")"
-          npx lighthouse http://127.0.0.1:4173/index.html             --chrome-path="$CHROME_PATH"             --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"             --only-categories=performance,accessibility,best-practices,seo             --output=json             --output-path=/tmp/lighthouse.json             --quiet
-          node - <<'NODE'
-          const fs=require("fs");
-          const report=JSON.parse(fs.readFileSync("/tmp/lighthouse.json","utf8"));
-          const thresholds={performance:.85,accessibility:.95,"best-practices":.90,seo:.90};
-          let failed=false;
-          for(const [name,min] of Object.entries(thresholds)){
-            const score=report.categories[name]?.score ?? 0;
-            console.log(name,score);
-            if(score<min){console.error(name+" score "+score+" below "+min);failed=true;}
-          }
-          for(const id of ["first-contentful-paint","largest-contentful-paint","speed-index","total-blocking-time","cumulative-layout-shift","interactive"]){
-            const audit=report.audits[id];
-            console.log("metric",id,audit?.score,audit?.numericValue,audit?.displayValue||"");
-          }
-          if(failed)process.exit(1);
-          NODE
+          PAGES=(
+            index.html
+            rooms.html
+            classic-room.html
+            club-room.html
+            premium-room.html
+            facilities.html
+            restaurant.html
+            gallery.html
+            about.html
+            contact.html
+            hotel-near-rps-more.html
+            hotel-near-danapur-railway-station.html
+          )
+          for page in "${PAGES[@]}"; do
+            safe_name="$(echo "$page" | tr '/.' '__')"
+            report="/tmp/lighthouse-${safe_name}.json"
+            npx lighthouse "http://127.0.0.1:4173/$page" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output-path="$report" \
+              --quiet
+            node scripts/lighthouse-check.mjs "$page" "$report"
+          done
