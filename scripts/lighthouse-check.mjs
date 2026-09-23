@@ -22,6 +22,17 @@ const thresholds = {
 };
 
 console.log(page, scores);
+for (const categoryName of ["accessibility","best-practices","seo"]) {
+  const category=report.categories[categoryName];
+  const failedAudits=(category?.auditRefs||[])
+    .filter(ref=>ref.weight>0 && (report.audits[ref.id]?.score ?? 1)<1)
+    .map(ref=>({
+      id:ref.id,
+      score:report.audits[ref.id]?.score,
+      title:report.audits[ref.id]?.title,
+    }));
+  if(failedAudits.length) console.log(page, categoryName, "failed-audits", failedAudits);
+}
 let failed = false;
 for (const [name, min] of Object.entries(thresholds)) {
   if (scores[name] < min) {
