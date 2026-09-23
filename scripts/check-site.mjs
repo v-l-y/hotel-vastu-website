@@ -209,15 +209,16 @@ for(const file of htmlFiles){
   if(/--hero-image:url\(['"]?images\//.test(html)) fail(file,"visual hero image URL must be root-absolute /images/... to avoid /css/images 404s");
 }
 
-// Production CSS bundle guard: source CSS remains split while key conversion pages serve one render-blocking bundle.
+// Production CSS bundle guard: Lighthouse-audited public pages serve one render-blocking CSS bundle.
 const cssBundleSources=["css/variables.css","css/base.css","css/components.css","css/layout.css","css/responsive.css"];
 const expectedCssBundle=cssBundleSources.map(file=>`/* ${file} */\n${read(file).trim()}`).join("\n\n")+"\n";
 if(!exists("css/site.css")) fail("css/site.css","production CSS bundle missing");
 else if(read("css/site.css")!==expectedCssBundle) fail("css/site.css","bundle is stale; run npm run build:css");
-for(const file of ["index.html","contact.html"]){
+const bundledPublicPages=["index.html","rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","restaurant.html","gallery.html","about.html","contact.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"];
+for(const file of bundledPublicPages){
   const html=read(file);
-  if(!html.includes('href="css/site.css"')) fail(file,"conversion page must load css/site.css");
-  if(html.includes('href="css/variables.css"')||html.includes('href="css/base.css"')||html.includes('href="css/components.css"')||html.includes('href="css/layout.css"')||html.includes('href="css/responsive.css"')) fail(file,"conversion page must not load split CSS in production");
+  if(!html.includes('href="css/site.css"')) fail(file,"public page must load css/site.css");
+  if(html.includes('href="css/variables.css"')||html.includes('href="css/base.css"')||html.includes('href="css/components.css"')||html.includes('href="css/layout.css"')||html.includes('href="css/responsive.css"')) fail(file,"public page must not load split CSS in production");
 }
 
 // Honest direct-booking guard.
