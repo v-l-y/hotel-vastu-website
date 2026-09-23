@@ -138,6 +138,12 @@ await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
 if((await mobile.locator('a[href="contact.html#booking"]').last().textContent())?.trim()!=="Plan your stay")failures.push("shared booking CTA did not normalize to Plan your stay");
 await mobile.locator("[data-menu-button]").click();
 if(!await mobile.locator("[data-nav-links]").evaluate(el=>el.classList.contains("open")))failures.push("mobile nav did not open");
+const mobileHeaderBooking=mobile.locator('[data-nav-links] a[href="contact.html#booking"]');
+const headerBookingWrap=await mobileHeaderBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
+if(headerBookingWrap.whiteSpace!=="nowrap"||headerBookingWrap.overflow)failures.push("mobile header Plan your stay CTA wrapped or overflowed");
+const mobileQuickBooking=mobile.locator('.mobile-actions a[href="contact.html#booking"]');
+const quickBookingWrap=await mobileQuickBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
+if(quickBookingWrap.whiteSpace!=="nowrap"||quickBookingWrap.overflow)failures.push("mobile quick-action Plan your stay CTA wrapped or overflowed");
 
 const gallery=await bookingContext.newPage();
 await gallery.goto(`${base}/gallery.html`,{waitUntil:"networkidle"});
