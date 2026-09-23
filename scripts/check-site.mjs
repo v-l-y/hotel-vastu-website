@@ -234,6 +234,11 @@ for(const token of ["Nothing has been sent or stored","tel:+918002007466","Call 
   if(!bookingSource.includes(token)) fail("js/booking.js","missing direct-booking completion token "+token);
 }
 if(!read("js/main.js").includes('["Book / Enquire","Send enquiry","Send an enquiry","Enquire now"]')) fail("js/main.js","shared stay-planner CTA normalization missing");
+const homeBookingSource=read("js/home-booking.js");
+const homeBookingMarkup=read("index.html").match(/<form[^>]*data-home-booking[^>]*>[\s\S]*?<\/form>/i)?.[0]||"";
+if(!homeBookingMarkup.includes('action="contact.html#booking"')||!homeBookingMarkup.includes('method="get"')) fail("index.html","homepage stay planner must have an explicit contact-page no-query fallback");
+if(/\bname=["'][^"']+["']/i.test(homeBookingMarkup)) fail("index.html","homepage stay planner controls must not expose named fields to native submission");
+if(homeBookingSource.includes("new FormData(form)")) fail("js/home-booking.js","homepage stay planner must assemble its local draft without native submission fields");
 const homeTruth=read("index.html");
 if(homeTruth.includes("booking enquiry form")) fail("index.html","FAQ structured data must describe the local stay planner");
 if(homeTruth.includes("security support")) fail("index.html","unverified security-support claim must not appear");
