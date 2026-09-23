@@ -380,9 +380,9 @@ if(!exists("scripts/migrate-rendered-hotel-photos.mjs")) fail("photo-migration",
 // Nearby transport content guard: distances are approximate and must keep live-directions links.
 const nearbyTransportPages=["index.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"];
 const nearbyTransportTruth=[
-  ["Patliputra Junction","Approx. 4 km","ChIJ07q89atX7TkRjhz6JA2rmwY"],
+  ["Patliputra Junction","Approx. 4–5 km","ChIJ07q89atX7TkRjhz6JA2rmwY"],
   ["Patna Airport","Approx. 7.4 km","ChIJVTWh0OdX7TkR1QcP-S7TAQk"],
-  ["Phulwari Sharif Railway Station","Approx. 6 km","ChIJW0osANxX7TkR1HJwwcae2IQ"]
+  ["Phulwari Sharif Railway Station","Approx. 6–8 km","ChIJW0osANxX7TkR1HJwwcae2IQ"]
 ];
 for(const file of nearbyTransportPages){
   const html=read(file);
