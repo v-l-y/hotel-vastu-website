@@ -300,7 +300,8 @@ if(read("facilities.html").includes('href="contact.html#booking">Plan an event</
 const responsiveCss=read("css/responsive.css");
 if(!responsiveCss.includes('url("../images/hotel/home-banner-1.webp") center/cover')) fail("css/responsive.css","mobile homepage hero must retain real hotel photography");
 if(!responsiveCss.includes(".hero-actions{display:none}")) fail("css/responsive.css","mobile hero utility actions must not duplicate the fixed quick-action bar");
-if(!mainJs.includes('"Close navigation"')||!mainJs.includes('button.textContent=open?"×":"☰"')) fail("js/main.js","mobile navigation button must expose synchronized open/close state");
+const uxMainJs=read("js/main.js");
+if(!uxMainJs.includes('"Close navigation"')||!uxMainJs.includes('button.textContent=open?"×":"☰"')) fail("js/main.js","mobile navigation button must expose synchronized open/close state");
 
 // Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
 for(const file of ["js/booking.js","js/home-booking.js"]){
