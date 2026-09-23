@@ -59,6 +59,25 @@ await reviewContext("mobile",{viewport:{width:390,height:844},isMobile:true,hasT
 const bookingContext=await browser.newContext({viewport:{width:1280,height:900},timezoneId:"Asia/Kolkata"});
 const home=await bookingContext.newPage();
 await home.goto(`${base}/index.html`,{waitUntil:"networkidle"});
+const revealCount=await home.locator(".lux-reveal").count();
+if(revealCount<1)failures.push("scroll reveal targets were not initialized");
+else{
+  const revealTarget=home.locator(".lux-reveal").last();
+  await revealTarget.scrollIntoViewIfNeeded();
+  try{
+    await revealTarget.evaluate(el=>new Promise((resolve,reject)=>{
+      const started=performance.now();
+      const check=()=>{
+        if(el.classList.contains("is-visible"))return resolve(true);
+        if(performance.now()-started>1800)return reject(new Error("timeout"));
+        requestAnimationFrame(check);
+      };
+      check();
+    }));
+  }catch{
+    failures.push("scroll reveal target did not become visible after entering viewport");
+  }
+}
 const dateState=await home.evaluate(()=>{
   const pad=n=>String(n).padStart(2,"0");
   const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -133,4 +152,4 @@ if(failures.length){
   failures.forEach(x=>console.error("✗",x));
   process.exit(1);
 }
-console.log("Browser QA passed for desktop/mobile pages, WCAG serious/critical checks, booking dates, nav and gallery.");
+console.log("Browser QA passed for desktop/mobile pages, WCAG serious/critical checks, scroll reveal, booking dates, nav and gallery.");
