@@ -279,6 +279,29 @@ const combinedCss=read("css/base.css")+"\n"+read("css/layout.css")+"\n"+read("cs
 for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{","scroll-padding-top","scroll-margin-top",".site-header.is-scrolled"]){
   if(!combinedCss.includes(token)) fail("design-system","missing luxury/smooth-scroll CSS token "+token);
 }
+// Guest-facing UX regression guard: keep the booking journey premium, truthful and mobile-friendly.
+const uxPublicPages=["index.html","rooms.html","classic-room.html","club-room.html","premium-room.html","facilities.html","restaurant.html","gallery.html","about.html","contact.html"];
+const bannedGuestPhrases=["current website","existing website","first-party","confirmed public baseline","dining photo pending","unverified claims"];
+for(const file of uxPublicPages){
+  const html=read(file);
+  const visibleish=html.replace(/<script[\s\S]*?<\/script>/gi," ");
+  for(const phrase of bannedGuestPhrases){
+    if(visibleish.toLowerCase().includes(phrase)) fail(file,"guest-facing audit/development wording must not return: "+phrase);
+  }
+}
+const homeUx=read("index.html");
+const roomSectionPos=homeUx.indexOf(">Accommodation</p>");
+const transportSectionPos=homeUx.indexOf("data-nearby-transport");
+if(roomSectionPos<0||transportSectionPos<0||roomSectionPos>transportSectionPos) fail("index.html","room discovery must appear before nearby-transport content");
+if(homeUx.includes(">Check stay</button>")) fail("index.html","homepage planner CTA must not imply live inventory checking");
+if(!homeUx.includes(">Prepare stay details</button>")) fail("index.html","homepage planner needs the truthful Prepare stay details CTA");
+if(read("rooms.html").includes('href="contact.html#booking">Check availability</a>')) fail("rooms.html","room browse CTA must not imply live availability checking");
+if(read("facilities.html").includes('href="contact.html#booking">Plan an event</a>')) fail("facilities.html","event CTA must use an event-specific direct contact path");
+const responsiveCss=read("css/responsive.css");
+if(!responsiveCss.includes('url("../images/hotel/home-banner-1.webp") center/cover')) fail("css/responsive.css","mobile homepage hero must retain real hotel photography");
+if(!responsiveCss.includes(".hero-actions{display:none}")) fail("css/responsive.css","mobile hero utility actions must not duplicate the fixed quick-action bar");
+if(!mainJs.includes('"Close navigation"')||!mainJs.includes('button.textContent=open?"×":"☰"')) fail("js/main.js","mobile navigation button must expose synchronized open/close state");
+
 // Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
 for(const file of ["js/booking.js","js/home-booking.js"]){
   const source=read(file);
@@ -358,8 +381,9 @@ for(const [page,asset] of [["deluxe-room.html","images/temp/room-temp.svg"],["lu
 }
 
 const restaurantPage=read("restaurant.html");
-if(restaurantPage.includes("images/temp/restaurant-temp.svg")||restaurantPage.includes("temp-visual-hero")) fail("restaurant.html","restaurant must not use a fake representative visual when first-party hotel photography is available");
-if(!restaurantPage.includes("images/hotel/about-interior.webp")||!restaurantPage.includes("context-photo-hero")) fail("restaurant.html","restaurant contextual first-party photo treatment missing");
+if(restaurantPage.includes("images/temp/restaurant-temp.svg")||restaurantPage.includes("temp-visual-hero")) fail("restaurant.html","restaurant must not use a fake representative visual when hotel photography is available");
+if(!restaurantPage.includes("images/hotel/about-interior.webp")) fail("restaurant.html","restaurant hotel-interior hero treatment missing");
+if(restaurantPage.includes("context-photo-hero")) fail("restaurant.html","guest-facing restaurant hero must not expose an internal photo-status badge");
 if(exists("images/temp/restaurant-temp.svg")) fail("assets","unused restaurant temporary illustration must stay removed");
 
 // Dynamic image migration guard: do not pin Vite content hashes in maintenance tooling.
