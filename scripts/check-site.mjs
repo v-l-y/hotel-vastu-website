@@ -231,6 +231,14 @@ if(homeTruth.includes("booking enquiry form")) fail("index.html","FAQ structured
 if(homeTruth.includes("security support")) fail("index.html","unverified security-support claim must not appear");
 if(read("facilities.html").includes("send an enquiry")) fail("facilities.html","CTA must not imply the local planner transmits an enquiry");
 if(read("restaurant.html").includes(">Ask the hotel</a>")) fail("restaurant.html","planner CTA must not imply a message is sent");
+for(const file of htmlFiles){
+  const html=read(file);
+  if(/<a[^>]*href=["']contact\.html#booking["'][^>]*>\s*(?:Book \/ Enquire|Send enquiry|Send an enquiry|Enquire now|Ask the hotel|Contact hotel|Booking enquiry)\s*<\/a>/i.test(html)){
+    fail(file,"stay-planner CTA must not imply transmission or direct contact");
+  }
+}
+if(read("privacy.html").includes("booking enquiry form")) fail("privacy.html","privacy copy must describe the browser-only stay planner");
+if(read("js/booking.js").includes("Hotel Vastu Premium booking enquiry")) fail("js/booking.js","prepared summary must be labelled booking details, not a transmitted enquiry");
 const homeSitemapBlock=sitemap.match(/<url>\s*<loc>https:\/\/hotelvastu\.com\/<\/loc>[\s\S]*?<\/url>/)?.[0]||"";
 if(!homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/home-banner-1.webp")) fail("sitemap.xml","homepage image mapping must include the actual desktop hero");
 if(homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/hero.webp")) fail("sitemap.xml","homepage image mapping must not use unrelated hero.webp");
