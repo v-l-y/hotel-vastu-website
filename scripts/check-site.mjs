@@ -223,6 +223,10 @@ for(const file of ["index.html","contact.html"]){
 // Honest direct-booking guard.
 const contactPage=read("contact.html");
 const bookingSource=read("js/booking.js");
+const bookingFormMarkup=contactPage.match(/<form[^>]*data-booking-form[^>]*>[\s\S]*?<\/form>/i)?.[0]||"";
+if(!bookingFormMarkup.includes('action="contact.html#booking"')||!bookingFormMarkup.includes('method="get"')) fail("contact.html","stay planner must have an explicit same-page no-PII fallback action");
+if(/\bname=["'][^"']+["']/i.test(bookingFormMarkup)) fail("contact.html","browser-only stay planner controls must not expose named fields to native submission");
+if(bookingSource.includes("new FormData(form)")) fail("js/booking.js","stay planner must read values locally by element id, not depend on named form submission fields");
 for(const token of ["Stay planner","does not send or store personal details","Prepare booking details"]){
   if(!contactPage.includes(token)) fail("contact.html","missing truthful stay-planner token "+token);
 }
