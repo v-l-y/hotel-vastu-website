@@ -18,7 +18,9 @@ jobs:
         with:
           node-version: "24"
       - name: Install browser QA dependencies
-        run: npm install --no-save --package-lock=false playwright@1.55.0 @axe-core/playwright@4.10.2 lighthouse@12.2.1
+        run: npm install --package-lock=false
+      - name: Audit browser QA dependencies
+        run: npm audit --no-package-lock --audit-level=high
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static server
@@ -67,15 +69,18 @@ jobs:
               --quiet
             node scripts/lighthouse-check.mjs "$page" "$report"
           }
+          echo "Warming Chromium and Lighthouse before strict scoring..."
+          warmup_report="/tmp/lighthouse-warmup.json"
+          npx lighthouse "http://127.0.0.1:4173/index.html" \
+            --chrome-path="$CHROME_PATH" \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --only-categories=performance \
+            --output=json \
+            --output-path="$warmup_report" \
+            --quiet
+
           for page in "${PAGES[@]}"; do
             safe_name="$(echo "$page" | tr '/.' '__')"
             report="/tmp/lighthouse-${safe_name}.json"
-            if run_lighthouse "$page" "$report"; then
-              continue
-            fi
-
-            echo "::warning::First Lighthouse gate failed for $page; retrying once to rule out transient runner CPU noise."
-            retry_report="/tmp/lighthouse-${safe_name}-retry.json"
-            sleep 2
-            run_lighthouse "$page" "$retry_report"
+            run_lighthouse "$page" "$report"
           done
