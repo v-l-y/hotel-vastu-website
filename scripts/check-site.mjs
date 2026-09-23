@@ -221,6 +221,32 @@ for(const file of bundledPublicPages){
   if(html.includes('href="css/variables.css"')||html.includes('href="css/base.css"')||html.includes('href="css/components.css"')||html.includes('href="css/layout.css"')||html.includes('href="css/responsive.css"')) fail(file,"public page must not load split CSS in production");
 }
 
+// Social share preview guard: indexed pages must expose a rich, crawler-friendly preview.
+for(const file of bundledPublicPages){
+  const html=read(file);
+  for(const token of [
+    'property="og:title"',
+    'property="og:description"',
+    'property="og:url"',
+    'property="og:site_name"',
+    'property="og:locale" content="en_IN"',
+    'property="og:image" content="https://hotelvastu.com/images/hotel/og-hotel-vastu.webp"',
+    'property="og:image:secure_url" content="https://hotelvastu.com/images/hotel/og-hotel-vastu.webp"',
+    'property="og:image:type" content="image/webp"',
+    'property="og:image:width" content="1200"',
+    'property="og:image:height" content="630"',
+    'property="og:image" content="https://hotelvastu.com/images/branding/hotel-vastu-icon-512.png"',
+    'property="og:image:type" content="image/png"',
+    'name="twitter:card" content="summary_large_image"',
+    'name="twitter:title"',
+    'name="twitter:description"',
+    'name="twitter:image" content="https://hotelvastu.com/images/hotel/og-hotel-vastu.webp"',
+    'rel="image_src" href="https://hotelvastu.com/images/hotel/og-hotel-vastu.webp"'
+  ]){
+    if(!html.includes(token)) fail(file,"social share preview metadata missing: "+token);
+  }
+}
+
 // Honest direct-booking guard.
 const contactPage=read("contact.html");
 const bookingSource=read("js/booking.js");
