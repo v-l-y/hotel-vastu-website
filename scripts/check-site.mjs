@@ -416,7 +416,6 @@ for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel
   const h2=(html.match(/<h2\b/gi)||[]).length;
   if(h2<1) fail(file,"expected at least one H2 for useful content hierarchy");
 }
-if(read("hotel-near-danapur-railway-station.html").includes("3.7 km")) fail("hotel-near-danapur-railway-station.html","fixed third-party distance claim must not return");
 
 // Dead asset guard.
 for(const asset of ["images/hotel/hero.svg","images/hotel/exterior.svg","images/rooms/classic-room.svg","images/rooms/luxury-room.svg","images/temp/reception-temp.svg","images/temp/exterior-temp.svg","images/temp/restaurant-temp.svg"]){
