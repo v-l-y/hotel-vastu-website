@@ -48,7 +48,8 @@ function ensureHotelIconStyles(){
  .ui-icon{width:1.08em;height:1.08em;flex:0 0 auto;display:inline-block;vertical-align:-.16em}
  .nav-links>a{display:inline-flex;align-items:center;gap:7px}
  .nav-links>a:not(.btn):not(.header-call)>.ui-icon{width:14px;height:14px;color:var(--gold-dark);opacity:.82}
- .header-call>.ui-icon,.btn>.ui-icon,.mobile-actions .ui-icon{width:16px;height:16px}
+ .header-call>.ui-icon,.btn>.ui-icon{width:16px;height:16px}
+ .mobile-actions .ui-icon{width:14px;height:14px}
  .menu-btn .menu-icon{width:24px;height:24px;display:block}
  .fact-mark{width:44px;padding:0}
  .fact-mark>.ui-icon{width:19px;height:19px}
