@@ -77,7 +77,10 @@
 .text-link{color:var(--gold-dark);font-weight:850;text-decoration:underline;text-underline-offset:4px}
 
 .mobile-actions{display:none}
-.mobile-actions a{flex:1;min-width:0;min-height:50px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 6px;font-size:clamp(.66rem,2.85vw,.74rem);font-weight:900;letter-spacing:.045em;text-transform:uppercase;white-space:nowrap}
+.mobile-actions a{flex:1;min-width:0;min-height:50px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;font-size:clamp(.62rem,2.55vw,.71rem);font-weight:900;letter-spacing:.025em;text-transform:uppercase;white-space:nowrap}
+.mobile-actions a:first-child{flex:.72}
+.mobile-actions a:nth-child(2){flex:1.02}
+.mobile-actions a:last-child{flex:1.35}
 .mobile-actions a+a{border-left:1px solid rgba(255,255,255,.15)}
 
 .temp-visual{position:relative;overflow:hidden}
