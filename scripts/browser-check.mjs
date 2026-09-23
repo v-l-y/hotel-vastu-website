@@ -79,6 +79,23 @@ if(!plannerText?.includes("Nothing has been sent or stored"))failures.push("book
 if(!plannerText?.includes("Call hotel to book"))failures.push("booking planner direct-call completion action missing");
 await contactPlanner.close();
 
+const noJsContext=await browser.newContext({viewport:{width:1280,height:900},javaScriptEnabled:false});
+const noJsPlanner=await noJsContext.newPage();
+await noJsPlanner.goto(`${base}/contact.html#booking`,{waitUntil:"networkidle"});
+await noJsPlanner.locator("#name").fill("Privacy Test Guest");
+await noJsPlanner.locator("#phone").fill("9999999999");
+await noJsPlanner.locator("#checkin").fill("2026-09-23");
+await noJsPlanner.locator("#checkout").fill("2026-09-24");
+await noJsPlanner.locator("#guests").fill("2");
+await Promise.all([
+  noJsPlanner.waitForNavigation({waitUntil:"networkidle"}),
+  noJsPlanner.getByRole("button",{name:"Prepare booking details"}).click(),
+]);
+const noJsUrl=new URL(noJsPlanner.url());
+if(noJsUrl.search)failures.push(`booking privacy: JavaScript-disabled fallback leaked form data into URL query ${noJsUrl.search}`);
+if(noJsUrl.hash!=="#booking")failures.push(`booking privacy: JavaScript-disabled fallback did not return to #booking (${noJsPlanner.url()})`);
+await noJsContext.close();
+
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
 await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
