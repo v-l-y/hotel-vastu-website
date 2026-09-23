@@ -27,6 +27,10 @@
 
 .two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:78px;align-items:center}
 .room-grid,.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+[data-nearby-transport] .feature-grid{grid-template-columns:repeat(6,1fr)}
+[data-nearby-transport] .feature-grid>article{grid-column:span 2}
+[data-nearby-transport] .feature-grid>article:nth-last-child(2){grid-column:2/span 2}
+[data-nearby-transport] .feature-grid>article:last-child{grid-column:4/span 2}
 .room-grid .card .media{aspect-ratio:4/3}
 .dark-section{position:relative;overflow:hidden;background:radial-gradient(circle at 85% 0%,rgba(192,154,102,.16),transparent 32%),#211a16;color:#fff}
 .dark-section::after{content:"";position:absolute;right:-120px;bottom:-170px;width:420px;height:420px;border:1px solid rgba(234,216,186,.1);border-radius:50%}

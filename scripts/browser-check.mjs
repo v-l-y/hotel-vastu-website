@@ -9,6 +9,7 @@ const pages=[
   "privacy.html","booking-information.html","luxury-room.html","deluxe-room.html","suite-room.html","404.html"
 ];
 
+const nearbyTransportPages=new Set(["index.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]);
 const failures=[];
 const browser=await chromium.launch({headless:true});
 
@@ -24,6 +25,22 @@ async function reviewContext(label,options){
     if(!response?.ok())errors.push("HTTP "+(response?.status()??"no response"));
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1);
     if(overflow)errors.push("horizontal overflow");
+    if(nearbyTransportPages.has(file)){
+      const transport=page.locator("[data-nearby-transport]");
+      const cardCount=await transport.locator("article.card").count();
+      if(cardCount!==5)errors.push("nearby transport card count "+cardCount+" != 5");
+      const directions=transport.getByRole("link",{name:"Directions"});
+      const directionCount=await directions.count();
+      if(directionCount!==5)errors.push("nearby transport directions link count "+directionCount+" != 5");
+      for(let i=0;i<directionCount;i++){
+        const link=directions.nth(i);
+        const href=await link.getAttribute("href");
+        const target=await link.getAttribute("target");
+        const rel=await link.getAttribute("rel");
+        if(!href?.startsWith("https://www.google.com/maps/dir/?api=1"))errors.push("nearby transport directions link "+(i+1)+" is not Google Maps directions");
+        if(target!=="_blank"||!rel?.split(/\s+/).includes("noopener"))errors.push("nearby transport directions link "+(i+1)+" missing safe external-link attributes");
+      }
+    }
     await page.evaluate(()=>document.querySelectorAll(".lux-reveal").forEach(el=>el.classList.add("is-visible")));await page.waitForTimeout(850);const results=await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
     for(const violation of results.violations){
       if(["serious","critical"].includes(violation.impact||"")){
