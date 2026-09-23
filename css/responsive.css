@@ -61,10 +61,10 @@
   .section{padding:78px 0}
   .site-header{backdrop-filter:blur(12px)}
   .brand-logo img{width:148px}.site-header.is-scrolled .brand-logo img{width:142px}.footer-brand-logo img{width:180px}
-  .hero{min-height:620px;padding:calc(var(--header) + 54px) 0 82px;background:radial-gradient(circle at 82% 18%,rgba(192,154,102,.24),transparent 34%),linear-gradient(135deg,#211a16 0%,#33241b 58%,#1b1511 100%)}
+  .hero{min-height:620px;padding:calc(var(--header) + 54px) 0 82px;background:linear-gradient(90deg,rgba(22,16,12,.88) 0%,rgba(22,16,12,.70) 48%,rgba(22,16,12,.36) 100%),url("../images/hotel/home-banner-1.webp") center/cover}
   .hero h1{font-size:clamp(3rem,13vw,4.25rem);line-height:.96}
   .hero p{font-size:1rem}
-  .hero-actions .btn{width:100%}
+  .hero-actions{display:none}
   .quick-facts{grid-template-columns:1fr 1fr;margin-top:22px}
   .quick-facts div{padding:20px 12px}
   .room-grid,.feature-grid,.amenity-grid,.footer-grid,.booking-grid,.facility-showcase{grid-template-columns:1fr}
