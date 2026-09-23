@@ -320,7 +320,7 @@ const componentCss=read("css/components.css");
 if(!componentCss.includes("linear-gradient(135deg,#8a6338,#76502a)")||!componentCss.includes("color:#fff")) fail("css/components.css","primary CTA must keep the WCAG-AA dark-gold treatment");
 
 const mainJs=read("js/main.js");
-for(const token of ["scrollIntoView","prefers-reduced-motion","requestAnimationFrame","is-scrolled"]){
+for(const token of ["scrollIntoView","prefers-reduced-motion","requestAnimationFrame","is-scrolled","IntersectionObserver","lux-reveal","is-visible"]){
   if(!mainJs.includes(token)) fail("js/main.js","missing smooth-scroll token "+token);
 }
 if(!exists("scripts/browser-check.mjs")) fail("browser-qa","browser QA script missing");
