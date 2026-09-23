@@ -45,6 +45,10 @@ Do not promote time-sensitive service details beyond what the current first-part
 
 Use these only as **approximate travel-planning distances**. Always pair them with wording that route, traffic and journey time can vary.
 
+- **Patna Junction:** approximately **10–12 km by road** from the RPS More / Hotel Vastu Premium area.
+  - Google Place ID: `ChIJ86aXgmhY7TkRS__VL8hYJXs`
+- **Danapur Railway Station:** approximately **5–7 km by road** from the RPS More / Hotel Vastu Premium area.
+  - Google Place ID: `ChIJK5DaC_NX7TkR6_sOqLXWKoU`
 - **Patliputra Junction:** approximately **4–5 km by road** from the RPS More / Hotel Vastu Premium area.
   - Google Place ID: `ChIJ07q89atX7TkRjhz6JA2rmwY`
 - **Jay Prakash Narayan International Airport (Patna Airport):** approximately **7.4 km drive** from Hotel Vastu Premium in current travel-listing data.
