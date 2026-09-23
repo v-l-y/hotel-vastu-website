@@ -377,6 +377,31 @@ for(const file of [".github/workflows/final-polish.yml",".github/workflows/migra
 if(!read("scripts/discover-live-images.mjs").includes("index-[^/]+\\.js")) fail("scripts/discover-live-images.mjs","live bundle discovery must resolve the current hashed entry dynamically");
 if(!exists("scripts/migrate-rendered-hotel-photos.mjs")) fail("photo-migration","rendered first-party photo migration script missing");
 
+// Nearby transport content guard: distances are approximate and must keep live-directions links.
+const nearbyTransportPages=["index.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"];
+const nearbyTransportTruth=[
+  ["Patliputra Junction","Approx. 4 km","ChIJ07q89atX7TkRjhz6JA2rmwY"],
+  ["Patna Airport","Approx. 7.4 km","ChIJVTWh0OdX7TkR1QcP-S7TAQk"],
+  ["Phulwari Sharif Railway Station","Approx. 6 km","ChIJW0osANxX7TkR1HJwwcae2IQ"]
+];
+for(const file of nearbyTransportPages){
+  const html=read(file);
+  if(!html.includes("data-nearby-transport")) fail(file,"nearby transport section missing");
+  if(!html.includes("Actual route and journey time can vary")) fail(file,"nearby transport variability note missing");
+  for(const [label,distance,placeId] of nearbyTransportTruth){
+    if(!html.includes(label)) fail(file,"nearby transport label missing: "+label);
+    if(!html.includes(distance)) fail(file,"nearby transport distance missing: "+distance);
+    if(!html.includes(placeId)) fail(file,"nearby transport directions place ID missing: "+placeId);
+  }
+}
+for(const question of [
+  "How far is Patliputra Junction from Hotel Vastu Premium?",
+  "How far is Patna Airport from Hotel Vastu Premium?",
+  "How far is Phulwari Sharif Railway Station from Hotel Vastu Premium?"
+]){
+  if(!read("index.html").includes(question)) fail("index.html","nearby transport FAQ missing: "+question);
+}
+
 // Content hierarchy guard for key indexable browse/local pages.
 for(const file of ["rooms.html","gallery.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]){
   const html=read(file);

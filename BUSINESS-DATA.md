@@ -41,6 +41,19 @@ These are presented on the current first-party Hotel Vastu website and may be sh
 
 Do not promote time-sensitive service details beyond what the current first-party site supports without reconfirmation.
 
+## Nearby transport distance content
+
+Use these only as **approximate travel-planning distances**. Always pair them with wording that route, traffic and journey time can vary.
+
+- **Patliputra Junction:** approximately **4 km by road** from the RPS More / Hotel Vastu Premium area.
+  - Google Place ID: `ChIJ07q89atX7TkRjhz6JA2rmwY`
+- **Jay Prakash Narayan International Airport (Patna Airport):** approximately **7.4 km drive** from Hotel Vastu Premium in current travel-listing data.
+  - Google Place ID: `ChIJVTWh0OdX7TkR1QcP-S7TAQk`
+- **Phulwari Sharif Railway Station:** approximately **6 km** for travel planning from the Danapur / RPS More side.
+  - Google Place ID: `ChIJW0osANxX7TkR1HJwwcae2IQ`
+
+Do not present these as guaranteed journey times or exact surveyed distances. Prefer “Approx.” / “approximately” and link to live directions.
+
 ## Booking/contact channel
 
 - The verified public phone **+91 80020 07466** is the canonical direct-booking confirmation path.
