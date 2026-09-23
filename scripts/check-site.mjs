@@ -308,6 +308,9 @@ const firstPartyPhotoAssets=["images/hotel/home-banner-1.webp","images/hotel/hom
 for(const token of ["data-gallery-grid","data-gallery-dialog","js/gallery.js",'data-gallery-filter="hotel"']){
   if(!gallery.includes(token)) fail("gallery.html","missing gallery token "+token);
 }
+for(const match of gallery.matchAll(/<img\b[^>]*\balt=["']([^"']*)["'][^>]*>/gi)){
+  if(/\b(?:image|picture|photo|photograph|photography)\b/i.test(match[1])) fail("gallery.html","gallery alt text must describe content without redundant image/photo wording: "+match[1]);
+}
 for(const asset of firstPartyPhotoAssets){
   if(!exists(asset)) fail("gallery.html","missing first-party photo asset "+asset);
   if(!gallery.includes(asset)) fail("gallery.html","first-party hotel photo missing from complete gallery: "+asset);
