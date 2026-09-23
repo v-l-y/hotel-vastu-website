@@ -51,6 +51,10 @@ for(const file of htmlFiles){
   if(!html.includes('class="footer-brand-logo"')) fail(file,"footer semantic logo wrapper missing");
   if(!html.includes("Comfortable stays near RPS More, Patna.")) fail(file,"canonical footer tagline missing");
   if(html.includes("Comfortable stays at RPS More")) fail(file,"stale footer tagline remains");
+  const footer=html.match(/<footer class="footer">[\s\S]*?<\/footer>/i)?.[0]||"";
+  for(const href of ["rooms.html","facilities.html","restaurant.html","gallery.html","contact.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html","privacy.html","booking-information.html"]){
+    if(!footer.includes(`href="${href}"`)) fail(file,"canonical footer link missing: "+href);
+  }
 
   const title=html.match(/<title>([^<]+)<\/title>/i)?.[1]?.trim();
   if(!title) fail(file,"missing <title>");
