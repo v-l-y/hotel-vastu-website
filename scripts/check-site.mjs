@@ -226,6 +226,15 @@ for(const token of ["Nothing has been sent or stored","tel:+918002007466","Call 
   if(!bookingSource.includes(token)) fail("js/booking.js","missing direct-booking completion token "+token);
 }
 if(!read("js/main.js").includes('["Book / Enquire","Send enquiry","Send an enquiry","Enquire now"]')) fail("js/main.js","shared stay-planner CTA normalization missing");
+const homeTruth=read("index.html");
+if(homeTruth.includes("booking enquiry form")) fail("index.html","FAQ structured data must describe the local stay planner");
+if(homeTruth.includes("security support")) fail("index.html","unverified security-support claim must not appear");
+if(read("facilities.html").includes("send an enquiry")) fail("facilities.html","CTA must not imply the local planner transmits an enquiry");
+if(read("restaurant.html").includes(">Ask the hotel</a>")) fail("restaurant.html","planner CTA must not imply a message is sent");
+const homeSitemapBlock=sitemap.match(/<url>\s*<loc>https:\/\/hotelvastu\.com\/<\/loc>[\s\S]*?<\/url>/)?.[0]||"";
+if(!homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/home-banner-1.webp")) fail("sitemap.xml","homepage image mapping must include the actual desktop hero");
+if(homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/hero.webp")) fail("sitemap.xml","homepage image mapping must not use unrelated hero.webp");
+
 
 // Luxury design system guard: every page must keep the premium system and smooth scrolling.
 const premiumHome=read("index.html");
