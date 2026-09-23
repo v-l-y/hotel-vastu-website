@@ -187,9 +187,9 @@ code{padding:.16em .4em;border-radius:6px;background:#f0e9df;font-size:.9em}
 .availability-field input:focus,.availability-field select:focus{box-shadow:none}
 .availability-submit{min-width:148px;margin-left:16px;height:52px}
 
-.lux-reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease var(--reveal-delay,0ms),transform .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms)}
-.lux-reveal.is-visible{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.lux-reveal{opacity:1;transform:none;transition:none}}
+.lux-reveal{opacity:0;transform:translate3d(0,26px,0) scale(.992);will-change:opacity,transform;transition:opacity .72s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms),transform .72s cubic-bezier(.2,.7,.2,1) var(--reveal-delay,0ms)}
+.lux-reveal.is-visible{opacity:1;transform:translate3d(0,0,0) scale(1);will-change:auto}
+@media(prefers-reduced-motion:reduce){.lux-reveal{opacity:1;transform:none;transition:none;will-change:auto}}
 
 .room-detail-section{background:linear-gradient(180deg,#fffdfa,#f7f2ea)}
 .room-detail-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:54px;align-items:start}
