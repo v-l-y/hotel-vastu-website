@@ -381,6 +381,8 @@ if(!exists("scripts/migrate-rendered-hotel-photos.mjs")) fail("photo-migration",
 // Nearby transport content guard: distances are approximate and must keep live-directions links.
 const nearbyTransportPages=["index.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"];
 const nearbyTransportTruth=[
+  ["Patna Junction","Approx. 10–12 km","ChIJ86aXgmhY7TkRS__VL8hYJXs"],
+  ["Danapur Railway Station","Approx. 5–7 km","ChIJK5DaC_NX7TkR6_sOqLXWKoU"],
   ["Patliputra Junction","Approx. 4–5 km","ChIJ07q89atX7TkRjhz6JA2rmwY"],
   ["Patna Airport","Approx. 7.4 km","ChIJVTWh0OdX7TkR1QcP-S7TAQk"],
   ["Phulwari Sharif Railway Station","Approx. 6–8 km","ChIJW0osANxX7TkR1HJwwcae2IQ"]
@@ -396,6 +398,8 @@ for(const file of nearbyTransportPages){
   }
 }
 for(const question of [
+  "How far is Patna Junction from Hotel Vastu Premium?",
+  "How far is Danapur Railway Station from Hotel Vastu Premium?",
   "How far is Patliputra Junction from Hotel Vastu Premium?",
   "How far is Patna Airport from Hotel Vastu Premium?",
   "How far is Phulwari Sharif Railway Station from Hotel Vastu Premium?"
