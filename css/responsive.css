@@ -47,6 +47,7 @@
   .room-photo-mosaic .room-photo-main img,.room-photo-mosaic figure img{min-height:280px}
   .room-booking-panel{padding:28px 24px}
   .visual-page-hero{min-height:430px;padding:calc(var(--header) + 72px) 0 52px;background-position:center}
+  .gallery-page-hero{min-height:360px;background:radial-gradient(circle at 82% 18%,rgba(192,154,102,.22),transparent 34%),linear-gradient(135deg,#211a16 0%,#33241b 58%,#1b1511 100%)}
   .visual-page-hero h1{font-size:clamp(2.9rem,13vw,4.15rem)}
   .visual-page-hero .lead{font-size:1rem}
   .availability-shell{margin-top:-24px}
