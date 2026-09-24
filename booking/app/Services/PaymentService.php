@@ -143,11 +143,13 @@ class PaymentService
         $total = (float) $reservation->total;
 
         $reservation->update([
-            'payment_status' => $net <= 0
-                ? 'unpaid'
-                : ($net > $total + 0.009
-                    ? 'overpaid'
-                    : ($net + 0.009 >= $total ? 'paid' : 'partially_paid')),
+            'payment_status' => $total <= 0.009
+                ? 'paid'
+                : ($net <= 0
+                    ? 'unpaid'
+                    : ($net > $total + 0.009
+                        ? 'overpaid'
+                        : ($net + 0.009 >= $total ? 'paid' : 'partially_paid'))),
         ]);
 
         return $reservation->fresh();
