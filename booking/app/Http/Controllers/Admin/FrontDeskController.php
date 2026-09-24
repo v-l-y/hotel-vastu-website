@@ -163,12 +163,16 @@ class FrontDeskController extends Controller
             }
         }
 
-        $arrivalsToday = $allReservations
+        $arrivalCountToday = $allReservations
             ->filter(fn (Reservation $reservation) => $reservation->check_in_date->isToday())
-            ->values();
+            ->count();
 
-        $departuresToday = $allStays
+        $departureCountToday = $allStays
             ->filter(fn (Stay $stay) => $stay->reservation->check_out_date->isToday())
+            ->count();
+
+        $arrivalsToday = $reservations
+            ->filter(fn (Reservation $reservation) => $reservation->check_in_date->isToday())
             ->values();
 
         return view('admin.front-desk', [
@@ -177,7 +181,8 @@ class FrontDeskController extends Controller
             'showNewBooking' => $request->boolean('new'),
             'reservations' => $reservations,
             'arrivalsToday' => $arrivalsToday,
-            'departuresToday' => $departuresToday,
+            'arrivalCountToday' => $arrivalCountToday,
+            'departureCountToday' => $departureCountToday,
             'readyRoomCount' => $readyUnoccupiedRooms->count(),
             'dirtyRoomCount' => $rooms->where('housekeeping_status', 'dirty')->count(),
             'outOfOrderRoomCount' => $rooms->where('housekeeping_status', 'out_of_order')->count(),
@@ -240,7 +245,7 @@ class FrontDeskController extends Controller
         $targetTab = $reservation->check_in_date->isToday() ? 'arrivals' : 'reservations';
 
         return redirect()
-            ->route('admin.front-desk', ['tab' => $targetTab, 'focus' => $reservation->id])
+            ->to(route('admin.front-desk', ['tab' => $targetTab]).'#reservation-'.$reservation->id)
             ->with(
                 'status',
                 "Booking {$reservation->booking_number} created successfully. Total ₹"
