@@ -147,6 +147,7 @@ table{display:block;overflow-x:auto;width:100%}
 @stack('styles')
 </head>
 <body>
+@include('partials.toast')
 <a class="skip-link" href="#admin-content">Skip to content</a>
 @php
 $currentAdmin = request()->attributes->get('admin_user');
@@ -219,8 +220,6 @@ $roleLabel = match($currentAdmin?->role) {
 </header>
 
 <main class="admin-content" id="admin-content">
-@if(session('status'))<div class="notice" role="status" aria-live="polite">{{ session('status') }}</div>@endif
-@if($errors->any())<div class="error" role="alert" aria-live="assertive"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 @yield('content')
 </main>
 </div>
