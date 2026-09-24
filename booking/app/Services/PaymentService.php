@@ -605,9 +605,11 @@ class PaymentService
             true
         );
 
-        $invoice = $payment->folio_id === null
-            ? null
-            : Invoice::query()->where('folio_id', $payment->folio_id)->first();
+        $invoice = $payment->folio_id !== null
+            ? Invoice::query()->where('folio_id', $payment->folio_id)->first()
+            : ($payment->restaurant_order_id !== null
+                ? Invoice::query()->where('restaurant_order_id', $payment->restaurant_order_id)->first()
+                : null);
 
         if ($requiresRevenueAdjustment && $invoice === null) {
             throw new RuntimeException(
