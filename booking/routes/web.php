@@ -85,6 +85,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,front_desk')->group(function () {
             Route::get('/front-desk', [FrontDeskController::class, 'index'])->name('front-desk');
+            Route::post('/front-desk/reservations', [FrontDeskController::class, 'createReservation'])->name('front-desk.create');
             Route::post('/front-desk/reservations/{reservation}/modify', [FrontDeskController::class, 'modifyReservation'])->name('front-desk.modify');
             Route::post('/front-desk/reservations/{reservation}/check-in', [FrontDeskController::class, 'checkIn'])->name('front-desk.check-in');
             Route::post('/front-desk/reservations/{reservation}/cancel', [FrontDeskController::class, 'cancel'])->name('front-desk.cancel');
