@@ -98,6 +98,14 @@ tbody tr:last-child td{border-bottom:0}
 .page-hero .button-link{background:#fff;border-color:#fff;color:#211a16}
 .section-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
 .section-head h2{margin:0 0 4px}.section-head p{margin:0}
+.section-title{display:flex;gap:10px;align-items:flex-start}
+.section-title .ui-icon-box{margin-top:1px}
+.page-hero .ui-icon-box{background:rgba(255,255,255,.12);color:#fff}
+.inline-icon-label{display:inline-flex;align-items:center;gap:8px}
+.inline-icon-label .ui-icon-box{width:28px;height:28px;flex-basis:28px;border-radius:8px}
+details.action-menu{min-width:190px}
+details.action-menu summary{cursor:pointer;font-weight:800;color:#4b3b31}
+details.action-menu[open] summary{margin-bottom:10px}
 .empty-state{border:1px dashed #d8cfc7;border-radius:12px;padding:22px;text-align:center;background:#fcfaf8;color:#6d655e}
 .stat-card{background:#fff;border:1px solid #e2dbd4;border-radius:16px;padding:16px;position:relative;overflow:hidden}
 .stat-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#8e7159}
