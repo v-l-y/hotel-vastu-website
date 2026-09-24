@@ -1,7 +1,19 @@
 @extends('admin.layout')
 @section('title','Payments & Refunds')
 @section('content')
+<div class="toolbar">
+<div>
 <h1>Payments & refunds</h1>
+@if(($selectedReservationId ?? 0) > 0)
+<p class="muted">Recording payment for the selected reservation. The booking target is already set.</p>
+@elseif(($selectedFolioId ?? 0) > 0)
+<p class="muted">Recording payment for the selected in-house folio. The folio target is already set.</p>
+@endif
+</div>
+@if(($selectedReservationId ?? 0) > 0 || ($selectedFolioId ?? 0) > 0)
+<a class="button-link" href="{{ route('admin.front-desk') }}">← Back to Front Desk</a>
+@endif
+</div>
 
 @if($showHotelPayments ?? false)
 <section class="panel">
