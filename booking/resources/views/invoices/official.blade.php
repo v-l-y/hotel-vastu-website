@@ -150,13 +150,13 @@ a{text-decoration:none!important;color:#000!important}
 @endif
 
 <div class="invoice-signature">
+<strong>For {{ $invoice->supplier_name ?: config('billing.legal_name','Hotel Vastu Premium') }}</strong><br><br>
 @if(config('billing.authorised_signatory'))
 <strong>{{ config('billing.authorised_signatory') }}</strong><br>
-<span class="invoice-small">Authorised Signatory</span>
 @else
-<strong>For {{ $invoice->supplier_name ?: config('billing.legal_name','Hotel Vastu Premium') }}</strong><br>
-<span class="invoice-small">Electronically generated document</span>
+<span>____________________________</span><br>
 @endif
+<span class="invoice-small">Authorised Signatory</span>
 </div>
 </div>
 
