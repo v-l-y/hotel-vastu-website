@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\ReservationNightRate;
 use App\Models\RestaurantOrder;
 use App\Models\Room;
+use App\Models\RoomType;
 use App\Models\RoomBlock;
 use App\Models\Stay;
 use App\Models\StayGuest;
@@ -226,6 +227,18 @@ class FrontDeskService
             }
 
             $reservation->load('rooms');
+
+            $roomTypeIds = $reservation->rooms
+                ->pluck('room_type_id')
+                ->unique()
+                ->sort()
+                ->values();
+
+            RoomType::query()
+                ->whereIn('id', $roomTypeIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
             foreach ($reservation->rooms as $reservationRoom) {
                 $availability = $this->availability->forRoomType(
