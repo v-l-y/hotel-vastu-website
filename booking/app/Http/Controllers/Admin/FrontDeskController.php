@@ -20,6 +20,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -150,8 +151,16 @@ class FrontDeskController extends Controller
             'email' => ['nullable', 'email:rfc', 'max:190'],
             'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in'],
-            'room_type_id' => ['required', 'integer', 'exists:room_types,id'],
-            'rate_plan_id' => ['required', 'integer', 'exists:rate_plans,id'],
+            'room_type_id' => [
+                'required',
+                'integer',
+                Rule::exists('room_types', 'id')->where('is_active', true),
+            ],
+            'rate_plan_id' => [
+                'required',
+                'integer',
+                Rule::exists('rate_plans', 'id')->where('is_active', true),
+            ],
             'rooms' => ['required', 'integer', 'min:1', 'max:10'],
             'adults' => ['required', 'integer', 'min:1', 'max:30'],
             'children' => ['required', 'integer', 'min:0', 'max:30'],
