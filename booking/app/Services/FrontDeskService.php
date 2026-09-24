@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Folio;
 use App\Models\Payment;
+use App\Models\PaymentGatewayOrder;
 use App\Models\Reservation;
 use App\Models\ReservationNightRate;
 use App\Models\RestaurantOrder;
@@ -152,6 +153,10 @@ class FrontDeskService
                 ]);
 
             $this->folios->recalculate($folio->fresh());
+            PaymentGatewayOrder::query()
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'created')
+                ->update(['status' => 'stale']);
             $reservation->update(['status' => 'checked_in']);
 
             return $stay->fresh(['rooms.room', 'guests', 'folio']);
