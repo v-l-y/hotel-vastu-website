@@ -91,12 +91,12 @@
 @if($showHotelPayments ?? false)
 <div class="payments-kpi"><span class="muted">Open folios</span><strong>{{ $folios->count() }}</strong><small>In-house balances awaiting settlement</small></div>
 <div class="payments-kpi"><span class="muted">Confirmed bookings</span><strong>{{ $reservations->count() }}</strong><small>Pre-arrival reservations available for payment</small></div>
-<div class="payments-kpi"><span class="muted">Recent invoices</span><strong>{{ $invoices->count() }}</strong><small>Latest issued hotel invoices</small></div>
+<div class="payments-kpi"><span class="muted">Recent invoices</span><strong>{{ method_exists($invoices,'total') ? $invoices->total() : $invoices->count() }}</strong><small>Issued hotel invoices</small></div>
 @endif
 @if($showRestaurantPayments ?? false)
 <div class="payments-kpi"><span class="muted">Restaurant balances</span><strong>{{ $restaurantOrders->count() }}</strong><small>Served dine-in / takeaway orders</small></div>
 @endif
-<div class="payments-kpi"><span class="muted">Recent payments</span><strong>{{ $payments->count() }}</strong><small>Latest ledger entries in your scope</small></div>
+<div class="payments-kpi"><span class="muted">Recent payments</span><strong>{{ $payments->total() }}</strong><small>Ledger entries in your scope</small></div>
 </div>
 @else
 <div class="payment-context-note">
@@ -275,64 +275,105 @@
 @endif
 
 @if(($showHotelPayments ?? false) && !$isTargeted)
-<section class="payments-section">
+<section class="payments-section" id="invoice-history">
 <div class="payments-section-head">
-<div><h2>Recent invoices</h2><p class="muted">Latest issued hotel invoices.</p></div>
+<div class="section-title">
+@include('admin.partials.icon',['name'=>'table'])
+<div><h2>Recent invoices</h2><p class="muted">Issued hotel invoices, newest first.</p></div>
 </div>
-<div class="payments-invoice-list">
-@forelse($invoices as $invoice)
-<div class="payments-invoice">
-<div><a href="{{ route('admin.invoices.show',$invoice) }}"><strong>{{ $invoice->invoice_number }}</strong></a><div class="muted">{{ $invoice->issued_at->format('d M Y, h:i A') }}</div></div>
-<strong>₹{{ number_format((float)$invoice->total,2) }}</strong>
+<span class="status-badge">{{ $invoices->total() }} total</span>
 </div>
-@empty
+@if($invoices->count() === 0)
 <div class="payments-empty">No invoices available.</div>
-@endforelse
+@else
+<div class="table-wrap">
+<table>
+<thead><tr><th>Invoice</th><th>Issued</th><th>Total</th><th>Paid</th><th>Balance</th><th>Action</th></tr></thead>
+<tbody>
+@foreach($invoices as $invoice)
+<tr>
+<td><span class="table-primary">{{ $invoice->invoice_number }}</span></td>
+<td>{{ $invoice->issued_at->format('d M Y, h:i A') }}</td>
+<td>₹{{ number_format((float)$invoice->total,2) }}</td>
+<td>₹{{ number_format((float)$invoice->paid,2) }}</td>
+<td><span class="status-badge {{ (float)$invoice->balance <= 0.009 ? 'good' : 'warn' }}">₹{{ number_format((float)$invoice->balance,2) }}</span></td>
+<td><a class="button-link" href="{{ route('admin.invoices.show',$invoice) }}">Open invoice</a></td>
+</tr>
+@endforeach
+</tbody>
+</table>
 </div>
+@include('admin.partials.pagination',['paginator'=>$invoices,'label'=>'Invoice history pagination','fragment'=>'invoice-history'])
+@endif
 </section>
 @endif
 
-<section class="payments-section">
+<section class="payments-section" id="payment-history">
 <div class="payments-section-head">
-<div><h2>Recent payments / refunds</h2><p class="muted">Latest successful payments and refund activity available to your role.</p></div>
-<span class="status-badge">{{ $payments->count() }} record(s)</span>
+<div class="section-title">
+@include('admin.partials.icon',['name'=>'payments'])
+<div><h2>Recent payments / refunds</h2><p class="muted">Successful payments and refund activity available to your role.</p></div>
+</div>
+<span class="status-badge">{{ $payments->total() }} record(s)</span>
 </div>
 
-<div class="payments-ledger">
-@forelse($payments as $payment)
+@if($payments->count() === 0)
+<div class="payments-empty">No recent payments available.</div>
+@else
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Payment</th><th>Target</th><th>Amount</th><th>Refund state</th><th>Paid at</th><th>Actions</th></tr>
+</thead>
+<tbody>
+@foreach($payments as $payment)
 @php($refunded=(float)$payment->refunds->where('status','succeeded')->sum('amount'))
 @php($pendingRefunds=(float)$payment->refunds->whereIn('status',['pending','pending_manual'])->sum('amount'))
 @php($refundable=max(0,(float)$payment->amount-$refunded-$pendingRefunds))
-<article class="payment-ledger-card">
-<div class="payment-ledger-head">
-<div>
-<div class="payment-ledger-title">
-<strong>Payment #{{ $payment->id }}</strong>
-<span class="status-badge payment-method-badge">{{ str_replace('_',' ',$payment->method) }}</span>
-@if($payment->status === 'succeeded')<span class="status-badge good">Succeeded</span>@else<span class="status-badge warn">{{ $payment->status }}</span>@endif
-</div>
-<div class="payment-ledger-meta">
-<span>@if($payment->reservation_id)Reservation {{ $payment->reservation?->booking_number }}@elseif($payment->folio_id)Folio #{{ $payment->folio_id }}@else Restaurant {{ $payment->restaurantOrder?->order_number }}@endif</span>
-@if($payment->external_reference)<span>Ref {{ $payment->external_reference }}</span>@endif
-<span>{{ $payment->paid_at?->format('d M Y, h:i A') }}</span>
-</div>
-</div>
-<div class="payment-ledger-amount">
-<strong>₹{{ number_format((float)$payment->amount,2) }}</strong>
-@if($refunded > 0)<span class="muted">Refunded ₹{{ number_format($refunded,2) }}</span>@endif
-@if($pendingRefunds > 0)<span class="muted">Pending refund ₹{{ number_format($pendingRefunds,2) }}</span>@endif
-</div>
-</div>
-
-<div class="payment-refund-panel">
+<tr>
+<td>
+<span class="table-primary">Payment #{{ $payment->id }}</span>
+<span class="table-secondary">{{ ucfirst(str_replace('_',' ',$payment->method)) }}</span>
+@if($payment->external_reference)
+<span class="table-secondary">Ref {{ $payment->external_reference }}</span>
+@endif
+</td>
+<td>
+@if($payment->reservation_id)
+<span class="table-primary">Reservation</span>
+<span class="table-secondary">{{ $payment->reservation?->booking_number ?? '#'.$payment->reservation_id }}</span>
+@elseif($payment->folio_id)
+<span class="table-primary">Folio #{{ $payment->folio_id }}</span>
+@else
+<span class="table-primary">Restaurant</span>
+<span class="table-secondary">{{ $payment->restaurantOrder?->order_number ?? 'Order' }}</span>
+@endif
+</td>
+<td>
+<span class="table-primary">₹{{ number_format((float)$payment->amount,2) }}</span>
+<span class="table-secondary">Refundable ₹{{ number_format($refundable,2) }}</span>
+</td>
+<td>
+@if($refunded > 0)
+<span class="status-badge warn">₹{{ number_format($refunded,2) }} refunded</span>
+@elseif($pendingRefunds > 0)
+<span class="status-badge warn">₹{{ number_format($pendingRefunds,2) }} pending</span>
+@else
+<span class="status-badge good">No refund</span>
+@endif
+</td>
+<td>{{ $payment->paid_at?->format('d M Y, h:i A') ?? '—' }}</td>
+<td>
+<details class="action-menu">
+<summary>Manage</summary>
+<div class="payment-refund-panel" style="margin-top:0;padding-top:0;border-top:0">
 <div class="payment-context">
-<span class="muted">Refundable</span><strong>₹{{ number_format($refundable,2) }}</strong>
-@if($refundable<=0)<span class="status-badge">Fully refunded</span>@endif
-@if(!($canRefund ?? false) && $refundable>0)<span class="status-badge">Refund restricted for this role</span>@endif
+<span class="muted">Status</span>
+<span class="status-badge {{ $payment->status === 'succeeded' ? 'good' : 'warn' }}">{{ ucfirst($payment->status) }}</span>
 </div>
 
 @if(($canRefund ?? false) && $refundable>0)
-<form class="payment-refund-form" method="post" action="{{ route('admin.payments.refund',$payment) }}">
+<form class="payment-refund-form" method="post" action="{{ route('admin.payments.refund',$payment) }}" style="grid-template-columns:1fr;margin-top:10px">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <label>Refund amount<input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" inputmode="decimal" placeholder="Amount" required></label>
@@ -350,25 +391,30 @@
 </select>
 <span class="payment-help">Rate/service adjustments are available only after invoice and create a credit note.</span>
 </label>
-<label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Why this refund is being issued" required></label>
-<button class="danger">Refund</button>
+<label>Reason<input name="reason" maxlength="255" minlength="3" placeholder="Why this refund is being issued" required></label>
+<button class="danger" type="submit">Issue refund</button>
 </form>
+@elseif(!($canRefund ?? false) && $refundable>0)
+<p class="muted">Refunds are restricted for this role.</p>
+@elseif($refundable<=0)
+<p class="muted">This payment has no refundable balance.</p>
 @endif
 
 @if($payment->refunds->isNotEmpty())
-<div class="payment-ledger-meta" style="margin-top:10px">
+<div style="margin-top:12px">
+<strong>Refund history</strong>
 @foreach($payment->refunds as $refund)
-<span>Refund #{{ $refund->id }} · {{ str_replace('_',' ',$refund->refund_type ?? 'other') }} · ₹{{ number_format((float)$refund->amount,2) }} · {{ str_replace('_',' ',$refund->status) }}</span>
+<div class="table-secondary">#{{ $refund->id }} · {{ str_replace('_',' ',$refund->refund_type ?? 'other') }} · ₹{{ number_format((float)$refund->amount,2) }} · {{ str_replace('_',' ',$refund->status) }}</div>
 @endforeach
 </div>
 @endif
 
 @if($canRefund ?? false)
 @foreach($payment->refunds->where('status','pending_manual') as $pendingRefund)
-<form class="payment-refund-form" method="post" action="{{ route('admin.payments.refunds.confirm-manual',$pendingRefund) }}" style="margin-top:10px">
+<form class="grid" method="post" action="{{ route('admin.payments.refunds.confirm-manual',$pendingRefund) }}" style="grid-template-columns:1fr;margin-top:10px">
 @csrf
 <label>External refund reference<input name="external_reference" maxlength="190" placeholder="UPI / card / bank refund reference" required></label>
-<div><span class="status-badge warn">₹{{ number_format((float)$pendingRefund->amount,2) }} pending manual confirmation</span><div class="payment-help">{{ str_replace('_',' ',$pendingRefund->refund_type) }} · {{ $pendingRefund->reason }}</div></div>
+<span class="status-badge warn">₹{{ number_format((float)$pendingRefund->amount,2) }} pending manual confirmation</span>
 <button type="submit">Confirm refunded</button>
 </form>
 @endforeach
@@ -381,11 +427,15 @@
 @endforeach
 @endif
 </div>
-</article>
-@empty
-<div class="payments-empty">No recent payments available.</div>
-@endforelse
+</details>
+</td>
+</tr>
+@endforeach
+</tbody>
+</table>
 </div>
+@include('admin.partials.pagination',['paginator'=>$payments,'label'=>'Payment history pagination','fragment'=>'payment-history'])
+@endif
 </section>
 </div>
 <script>
