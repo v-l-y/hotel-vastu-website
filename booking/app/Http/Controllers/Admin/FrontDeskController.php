@@ -26,14 +26,39 @@ use RuntimeException;
 
 class FrontDeskController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $reservations = Reservation::query()
+        $tab = (string) $request->query('tab', 'overview');
+        if (! in_array($tab, ['overview', 'arrivals', 'in-house', 'reservations', 'housekeeping'], true)) {
+            $tab = 'overview';
+        }
+
+        $search = trim((string) $request->query('q', ''));
+
+        $allReservations = Reservation::query()
             ->where('status', 'confirmed')
             ->with(['rooms', 'guestLinks.guest'])
             ->orderBy('check_in_date')
-            ->limit(50)
+            ->limit(100)
             ->get();
+
+        $reservations = $allReservations;
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $reservations = $allReservations->filter(function (Reservation $reservation) use ($needle) {
+                $guest = $reservation->guestLinks->first()?->guest;
+                $haystack = mb_strtolower(implode(' ', array_filter([
+                    $reservation->booking_number,
+                    $guest?->first_name,
+                    $guest?->last_name,
+                    $guest?->phone,
+                    $guest?->email,
+                ])));
+
+                return str_contains($haystack, $needle);
+            })->values();
+        }
 
         $rooms = Room::query()
             ->where('status', 'active')
@@ -41,11 +66,30 @@ class FrontDeskController extends Controller
             ->orderBy('number')
             ->get();
 
-        $stays = Stay::query()
+        $allStays = Stay::query()
             ->where('status', 'checked_in')
-            ->with(['reservation', 'rooms.room.roomType', 'folio'])
+            ->with(['reservation.guestLinks.guest', 'rooms.room.roomType', 'folio'])
             ->orderByDesc('checked_in_at')
             ->get();
+
+        $stays = $allStays;
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $stays = $allStays->filter(function (Stay $stay) use ($needle) {
+                $guest = $stay->reservation->guestLinks->first()?->guest;
+                $haystack = mb_strtolower(implode(' ', array_filter([
+                    $stay->reservation->booking_number,
+                    $guest?->first_name,
+                    $guest?->last_name,
+                    $guest?->phone,
+                    $guest?->email,
+                    $stay->rooms->whereNull('released_at')->pluck('room.number')->join(' '),
+                ])));
+
+                return str_contains($haystack, $needle);
+            })->values();
+        }
 
         $occupiedRoomIds = StayRoom::query()
             ->whereNull('released_at')
@@ -67,7 +111,7 @@ class FrontDeskController extends Controller
         $checkInWindowOpenByReservation = [];
         $checkInReadyByReservation = [];
 
-        foreach ($reservations as $reservation) {
+        foreach ($allReservations as $reservation) {
             $windowOpen = ! today()->lt($reservation->check_in_date)
                 && today()->lt($reservation->check_out_date)
                 && $reservation->pricing_status === 'priced';
@@ -104,7 +148,7 @@ class FrontDeskController extends Controller
 
         $transferRoomsByAssignment = [];
 
-        foreach ($stays as $stay) {
+        foreach ($allStays as $stay) {
             foreach ($stay->rooms->whereNull('released_at') as $assignment) {
                 $transferRoomsByAssignment[$assignment->id] = $readyUnoccupiedRooms
                     ->filter(fn (Room $room) => $room->room_type_id === $assignment->room->room_type_id)
@@ -119,8 +163,24 @@ class FrontDeskController extends Controller
             }
         }
 
+        $arrivalsToday = $allReservations
+            ->filter(fn (Reservation $reservation) => $reservation->check_in_date->isToday())
+            ->values();
+
+        $departuresToday = $allStays
+            ->filter(fn (Stay $stay) => $stay->reservation->check_out_date->isToday())
+            ->values();
+
         return view('admin.front-desk', [
+            'tab' => $tab,
+            'search' => $search,
+            'showNewBooking' => $request->boolean('new'),
             'reservations' => $reservations,
+            'arrivalsToday' => $arrivalsToday,
+            'departuresToday' => $departuresToday,
+            'readyRoomCount' => $readyUnoccupiedRooms->count(),
+            'dirtyRoomCount' => $rooms->where('housekeeping_status', 'dirty')->count(),
+            'outOfOrderRoomCount' => $rooms->where('housekeeping_status', 'out_of_order')->count(),
             'roomTypes' => RoomType::query()->where('is_active', true)->orderBy('name')->get(),
             'ratePlans' => RatePlan::query()->where('is_active', true)->orderBy('name')->get(),
             'rooms' => $rooms,
@@ -177,12 +237,16 @@ class FrontDeskController extends Controller
 
         $messages->sendBookingConfirmation($reservation);
 
-        return back()->with(
-            'status',
-            "Booking {$reservation->booking_number} created successfully. Total ₹"
-            .number_format((float) $reservation->total, 2)
-            .'. Customer confirmation processed.'
-        );
+        $targetTab = $reservation->check_in_date->isToday() ? 'arrivals' : 'reservations';
+
+        return redirect()
+            ->route('admin.front-desk', ['tab' => $targetTab, 'focus' => $reservation->id])
+            ->with(
+                'status',
+                "Booking {$reservation->booking_number} created successfully. Total ₹"
+                .number_format((float) $reservation->total, 2)
+                .'. Customer confirmation processed.'
+            );
     }
 
     public function modifyReservation(
