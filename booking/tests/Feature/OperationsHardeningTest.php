@@ -9,6 +9,7 @@ use App\Models\RatePlan;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\ReservationRoom;
+use App\Models\ReservationNightRate;
 use App\Models\RestaurantCategory;
 use App\Models\RestaurantMenuItem;
 use App\Models\Room;
@@ -177,11 +178,11 @@ class OperationsHardeningTest extends TestCase
         app(FrontDeskService::class)->extendStay($stay, CarbonImmutable::parse(today()->addDays(2)));
 
         $this->assertSame(today()->addDays(2)->toDateString(), $reservation->fresh()->check_out_date->toDateString());
-        $this->assertDatabaseHas('reservation_night_rates', [
-            'reservation_id' => $reservation->id,
-            'stay_date' => today()->addDay()->toDateString(),
-            'line_total' => 2000,
-        ]);
+        $night = ReservationNightRate::query()
+            ->where('reservation_id', $reservation->id)
+            ->whereDate('stay_date', today()->addDay()->toDateString())
+            ->firstOrFail();
+        $this->assertSame('2000.00', $night->line_total);
         $this->assertDatabaseHas('folio_charges', [
             'folio_id' => $stay->folio->id,
             'source_key' => 'stay-extension:'.$stay->id.':'.today()->addDays(2)->toDateString(),
