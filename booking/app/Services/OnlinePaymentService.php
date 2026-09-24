@@ -101,7 +101,7 @@ class OnlinePaymentService
             ->where('provider_order_id', $providerOrderId)
             ->firstOrFail();
 
-        if (! in_array($gatewayOrder->status, ['created', 'paid'], true)) {
+        if (! in_array($gatewayOrder->status, ['created', 'paid', 'stale', 'paid_stale'], true)) {
             throw new RuntimeException('This online payment order is no longer valid.');
         }
 
@@ -182,10 +182,6 @@ class OnlinePaymentService
                     if ((int) ($payment['amount'] ?? 0) !== (int) $gatewayOrder->amount_subunits) {
                         throw new RuntimeException('Webhook payment amount does not match booking order.');
                     }
-                    if ($gatewayOrder->status === 'stale') {
-                        throw new RuntimeException('Captured payment belongs to a stale booking order and requires manual reconciliation.');
-                    }
-
                     $this->recordCapturedPayment(
                         $gatewayOrder,
                         $providerPaymentId,
@@ -232,22 +228,22 @@ class OnlinePaymentService
                 return $existing;
             }
 
-            if (! in_array($lockedOrder->status, ['created', 'paid'], true)) {
+            if (! in_array($lockedOrder->status, ['created', 'paid', 'stale', 'paid_stale'], true)) {
                 throw new RuntimeException('Online payment order is not eligible for capture posting.');
             }
 
-            $payment = $this->payments->record([
-                'idempotency_key' => (string) Str::uuid(),
-                'reservation_id' => $lockedOrder->reservation_id,
-                'method' => 'online_gateway',
-                'status' => 'succeeded',
-                'amount' => round($amountSubunits / 100, 2),
-                'external_reference' => $providerPaymentId,
-            ]);
+            $wasStale = in_array($lockedOrder->status, ['stale', 'paid_stale'], true);
+
+            $payment = $this->payments->recordProviderCaptured(
+                $lockedOrder->reservation_id,
+                round($amountSubunits / 100, 2),
+                $providerPaymentId,
+                (string) Str::uuid()
+            );
 
             $lockedOrder->update([
                 'provider_payment_id' => $providerPaymentId,
-                'status' => 'paid',
+                'status' => $wasStale ? 'paid_stale' : 'paid',
             ]);
 
             return $payment;

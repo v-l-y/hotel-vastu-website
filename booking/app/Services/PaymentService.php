@@ -71,6 +71,52 @@ class PaymentService
         }, 3);
     }
 
+    public function recordProviderCaptured(
+        int $reservationId,
+        float $amount,
+        string $externalReference,
+        string $idempotencyKey
+    ): Payment {
+        return DB::transaction(function () use (
+            $reservationId,
+            $amount,
+            $externalReference,
+            $idempotencyKey
+        ) {
+            $existing = Payment::query()
+                ->where('external_reference', $externalReference)
+                ->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $reservation = Reservation::query()
+                ->whereKey($reservationId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $amount = round($amount, 2);
+            if ($amount <= 0) {
+                throw new RuntimeException('Captured provider payment amount must be greater than zero.');
+            }
+
+            $payment = Payment::query()->create([
+                'idempotency_key' => $idempotencyKey,
+                'reservation_id' => $reservation->id,
+                'method' => 'online_gateway',
+                'status' => 'succeeded',
+                'amount' => $amount,
+                'external_reference' => $externalReference,
+                'paid_at' => now(),
+            ]);
+
+            $this->syncTarget($payment);
+
+            return $payment;
+        }, 3);
+    }
+
     public function refund(Payment $payment, array $data): Refund
     {
         $existing = Refund::query()->where('idempotency_key', $data['idempotency_key'])->first();
