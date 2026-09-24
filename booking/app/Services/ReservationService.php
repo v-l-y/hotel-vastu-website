@@ -15,8 +15,10 @@ use RuntimeException;
 
 class ReservationService
 {
-    public function __construct(private PricingService $pricing)
-    {
+    public function __construct(
+        private PricingService $pricing,
+        private AvailabilityService $availability
+    ) {
     }
 
     public function confirmHold(string $token, array $guestData): Reservation
@@ -85,6 +87,105 @@ class ReservationService
 
             $reservation = $this->pricing->priceReservation($reservation);
             $hold->update(['converted_reservation_id' => $reservation->id]);
+
+            ReservationFeedback::query()->create([
+                'reservation_id' => $reservation->id,
+                'token' => (string) Str::uuid(),
+            ]);
+
+            return $reservation->load(['rooms', 'guestLinks.guest', 'feedback']);
+        }, 3);
+    }
+
+    public function createFrontDeskBooking(array $data): Reservation
+    {
+        return DB::transaction(function () use ($data) {
+            $checkIn = \Carbon\CarbonImmutable::parse($data['check_in']);
+            $checkOut = \Carbon\CarbonImmutable::parse($data['check_out']);
+            $quantity = (int) $data['rooms'];
+            $adults = (int) $data['adults'];
+            $children = (int) ($data['children'] ?? 0);
+            $roomTypeId = (int) $data['room_type_id'];
+            $ratePlanId = (int) $data['rate_plan_id'];
+
+            $roomType = RoomType::query()
+                ->whereKey($roomTypeId)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            \App\Models\RatePlan::query()
+                ->whereKey($ratePlanId)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($checkIn->isBefore(today()) || $checkOut->lessThanOrEqualTo($checkIn)) {
+                throw new RuntimeException('Choose a valid current or future stay window.');
+            }
+
+            if ($roomType->max_adults !== null && $adults > ($roomType->max_adults * $quantity)) {
+                throw new RuntimeException('The selected room quantity cannot accommodate this many adults.');
+            }
+
+            if ($roomType->max_children !== null && $children > ($roomType->max_children * $quantity)) {
+                throw new RuntimeException('The selected room quantity cannot accommodate this many children.');
+            }
+
+            $availability = $this->availability->forRoomType(
+                $roomTypeId,
+                $checkIn,
+                $checkOut
+            );
+
+            if ($availability['available_rooms'] < $quantity) {
+                throw new RuntimeException('Requested room inventory is no longer available.');
+            }
+
+            $this->pricing->quote(
+                $roomTypeId,
+                $ratePlanId,
+                $checkIn,
+                $checkOut,
+                $quantity
+            );
+
+            $guest = Guest::query()->create([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'] ?? null,
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+            ]);
+
+            $reservation = Reservation::query()->create([
+                'booking_number' => $this->nextBookingNumber(),
+                'public_token' => (string) Str::uuid(),
+                'check_in_date' => $checkIn->toDateString(),
+                'check_out_date' => $checkOut->toDateString(),
+                'adults' => $adults,
+                'children' => $children,
+                'status' => 'confirmed',
+                'source' => 'front_desk',
+                'special_request' => $data['special_request'] ?? null,
+                'payment_status' => 'unpaid',
+                'pricing_status' => 'pending',
+            ]);
+
+            ReservationRoom::query()->create([
+                'reservation_id' => $reservation->id,
+                'room_type_id' => $roomTypeId,
+                'rate_plan_id' => $ratePlanId,
+                'quantity' => $quantity,
+                'nightly_rate' => null,
+            ]);
+
+            ReservationGuest::query()->create([
+                'reservation_id' => $reservation->id,
+                'guest_id' => $guest->id,
+                'role' => 'primary',
+            ]);
+
+            $reservation = $this->pricing->priceReservation($reservation);
 
             ReservationFeedback::query()->create([
                 'reservation_id' => $reservation->id,
