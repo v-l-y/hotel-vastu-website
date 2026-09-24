@@ -63,6 +63,14 @@ class FrontDeskBookingTest extends TestCase
             return str_contains($mail->messageSubject, 'Booking confirmed - ')
                 && str_contains($mail->messageBody, 'Your Hotel Vastu Premium booking is confirmed.');
         });
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/front-desk')
+            ->assertOk()
+            ->assertSee($reservation->booking_number)
+            ->assertSee('Walkin Guest')
+            ->assertSee('Desk booking')
+            ->assertSee('Check in');
     }
 
     public function test_front_desk_booking_respects_live_inventory_and_does_not_oversell(): void
