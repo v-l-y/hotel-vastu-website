@@ -69,6 +69,25 @@ class PaymentService
                 $data['restaurant_order_id'] ?? null
             );
 
+            // A concurrent request with the same key may have committed while this
+            // request was waiting for the target row lock.
+            $existing = Payment::query()->where('idempotency_key', $data['idempotency_key'])->first();
+            if ($existing !== null) {
+                $sameRequest =
+                    (int) ($existing->reservation_id ?? 0) === (int) ($data['reservation_id'] ?? 0)
+                    && (int) ($existing->folio_id ?? 0) === (int) ($data['folio_id'] ?? 0)
+                    && (int) ($existing->restaurant_order_id ?? 0) === (int) ($data['restaurant_order_id'] ?? 0)
+                    && $existing->method === $data['method']
+                    && abs((float) $existing->amount - $amount) < 0.009
+                    && (string) ($existing->external_reference ?? '') === (string) ($data['external_reference'] ?? '');
+
+                if (! $sameRequest) {
+                    throw new RuntimeException('Idempotency key was already used for a different payment request.');
+                }
+
+                return $existing;
+            }
+
             if ($amount > $due + 0.009) {
                 throw new RuntimeException('Payment amount exceeds the outstanding balance.');
             }
@@ -265,8 +284,25 @@ class PaymentService
             return $existing;
         }
 
-        $refund = DB::transaction(function () use ($payment, $data, $reason, $refundType) {
+        $refundResult = DB::transaction(function () use ($payment, $data, $reason, $refundType) {
             $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            // Re-check after the payment row lock so a concurrent same-key refund
+            // that committed while we waited is returned idempotently.
+            $existing = Refund::query()->where('idempotency_key', $data['idempotency_key'])->first();
+            if ($existing !== null) {
+                $sameRequest =
+                    (int) $existing->payment_id === (int) $payment->id
+                    && abs((float) $existing->amount - round((float) $data['amount'], 2)) < 0.009
+                    && (string) ($existing->reason ?? '') === (string) ($data['reason'] ?? '')
+                    && (string) ($existing->refund_type ?? 'other') === $refundType;
+
+                if (! $sameRequest) {
+                    throw new RuntimeException('Idempotency key was already used for a different refund request.');
+                }
+
+                return ['refund' => $existing, 'replay' => true];
+            }
 
             if ($payment->status !== 'succeeded') {
                 throw new RuntimeException('Only successful payments can be refunded.');
@@ -302,8 +338,14 @@ class PaymentService
                 $this->finalizeRefund($payment, $refund);
             }
 
-            return $refund;
+            return ['refund' => $refund, 'replay' => false];
         }, 3);
+
+        /** @var Refund $refund */
+        $refund = $refundResult['refund'];
+        if ($refundResult['replay']) {
+            return $refund->fresh();
+        }
 
         if ($refund->status === 'pending_manual') {
             return $refund->fresh();
