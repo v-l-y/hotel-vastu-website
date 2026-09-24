@@ -102,13 +102,13 @@ code{word-break:break-all}
 @media(max-width:1100px){.cards,.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){
 .admin-app{grid-template-columns:1fr}
-.admin-sidebar{position:sticky;height:auto;z-index:50;padding:10px 14px;gap:10px}
+.admin-sidebar{position:relative;height:auto;z-index:50;padding:10px 14px;gap:10px}
 .admin-brand{padding:0}.admin-brand span,.admin-user-card,.admin-nav-title{display:none}
 .admin-nav-group{display:block}.admin-nav{display:flex;overflow:auto;padding-bottom:2px;scrollbar-width:thin}
 .admin-nav-link{white-space:nowrap;flex:0 0 auto}.admin-nav-icon{display:none}
 .admin-sidebar-foot{margin:0;position:absolute;right:14px;top:10px}
 .admin-logout{width:auto;padding-inline:12px}
-.admin-topbar{top:62px;padding:12px 16px;min-height:58px}
+.admin-topbar{top:0;padding:12px 16px;min-height:58px}
 .admin-content{padding:18px}
 }
 @media(max-width:640px){
