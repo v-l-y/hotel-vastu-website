@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\AdminUser;
+use App\Services\PreArrivalReminderService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('hotel:status', function () {
     $this->info('Hotel Vastu booking application is ready.');
@@ -44,6 +46,17 @@ Artisan::command('hotel:infra-check', function () {
     $this->info('MySQL + Redis + session/cache configuration are healthy.');
     return 0;
 });
+
+
+Artisan::command('hotel:send-pre-arrival-reminders', function () {
+    $count = app(PreArrivalReminderService::class)->sendForTomorrow();
+    $this->info("Pre-arrival reminders processed: {$count}.");
+    return 0;
+})->purpose('Send one-time reminders for confirmed guests arriving tomorrow.');
+
+Schedule::command('hotel:send-pre-arrival-reminders')
+    ->dailyAt('10:00')
+    ->withoutOverlapping();
 
 Artisan::command('admin:create {email} {--name=} {--role=administrator}', function () {
     $email = strtolower(trim((string) $this->argument('email')));

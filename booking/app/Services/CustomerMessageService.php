@@ -23,23 +23,87 @@ class CustomerMessageService
         $reservation->loadMissing(['guestLinks.guest']);
         $guest = $reservation->guestLinks->first()?->guest;
         $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
+        $paymentStatus = str_replace('_', ' ', ucfirst((string) $reservation->payment_status));
 
-        $message = "Hotel Vastu booking confirmed. {$reservation->booking_number}, "
-            .$reservation->check_in_date->format('d M Y')." to "
-            .$reservation->check_out_date->format('d M Y').". Status: {$statusUrl}";
+        $message = "Booking confirmed at Hotel Vastu Premium. {$reservation->booking_number}. "
+            ."Check-in {$reservation->check_in_date->format('d M Y')}, "
+            ."check-out {$reservation->check_out_date->format('d M Y')}. "
+            ."Total INR {$reservation->total}. Payment: {$paymentStatus}. "
+            ."Status: {$statusUrl}";
 
         $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
 
         if ($guest?->email) {
             $body = "Your Hotel Vastu Premium booking is confirmed.\n\n"
-                ."Booking: {$reservation->booking_number}\n"
+                ."Booking number: {$reservation->booking_number}\n"
                 ."Check-in: {$reservation->check_in_date->format('d M Y')}\n"
                 ."Check-out: {$reservation->check_out_date->format('d M Y')}\n"
                 ."Total: INR {$reservation->total}\n"
-                ."Payment: {$reservation->payment_status}\n\n"
+                ."Payment status: {$paymentStatus}\n\n"
+                ."View booking status: {$statusUrl}\n\n"
+                ."Please keep this secure link for your booking updates.\n";
+
+            $this->sendEmailBestEffort(
+                $guest->email,
+                'Booking confirmed - '.$reservation->booking_number.' | Hotel Vastu Premium',
+                $body
+            );
+        }
+    }
+
+    public function sendPreArrivalReminder(Reservation $reservation): void
+    {
+        $reservation->loadMissing(['guestLinks.guest']);
+        $guest = $reservation->guestLinks->first()?->guest;
+        $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
+
+        $message = "Reminder: your Hotel Vastu Premium stay starts "
+            .$reservation->check_in_date->format('d M Y').". "
+            ."Booking {$reservation->booking_number}. "
+            ."If your plans changed, please contact the hotel. {$statusUrl}";
+
+        $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
+
+        if ($guest?->email) {
+            $body = "Your stay at Hotel Vastu Premium is tomorrow.\n\n"
+                ."Booking number: {$reservation->booking_number}\n"
+                ."Check-in: {$reservation->check_in_date->format('d M Y')}\n"
+                ."Check-out: {$reservation->check_out_date->format('d M Y')}\n"
+                ."Booking status: {$statusUrl}\n\n"
+                ."If your plans have changed, please contact the hotel.\n";
+
+            $this->sendEmailBestEffort(
+                $guest->email,
+                'Stay reminder - '.$reservation->booking_number.' | Hotel Vastu Premium',
+                $body
+            );
+        }
+    }
+
+    public function sendNoShow(Reservation $reservation): void
+    {
+        $reservation->loadMissing(['guestLinks.guest']);
+        $guest = $reservation->guestLinks->first()?->guest;
+        $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
+
+        $message = "Hotel Vastu Premium booking {$reservation->booking_number} was marked no-show. "
+            ."No refund is processed automatically. Booking status: {$statusUrl}";
+
+        $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
+
+        if ($guest?->email) {
+            $body = "Your Hotel Vastu Premium reservation was marked as no-show.\n\n"
+                ."Booking number: {$reservation->booking_number}\n"
+                ."Scheduled check-in: {$reservation->check_in_date->format('d M Y')}\n"
+                ."Status: No show\n\n"
+                ."No refund is processed automatically. Any refund or adjustment follows the hotel's applicable booking policy.\n"
                 ."View booking status: {$statusUrl}\n";
 
-            $this->sendEmailBestEffort($guest->email, 'Hotel Vastu booking '.$reservation->booking_number, $body);
+            $this->sendEmailBestEffort(
+                $guest->email,
+                'No-show status - '.$reservation->booking_number.' | Hotel Vastu Premium',
+                $body
+            );
         }
     }
 

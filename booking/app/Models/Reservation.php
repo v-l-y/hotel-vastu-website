@@ -12,7 +12,7 @@ class Reservation extends Model
         'booking_number', 'public_token', 'check_in_date', 'check_out_date',
         'adults', 'children', 'status', 'source', 'special_request',
         'subtotal', 'tax', 'discount', 'total', 'payment_status',
-        'pricing_status', 'expires_at',
+        'pricing_status', 'expires_at', 'pre_arrival_reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class Reservation extends Model
             'check_in_date' => 'date',
             'check_out_date' => 'date',
             'expires_at' => 'datetime',
+            'pre_arrival_reminder_sent_at' => 'datetime',
             'subtotal' => 'decimal:2',
             'tax' => 'decimal:2',
             'discount' => 'decimal:2',

@@ -264,15 +264,20 @@ class FrontDeskController extends Controller
         return back()->with('status', 'Reservation cancelled. Review any collected payment for refund.');
     }
 
-    public function noShow(Reservation $reservation, ReservationLifecycleService $service): RedirectResponse
-    {
+    public function noShow(
+        Reservation $reservation,
+        ReservationLifecycleService $service,
+        CustomerMessageService $messages
+    ): RedirectResponse {
         try {
-            $service->markNoShow($reservation);
+            $reservation = $service->markNoShow($reservation);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['front_desk' => $exception->getMessage()]);
         }
 
-        return back()->with('status', 'Reservation marked no-show.');
+        $messages->sendNoShow($reservation->load(['guestLinks.guest']));
+
+        return back()->with('status', 'Reservation marked no-show. Customer notification sent.');
     }
 
     private function roomBlockedForRange(
