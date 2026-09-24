@@ -63,6 +63,28 @@ const expectedBookingHref=["localhost","127.0.0.1","::1","[::1]"].includes(booki
 const bookingContext=await browser.newContext({viewport:{width:1280,height:900},timezoneId:"Asia/Kolkata"});
 const home=await bookingContext.newPage();
 await home.goto(`${base}/index.html`,{waitUntil:"networkidle"});
+const readHeaderGeometry=()=>home.evaluate(()=>{
+  const header=document.querySelector(".site-header");
+  const logo=document.querySelector(".brand-logo img");
+  const nav=document.querySelector(".site-header .nav");
+  if(!header||!logo||!nav)return null;
+  const h=header.getBoundingClientRect();
+  const l=logo.getBoundingClientRect();
+  const n=nav.getBoundingClientRect();
+  return {headerHeight:h.height,logoWidth:l.width,navLeft:n.left,navRight:n.right};
+});
+const headerTopGeometry=await readHeaderGeometry();
+await home.evaluate(()=>window.scrollTo(0,160));
+await home.waitForTimeout(350);
+const headerScrolledGeometry=await readHeaderGeometry();
+if(!headerTopGeometry||!headerScrolledGeometry){
+  failures.push("header stability geometry could not be measured");
+}else{
+  const shifted=Object.keys(headerTopGeometry).some(key=>Math.abs(headerTopGeometry[key]-headerScrolledGeometry[key])>0.5);
+  if(shifted)failures.push(`header geometry changed on scroll: ${JSON.stringify({top:headerTopGeometry,scrolled:headerScrolledGeometry})}`);
+}
+await home.evaluate(()=>window.scrollTo(0,0));
+await home.waitForTimeout(100);
 const revealCount=await home.locator(".lux-reveal").count();
 if(revealCount<1)failures.push("scroll reveal targets were not initialized");
 else{
