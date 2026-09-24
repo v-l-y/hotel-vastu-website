@@ -62,6 +62,24 @@
 .front-desk-feedback{display:grid;gap:9px}
 .front-desk-feedback-item{padding:12px;border:1px solid #ece5df;border-radius:12px;background:#fcfaf8}
 .front-desk-feedback-item p{margin:5px 0 0}
+.front-desk-booking-modal{width:min(920px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:0;border:0;border-radius:20px;background:#fff;color:#231e1a;box-shadow:0 24px 70px rgba(20,14,10,.28);overflow:hidden}
+.front-desk-booking-modal::backdrop{background:rgba(26,20,16,.62);backdrop-filter:blur(2px)}
+.front-desk-modal-shell{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:calc(100vh - 32px)}
+.front-desk-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid #e8e0da;background:#fcfaf8}
+.front-desk-modal-head h2{margin:0 0 5px;font-size:1.45rem}
+.front-desk-modal-head p{margin:0;color:#6f675f}
+.front-desk-modal-close{width:42px;height:42px;min-height:42px;padding:0;border-radius:999px;background:#eee8e2;color:#2b211b;font-size:1.35rem;line-height:1}
+.front-desk-modal-body{overflow:auto;padding:20px 22px}
+.front-desk-modal-body .front-desk-form-note{margin-top:0}
+.front-desk-form-section{border:0;padding:0;margin:0 0 22px}
+.front-desk-form-section legend{font-size:1rem;font-weight:800;margin-bottom:12px}
+.front-desk-field-title{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.front-desk-field-title small{font-weight:500;color:#81776e}
+.front-desk-required{color:#7d1c1c;font-weight:800}
+.front-desk-field-help{font-size:.82rem;color:#776e66;font-weight:500;margin-top:-2px}
+.front-desk-modal-actions{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:14px 0 0;margin-top:4px;background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 18px)}
+.front-desk-modal-actions-inner{width:100%;display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid #ece4de}
+
 @media(max-width:900px){
 .front-desk-layout{grid-template-columns:1fr}
 .front-desk-room-board{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -82,70 +100,13 @@
 @endpush
 
 @section('content')
-@if($showNewBooking)
-<div class="front-desk-booking-shell">
-<div class="front-desk-shell">
-<div class="front-desk-hero">
-<div>
-<h1>New booking</h1>
-<p>Create a confirmed desk / walk-in reservation. Inventory and pricing are checked when you confirm.</p>
-</div>
-<a class="button-link" href="{{ route('admin.front-desk') }}">← Back to Front Desk</a>
-</div>
-
-<section class="front-desk-booking-panel" data-front-desk-booking>
-<div class="front-desk-form-note"><strong>Desk booking flow:</strong> guest details → stay details → room & rate → confirmation.</div>
-<form class="grid" method="post" action="{{ route('admin.front-desk.create') }}">
-@csrf
-
-<fieldset class="front-desk-form-section full">
-<legend>Guest details</legend>
-<div class="grid">
-<label>First name<input name="first_name" value="{{ old('first_name') }}" maxlength="100" required></label>
-<label>Last name<input name="last_name" value="{{ old('last_name') }}" maxlength="100"></label>
-<label>Phone<input name="phone" value="{{ old('phone') }}" maxlength="30" required></label>
-<label>Email<input type="email" name="email" value="{{ old('email') }}" maxlength="190"></label>
-</div>
-</fieldset>
-
-<fieldset class="front-desk-form-section full">
-<legend>Stay details</legend>
-<div class="grid">
-<label>Check-in<input type="date" name="check_in" value="{{ old('check_in', today()->toDateString()) }}" min="{{ today()->toDateString() }}" required></label>
-<label>Check-out<input type="date" name="check_out" value="{{ old('check_out', today()->addDay()->toDateString()) }}" min="{{ today()->addDay()->toDateString() }}" required></label>
-<label>Rooms<input type="number" name="rooms" min="1" max="10" value="{{ old('rooms',1) }}" required></label>
-<label>Adults<input type="number" name="adults" min="1" max="30" value="{{ old('adults',1) }}" required></label>
-<label>Children<input type="number" name="children" min="0" max="30" value="{{ old('children',0) }}" required></label>
-</div>
-</fieldset>
-
-<fieldset class="front-desk-form-section full">
-<legend>Room & rate</legend>
-<div class="grid">
-<label>Room type<select name="room_type_id" required><option value="">Choose room type</option>@foreach($roomTypes as $type)<option value="{{ $type->id }}" @selected((string)old('room_type_id')===(string)$type->id)>{{ $type->name }}</option>@endforeach</select></label>
-<label>Rate plan<select name="rate_plan_id" required><option value="">Choose rate plan</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" @selected((string)old('rate_plan_id')===(string)$plan->id)>{{ $plan->name }}</option>@endforeach</select></label>
-</div>
-</fieldset>
-
-<label class="full">Special request<textarea name="special_request" rows="3" maxlength="2000" placeholder="Optional guest note">{{ old('special_request') }}</textarea></label>
-
-<div class="full front-desk-actions-bar">
-<a class="button-link" href="{{ route('admin.front-desk') }}">Cancel</a>
-<button type="submit">Check availability & confirm booking</button>
-</div>
-</form>
-</section>
-</div>
-</div>
-@else
-
 <div class="front-desk-shell">
 <section class="front-desk-hero">
 <div>
 <h1>Front desk</h1>
 <p>Run arrivals, in-house stays, reservations and room readiness from one operational workspace.</p>
 </div>
-<a class="button-link" href="{{ route('admin.front-desk',['new'=>1]) }}">+ New booking</a>
+<button type="button" class="button-link" data-open-booking-modal>+ New booking</button>
 </section>
 
 <div class="front-desk-command">
@@ -377,5 +338,148 @@
 </section>
 @endif
 </div>
-@endif
+
+<dialog id="new-booking-modal" class="front-desk-booking-modal" aria-labelledby="new-booking-title">
+<div class="front-desk-modal-shell">
+<div class="front-desk-modal-head">
+<div>
+<h2 id="new-booking-title">New booking</h2>
+<p>Create a confirmed desk / walk-in reservation.</p>
+</div>
+<button type="button" class="front-desk-modal-close" data-close-booking-modal aria-label="Close new booking">×</button>
+</div>
+
+<div class="front-desk-modal-body">
+<div class="front-desk-form-note">
+<strong>Before you confirm:</strong> availability and pricing are checked again when the booking is saved. A physical room number is assigned later at check-in.
+</div>
+
+<form method="post" action="{{ route('admin.front-desk.create') }}" data-front-desk-booking>
+@csrf
+<input type="hidden" name="_booking_modal" value="1">
+
+<fieldset class="front-desk-form-section">
+<legend>Guest details</legend>
+<div class="grid">
+<label>
+<span class="front-desk-field-title"><span>First name <span class="front-desk-required">*</span></span></span>
+<input name="first_name" value="{{ old('first_name') }}" maxlength="100" autocomplete="given-name" required autofocus>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Last name</span><small>Optional</small></span>
+<input name="last_name" value="{{ old('last_name') }}" maxlength="100" autocomplete="family-name">
+</label>
+<label>
+<span class="front-desk-field-title"><span>Phone <span class="front-desk-required">*</span></span></span>
+<input type="tel" name="phone" value="{{ old('phone') }}" maxlength="30" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" required>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Email</span><small>Optional</small></span>
+<input type="email" name="email" value="{{ old('email') }}" maxlength="190" autocomplete="email" placeholder="guest@example.com">
+<span class="front-desk-field-help">Used for booking confirmation when provided.</span>
+</label>
+</div>
+</fieldset>
+
+<fieldset class="front-desk-form-section">
+<legend>Stay details</legend>
+<div class="grid">
+<label>
+<span class="front-desk-field-title"><span>Check-in <span class="front-desk-required">*</span></span></span>
+<input type="date" name="check_in" value="{{ old('check_in', today()->toDateString()) }}" min="{{ today()->toDateString() }}" required>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Check-out <span class="front-desk-required">*</span></span></span>
+<input type="date" name="check_out" value="{{ old('check_out', today()->addDay()->toDateString()) }}" min="{{ today()->addDay()->toDateString() }}" required>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Rooms <span class="front-desk-required">*</span></span></span>
+<input type="number" name="rooms" min="1" max="10" value="{{ old('rooms',1) }}" inputmode="numeric" required>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Adults <span class="front-desk-required">*</span></span></span>
+<input type="number" name="adults" min="1" max="30" value="{{ old('adults',1) }}" inputmode="numeric" required>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Children <span class="front-desk-required">*</span></span></span>
+<input type="number" name="children" min="0" max="30" value="{{ old('children',0) }}" inputmode="numeric" required>
+</label>
+</div>
+</fieldset>
+
+<fieldset class="front-desk-form-section">
+<legend>Room & rate</legend>
+<div class="grid">
+<label>
+<span class="front-desk-field-title"><span>Room type <span class="front-desk-required">*</span></span></span>
+<select name="room_type_id" required>
+<option value="">Choose room type</option>
+@foreach($roomTypes as $type)
+<option value="{{ $type->id }}" @selected((string)old('room_type_id')===(string)$type->id)>{{ $type->name }}</option>
+@endforeach
+</select>
+</label>
+<label>
+<span class="front-desk-field-title"><span>Rate plan <span class="front-desk-required">*</span></span></span>
+<select name="rate_plan_id" required>
+<option value="">Choose rate plan</option>
+@foreach($ratePlans as $plan)
+<option value="{{ $plan->id }}" @selected((string)old('rate_plan_id')===(string)$plan->id)>{{ $plan->name }}</option>
+@endforeach
+</select>
+</label>
+</div>
+</fieldset>
+
+<label>
+<span class="front-desk-field-title"><span>Special request</span><small>Optional</small></span>
+<textarea name="special_request" rows="3" maxlength="2000" placeholder="Late arrival, accessibility need, food preference, or other guest note">{{ old('special_request') }}</textarea>
+</label>
+
+<div class="front-desk-modal-actions">
+<div class="front-desk-modal-actions-inner">
+<button type="button" class="button-link" data-close-booking-modal>Cancel</button>
+<button type="submit">Check availability & confirm booking</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</dialog>
+
+<script>
+(() => {
+    const dialog = document.getElementById('new-booking-modal');
+    if (!dialog) return;
+
+    const open = () => {
+        if (!dialog.open) dialog.showModal();
+    };
+
+    const close = () => {
+        if (dialog.open) dialog.close();
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('new')) {
+            url.searchParams.delete('new');
+            history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+        }
+    };
+
+    document.querySelectorAll('[data-open-booking-modal]').forEach((button) => {
+        button.addEventListener('click', open);
+    });
+
+    dialog.querySelectorAll('[data-close-booking-modal]').forEach((button) => {
+        button.addEventListener('click', close);
+    });
+
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) close();
+    });
+
+    const shouldOpen = @json($showNewBooking || (string) old('_booking_modal') === '1');
+    if (shouldOpen) open();
+})();
+</script>
+
 @endsection
