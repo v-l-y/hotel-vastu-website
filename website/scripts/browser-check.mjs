@@ -103,12 +103,13 @@ const bookingFormState=await home.locator("[data-home-booking]").evaluate(form=>
   method:form.method,
   checkInName:document.getElementById("home-checkin")?.name,
   checkOutName:document.getElementById("home-checkout")?.name,
-  adultsName:document.getElementById("home-guests")?.name,
+  adultsName:document.getElementById("home-adults")?.name,
+  childrenName:document.getElementById("home-children")?.name,
   roomName:document.getElementById("home-room")?.name
 }));
 if(bookingFormState.action!=="https://booking.hotelvastu.com/")failures.push(`booking form action ${bookingFormState.action} != https://booking.hotelvastu.com/`);
 if(bookingFormState.method!=="get")failures.push("booking form must use GET for non-PII stay-prefill fields");
-if(bookingFormState.checkInName!=="check_in"||bookingFormState.checkOutName!=="check_out"||bookingFormState.adultsName!=="adults"||bookingFormState.roomName!=="room_code")failures.push("booking form prefill field names are incomplete");
+if(bookingFormState.checkInName!=="check_in"||bookingFormState.checkOutName!=="check_out"||bookingFormState.adultsName!=="adults"||bookingFormState.childrenName!=="children"||bookingFormState.roomName!=="room_code")failures.push("booking form prefill field names are incomplete");
 
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
