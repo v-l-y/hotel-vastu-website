@@ -84,6 +84,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
             Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
+            Route::post('/payments/refunds/{refund}/reconcile', [PaymentController::class, 'reconcileRefund'])->name('payments.refunds.reconcile');
         });
 
         Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
