@@ -82,7 +82,10 @@ class SetupController extends Controller
 
     public function closeRoomBlock(RoomBlock $roomBlock): RedirectResponse
     {
-        $roomBlock->update(['status' => 'inactive']);
+        $roomBlock->update([
+            'status' => 'inactive',
+            'closed_at' => $roomBlock->closed_at ?? now(),
+        ]);
 
         return back()->with('status', 'Room block closed.');
     }
