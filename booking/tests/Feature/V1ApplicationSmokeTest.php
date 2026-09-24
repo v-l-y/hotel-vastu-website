@@ -101,7 +101,10 @@ class V1ApplicationSmokeTest extends TestCase
         $this->get('/confirmation/'.$reservation->public_token)
             ->assertOk()
             ->assertSee($reservation->booking_number)
-            ->assertSee('Booking confirmation');
+            ->assertSee('Booking confirmation')
+            ->assertSee('V1 Smoke Room')
+            ->assertSee('V1 Smoke Plan')
+            ->assertDontSee('A confirmation has been sent');
     }
 
     public function test_administrator_can_render_every_core_v1_admin_page(): void
