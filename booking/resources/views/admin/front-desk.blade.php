@@ -31,7 +31,15 @@
 @php($checkInWindowOpen=$checkInWindowOpenByReservation[$reservation->id] ?? false)
 @php($checkInReady=$checkInReadyByReservation[$reservation->id] ?? false)
 <article>
-<strong>{{ $reservation->booking_number }}</strong> · {{ $reservation->check_in_date->format('d M Y') }} → {{ $reservation->check_out_date->format('d M Y') }} · ₹{{ number_format((float)$reservation->total,2) }}
+@php($reservationGuest=optional($reservation->guestLinks->first())->guest)
+<strong>{{ $reservation->booking_number }}</strong>
+@if($reservationGuest)
+· {{ trim(($reservationGuest->first_name ?? '').' '.($reservationGuest->last_name ?? '')) }}
+· {{ $reservationGuest->phone }}
+@endif
+· {{ $reservation->check_in_date->format('d M Y') }} → {{ $reservation->check_out_date->format('d M Y') }}
+· ₹{{ number_format((float)$reservation->total,2) }}
+@if($reservation->source === 'front_desk') · <span class="muted">Desk booking</span>@endif
 <details><summary>Edit reservation</summary><form class="grid" method="post" action="{{ route('admin.front-desk.modify',$reservation) }}">@csrf
 @php($line=$reservation->rooms->first())
 <label>Check-in<input type="date" name="check_in" value="{{ $reservation->check_in_date->toDateString() }}" required></label>
