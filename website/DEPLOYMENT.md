@@ -11,7 +11,7 @@ Target canonical domain: **https://hotelvastu.com/**
 
 ## 2. Files to upload
 
-Upload the repository contents to the web root, including hidden files:
+Upload the deployable contents of the repository's `website/` directory to the web root, including hidden files:
 
 - HTML pages
 - `css/`

@@ -9,6 +9,9 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
     steps:
       - name: Checkout
         uses: actions/checkout@v7
