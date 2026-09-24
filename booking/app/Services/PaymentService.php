@@ -367,10 +367,13 @@ class PaymentService
                 ->sum('amount');
             $net = $payments - $refunds;
 
+            $total = (float) $reservation->total;
             $reservation->update([
                 'payment_status' => $net <= 0
                     ? 'unpaid'
-                    : ($net + 0.009 >= (float) $reservation->total ? 'paid' : 'partially_paid'),
+                    : ($net > $total + 0.009
+                        ? 'overpaid'
+                        : ($net + 0.009 >= $total ? 'paid' : 'partially_paid')),
             ]);
         }
 
