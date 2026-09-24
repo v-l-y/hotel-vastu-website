@@ -53,11 +53,12 @@
 <table><thead><tr><th>Payment</th><th>Target</th><th>Amount</th><th>Refundable</th><th>Refund</th></tr></thead><tbody>
 @foreach($payments as $payment)
 @php($refunded=(float)$payment->refunds->where('status','succeeded')->sum('amount'))
-@php($refundable=max(0,(float)$payment->amount-$refunded))
+@php($pendingRefunds=(float)$payment->refunds->where('status','pending')->sum('amount'))
+@php($refundable=max(0,(float)$payment->amount-$refunded-$pendingRefunds))
 <tr>
 <td>#{{ $payment->id }} · {{ $payment->method }}<br><span class="muted">{{ $payment->paid_at?->format('d M Y, h:i A') }}</span></td>
 <td>@if($payment->reservation_id)Reservation {{ $payment->reservation?->booking_number }}@elseif($payment->folio_id)Folio #{{ $payment->folio_id }}@else Restaurant {{ $payment->restaurantOrder?->order_number }}@endif</td>
-<td>₹{{ number_format((float)$payment->amount,2) }}<br>Refunded ₹{{ number_format($refunded,2) }}</td>
+<td>₹{{ number_format((float)$payment->amount,2) }}<br>Refunded ₹{{ number_format($refunded,2) }}@if($pendingRefunds>0)<br>Pending refund ₹{{ number_format($pendingRefunds,2) }}@endif</td>
 <td>₹{{ number_format($refundable,2) }}</td>
 <td>
 @if(($canRefund ?? false) && $refundable>0)
