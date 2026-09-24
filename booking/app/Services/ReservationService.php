@@ -17,7 +17,8 @@ class ReservationService
 {
     public function __construct(
         private PricingService $pricing,
-        private AvailabilityService $availability
+        private AvailabilityService $availability,
+        private PromotionService $promotions
     ) {
     }
 
@@ -50,6 +51,18 @@ class ReservationService
                 throw new RuntimeException('This room hold does not have a valid rate plan.');
             }
 
+            $baseQuote = $this->pricing->quote(
+                $hold->room_type_id,
+                $hold->rate_plan_id,
+                \Carbon\CarbonImmutable::parse($hold->check_in_date),
+                \Carbon\CarbonImmutable::parse($hold->check_out_date),
+                $hold->quantity
+            );
+            $promotion = $this->promotions->consume(
+                $guestData['promo_code'] ?? null,
+                (float) $baseQuote['subtotal']
+            );
+
             $guest = Guest::query()->create([
                 'first_name' => $guestData['first_name'],
                 'last_name' => $guestData['last_name'] ?? null,
@@ -69,6 +82,7 @@ class ReservationService
                 'special_request' => $guestData['special_request'] ?? null,
                 'payment_status' => 'unpaid',
                 'pricing_status' => 'pending',
+                ...($promotion ?? []),
             ]);
 
             ReservationRoom::query()->create([
@@ -142,12 +156,16 @@ class ReservationService
                 throw new RuntimeException('Requested room inventory is no longer available.');
             }
 
-            $this->pricing->quote(
+            $baseQuote = $this->pricing->quote(
                 $roomTypeId,
                 $ratePlanId,
                 $checkIn,
                 $checkOut,
                 $quantity
+            );
+            $promotion = $this->promotions->consume(
+                $data['promo_code'] ?? null,
+                (float) $baseQuote['subtotal']
             );
 
             $guest = Guest::query()->create([
@@ -169,6 +187,7 @@ class ReservationService
                 'special_request' => $data['special_request'] ?? null,
                 'payment_status' => 'unpaid',
                 'pricing_status' => 'pending',
+                ...($promotion ?? []),
             ]);
 
             ReservationRoom::query()->create([
