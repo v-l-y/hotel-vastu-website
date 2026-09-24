@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
+use App\Models\Guest;
 use App\Models\Payment;
+use App\Models\Reservation;
+use App\Models\ReservationGuest;
 use App\Models\RestaurantCategory;
 use App\Models\RestaurantMenuItem;
 use App\Models\RestaurantOrder;
@@ -106,6 +109,99 @@ class AdminPaginationUiTest extends TestCase
             ->assertSee('Recent payments / refunds')
             ->assertSee('Payment #1')
             ->assertSee('Showing 26–26 of 26');
+    }
+
+
+    public function test_front_desk_reservations_are_searchable_beyond_the_old_first_hundred_cap(): void
+    {
+        $admin = $this->admin('front_desk', 'frontdesk-large-list@example.com');
+
+        foreach (range(1, 101) as $index) {
+            $reservation = Reservation::query()->create([
+                'booking_number' => 'HV-FD-PAGE-'.sprintf('%03d', $index),
+                'check_in_date' => today()->addDays(2),
+                'check_out_date' => today()->addDays(3),
+                'adults' => 2,
+                'children' => 0,
+                'status' => 'confirmed',
+                'pricing_status' => 'priced',
+                'payment_status' => 'unpaid',
+                'subtotal' => 1000,
+                'tax' => 0,
+                'total' => 1000,
+            ]);
+            $guest = Guest::query()->create([
+                'first_name' => 'Pagination',
+                'last_name' => 'Guest '.sprintf('%03d', $index),
+                'phone' => '+91 90000 '.sprintf('%05d', $index),
+            ]);
+            ReservationGuest::query()->create([
+                'reservation_id' => $reservation->id,
+                'guest_id' => $guest->id,
+                'role' => 'primary',
+            ]);
+        }
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/front-desk?tab=reservations&q=HV-FD-PAGE-101')
+            ->assertOk()
+            ->assertSee('HV-FD-PAGE-101')
+            ->assertSee('1 booking(s)');
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/front-desk?tab=reservations&reservations_page=5')
+            ->assertOk()
+            ->assertSee('HV-FD-PAGE-101')
+            ->assertSee('Showing 101–101 of 101');
+    }
+
+    public function test_payment_target_queues_paginate_past_fifty_without_hiding_balances(): void
+    {
+        $admin = $this->admin('administrator', 'payments-large-list@example.com');
+
+        foreach (range(1, 51) as $index) {
+            Reservation::query()->create([
+                'booking_number' => 'HV-PAY-PAGE-'.sprintf('%02d', $index),
+                'check_in_date' => today()->addDays(2),
+                'check_out_date' => today()->addDays(3),
+                'adults' => 2,
+                'children' => 0,
+                'status' => 'confirmed',
+                'pricing_status' => 'priced',
+                'payment_status' => 'unpaid',
+                'subtotal' => 100,
+                'tax' => 0,
+                'total' => 100,
+            ]);
+
+            RestaurantOrder::query()->create([
+                'order_number' => 'RO-BAL-'.sprintf('%02d', $index),
+                'order_type' => 'takeaway',
+                'status' => 'served',
+                'payment_status' => 'unpaid',
+                'subtotal' => 100,
+                'tax' => 0,
+                'total' => 100,
+            ]);
+        }
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/payments?reservations_page=3')
+            ->assertOk()
+            ->assertSee('HV-PAY-PAGE-51')
+            ->assertSee('Showing 51–51 of 51');
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/payments?restaurant_page=3')
+            ->assertOk()
+            ->assertSee('RO-BAL-01')
+            ->assertSee('Showing 51–51 of 51');
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/payments?q=HV-PAY-PAGE-51')
+            ->assertOk()
+            ->assertSee('HV-PAY-PAGE-51')
+            ->assertSee('1 booking(s)');
     }
 
     private function admin(string $role, string $email, string $name = 'Pagination Admin'): AdminUser

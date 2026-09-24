@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Book Hotel Vastu Premium</title>
 <style>
-body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}main{max-width:920px;margin:auto;padding:32px 20px 64px}.panel{background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:grid;gap:7px;font-weight:600}input,select,button{min-height:44px;font:inherit}input,select{border:1px solid #b9b0a7;border-radius:8px;padding:0 12px}button{border:0;border-radius:8px;padding:0 18px;background:#2b211b;color:#fff;cursor:pointer}.full{grid-column:1/-1}.result{margin-top:24px}.notice,.error{padding:12px 14px;border-radius:8px}.notice{background:#eef6ee}.error{background:#fff0f0;color:#791717}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.metric{border:1px solid #e2ddd7;border-radius:10px;padding:14px}.metric strong{display:block;font-size:1.5rem}.price{font-size:1.3rem;font-weight:700}@media(max-width:640px){.grid,.metrics{grid-template-columns:1fr}}
+body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}main{max-width:920px;margin:auto;padding:32px 20px 64px}.panel{background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:grid;gap:7px;font-weight:600}input,select,button{min-height:44px;font:inherit}input,select{border:1px solid #b9b0a7;border-radius:8px;padding:0 12px}button{border:0;border-radius:8px;padding:0 18px;background:#2b211b;color:#fff;cursor:pointer}.full{grid-column:1/-1}.result{margin-top:24px}.notice,.error{padding:12px 14px;border-radius:8px}.notice{background:#eef6ee}.error{background:#fff0f0;color:#791717}.price{font-size:1.3rem;font-weight:700}@media(max-width:640px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -19,8 +19,8 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 
 <section class="panel">
 <form class="grid" method="get" action="{{ route('booking.availability') }}">
-<label>Check-in<input type="date" name="check_in" required value="{{ old('check_in', $search['check_in'] ?? request('check_in')) }}"></label>
-<label>Check-out<input type="date" name="check_out" required value="{{ old('check_out', $search['check_out'] ?? request('check_out')) }}"></label>
+<label>Check-in<input type="date" name="check_in" min="{{ today()->toDateString() }}" required value="{{ old('check_in', $search['check_in'] ?? request('check_in')) }}"></label>
+<label>Check-out<input type="date" name="check_out" min="{{ today()->addDay()->toDateString() }}" required value="{{ old('check_out', $search['check_out'] ?? request('check_out')) }}"></label>
 <label>Room type
 <select name="room_type_id" required>
 <option value="">Choose a room</option>
@@ -47,12 +47,9 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 @if ($availability !== null)
 <section class="panel result">
 <h2>{{ $selectedRoomType->name }} · {{ $selectedRatePlan->name }}</h2>
-<div class="metrics">
-<div class="metric"><strong>{{ $availability['total_rooms'] }}</strong>Total inventory</div>
-<div class="metric"><strong>{{ $availability['reserved_rooms'] }}</strong>Reserved</div>
-<div class="metric"><strong>{{ $availability['held_rooms'] }}</strong>Temporarily held</div>
-<div class="metric"><strong>{{ $availability['available_rooms'] }}</strong>Available</div>
-</div>
+@if ($availability['available_rooms'] >= (int) ($search['rooms'] ?? 1))
+<p class="notice"><strong>Available for your selected dates.</strong> You can continue with the requested room quantity.</p>
+@endif
 
 @if ($quoteError)
 <p class="error">{{ $quoteError }}</p>

@@ -37,30 +37,42 @@ class FrontDeskController extends Controller
 
         $search = trim((string) $request->query('q', ''));
 
-        $allReservations = Reservation::query()
+        $reservationQuery = Reservation::query()
             ->where('status', 'confirmed')
             ->with(['rooms.roomType', 'guestLinks.guest'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->where('booking_number', 'like', '%'.$search.'%')
+                        ->orWhereHas('guestLinks.guest', function ($guestQuery) use ($search) {
+                            $guestQuery->where(function ($guestSearch) use ($search) {
+                                $guestSearch
+                                    ->where('first_name', 'like', '%'.$search.'%')
+                                    ->orWhere('last_name', 'like', '%'.$search.'%')
+                                    ->orWhere('phone', 'like', '%'.$search.'%')
+                                    ->orWhere('email', 'like', '%'.$search.'%');
+                            });
+                        });
+                });
+            });
+
+        $reservations = (clone $reservationQuery)
             ->orderBy('check_in_date')
-            ->limit(100)
-            ->get();
+            ->orderBy('id')
+            ->paginate(25, ['*'], 'reservations_page')
+            ->withQueryString();
 
-        $reservations = $allReservations;
+        $arrivalsToday = (clone $reservationQuery)
+            ->whereDate('check_in_date', today()->toDateString())
+            ->orderBy('check_in_date')
+            ->orderBy('id')
+            ->paginate(25, ['*'], 'arrivals_page')
+            ->withQueryString();
 
-        if ($search !== '') {
-            $needle = mb_strtolower($search);
-            $reservations = $allReservations->filter(function (Reservation $reservation) use ($needle) {
-                $guest = $reservation->guestLinks->first()?->guest;
-                $haystack = mb_strtolower(implode(' ', array_filter([
-                    $reservation->booking_number,
-                    $guest?->first_name,
-                    $guest?->last_name,
-                    $guest?->phone,
-                    $guest?->email,
-                ])));
-
-                return str_contains($haystack, $needle);
-            })->values();
-        }
+        $actionReservations = $reservations->getCollection()
+            ->concat($arrivalsToday->getCollection())
+            ->unique('id')
+            ->values();
 
         $rooms = Room::query()
             ->where('status', 'active')
@@ -113,7 +125,7 @@ class FrontDeskController extends Controller
         $checkInWindowOpenByReservation = [];
         $checkInReadyByReservation = [];
 
-        foreach ($allReservations as $reservation) {
+        foreach ($actionReservations as $reservation) {
             $windowOpen = ! today()->lt($reservation->check_in_date)
                 && today()->lt($reservation->check_out_date)
                 && $reservation->pricing_status === 'priced';
@@ -165,17 +177,14 @@ class FrontDeskController extends Controller
             }
         }
 
-        $arrivalCountToday = $allReservations
-            ->filter(fn (Reservation $reservation) => $reservation->check_in_date->isToday())
+        $arrivalCountToday = Reservation::query()
+            ->where('status', 'confirmed')
+            ->whereDate('check_in_date', today()->toDateString())
             ->count();
 
         $departureCountToday = $allStays
             ->filter(fn (Stay $stay) => $stay->reservation->check_out_date->isToday())
             ->count();
-
-        $arrivalsToday = $reservations
-            ->filter(fn (Reservation $reservation) => $reservation->check_in_date->isToday())
-            ->values();
 
         return view('admin.front-desk', [
             'tab' => $tab,

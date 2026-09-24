@@ -23,7 +23,10 @@ class DashboardController extends Controller
 
         $cards = match ($role) {
             'front_desk' => [
-                ['label' => 'Confirmed arrivals', 'value' => Reservation::query()->where('status', 'confirmed')->count()],
+                ['label' => 'Confirmed arrivals', 'value' => Reservation::query()
+                    ->where('status', 'confirmed')
+                    ->whereDate('check_in_date', today()->toDateString())
+                    ->count()],
                 ['label' => 'In-house stays', 'value' => Stay::query()->where('status', 'checked_in')->count()],
                 ['label' => 'Open folios', 'value' => Folio::query()->where('status', 'open')->count()],
             ],
@@ -48,7 +51,10 @@ class DashboardController extends Controller
                 ['label' => 'Invoices issued', 'value' => Invoice::query()->count()],
             ],
             default => [
-                ['label' => 'Confirmed arrivals', 'value' => Reservation::query()->where('status', 'confirmed')->count()],
+                ['label' => 'Confirmed arrivals', 'value' => Reservation::query()
+                    ->where('status', 'confirmed')
+                    ->whereDate('check_in_date', today()->toDateString())
+                    ->count()],
                 ['label' => 'In-house stays', 'value' => Stay::query()->where('status', 'checked_in')->count()],
                 ['label' => 'Open folios', 'value' => Folio::query()->where('status', 'open')->count()],
                 ['label' => 'Active restaurant orders', 'value' => RestaurantOrder::query()

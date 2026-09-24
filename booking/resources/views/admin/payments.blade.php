@@ -87,14 +87,22 @@
 </section>
 
 @if(!$isTargeted)
+<form class="search-bar" method="get" action="{{ route('admin.payments') }}">
+<input name="q" value="{{ $search ?? '' }}" placeholder="Search booking, guest or restaurant order" aria-label="Search payment targets">
+<button type="submit">Search</button>
+@if(($search ?? '') !== '')
+<a class="button-link" href="{{ route('admin.payments') }}">Clear</a>
+@endif
+</form>
+
 <div class="payments-kpis">
 @if($showHotelPayments ?? false)
-<div class="payments-kpi"><span class="muted">Open folios</span><strong>{{ $folios->count() }}</strong><small>In-house balances awaiting settlement</small></div>
-<div class="payments-kpi"><span class="muted">Confirmed bookings</span><strong>{{ $reservations->count() }}</strong><small>Pre-arrival reservations available for payment</small></div>
+<div class="payments-kpi"><span class="muted">Open folios</span><strong>{{ method_exists($folios,'total') ? $folios->total() : $folios->count() }}</strong><small>In-house balances awaiting settlement</small></div>
+<div class="payments-kpi"><span class="muted">Confirmed bookings</span><strong>{{ method_exists($reservations,'total') ? $reservations->total() : $reservations->count() }}</strong><small>Pre-arrival reservations available for payment</small></div>
 <div class="payments-kpi"><span class="muted">Recent invoices</span><strong>{{ method_exists($invoices,'total') ? $invoices->total() : $invoices->count() }}</strong><small>Issued hotel invoices</small></div>
 @endif
 @if($showRestaurantPayments ?? false)
-<div class="payments-kpi"><span class="muted">Restaurant balances</span><strong>{{ $restaurantOrders->count() }}</strong><small>Served dine-in / takeaway orders</small></div>
+<div class="payments-kpi"><span class="muted">Restaurant balances</span><strong>{{ method_exists($restaurantOrders,'total') ? $restaurantOrders->total() : $restaurantOrders->count() }}</strong><small>Served dine-in / takeaway orders</small></div>
 @endif
 <div class="payments-kpi"><span class="muted">Recent payments</span><strong>{{ $payments->total() }}</strong><small>Ledger entries in your scope</small></div>
 </div>
@@ -109,10 +117,10 @@
 @endif
 
 @if(($showHotelPayments ?? false) && !$targetedReservation)
-<section class="payments-section">
+<section class="payments-section" id="folio-balances">
 <div class="payments-section-head">
 <div><h2>Open hotel balances</h2><p class="muted">Settle amounts due or refund in-house credits before checkout.</p></div>
-<span class="status-badge">{{ $folios->count() }} open</span>
+<span class="status-badge">{{ method_exists($folios,'total') ? $folios->total() : $folios->count() }} open</span>
 </div>
 <div class="payments-card-list">
 @forelse($folios as $folio)
@@ -162,14 +170,17 @@
 <div class="payments-empty">No open folio balances.</div>
 @endforelse
 </div>
+@if(method_exists($folios,'links'))
+@include('admin.partials.pagination',['paginator'=>$folios,'label'=>'Open folio pagination','fragment'=>'folio-balances'])
+@endif
 </section>
 @endif
 
 @if(($showHotelPayments ?? false) && !$targetedFolio)
-<section class="payments-section">
+<section class="payments-section" id="reservation-balances">
 <div class="payments-section-head">
 <div><h2>Pre-arrival reservation payments</h2><p class="muted">Collect full or partial payment against confirmed priced reservations.</p></div>
-<span class="status-badge">{{ $reservations->count() }} booking(s)</span>
+<span class="status-badge">{{ method_exists($reservations,'total') ? $reservations->total() : $reservations->count() }} booking(s)</span>
 </div>
 <div class="payments-card-list">
 @forelse($reservations as $reservation)
@@ -225,14 +236,17 @@
 <div class="payments-empty">No confirmed reservations.</div>
 @endforelse
 </div>
+@if(method_exists($reservations,'links'))
+@include('admin.partials.pagination',['paginator'=>$reservations,'label'=>'Reservation payment pagination','fragment'=>'reservation-balances'])
+@endif
 </section>
 @endif
 
 @if(($showRestaurantPayments ?? false) && !$isTargeted)
-<section class="payments-section">
+<section class="payments-section" id="restaurant-balances">
 <div class="payments-section-head">
 <div><h2>Restaurant balances</h2><p class="muted">Collect direct payment for served dine-in and takeaway orders.</p></div>
-<span class="status-badge">{{ $restaurantOrders->count() }} order(s)</span>
+<span class="status-badge">{{ method_exists($restaurantOrders,'total') ? $restaurantOrders->total() : $restaurantOrders->count() }} order(s)</span>
 </div>
 <div class="payments-card-list">
 @forelse($restaurantOrders as $order)
@@ -271,6 +285,9 @@
 <div class="payments-empty">No restaurant balances.</div>
 @endforelse
 </div>
+@if(method_exists($restaurantOrders,'links'))
+@include('admin.partials.pagination',['paginator'=>$restaurantOrders,'label'=>'Restaurant balance pagination','fragment'=>'restaurant-balances'])
+@endif
 </section>
 @endif
 

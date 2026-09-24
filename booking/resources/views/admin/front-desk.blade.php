@@ -222,29 +222,31 @@
 </div>
 
 @elseif($tab === 'arrivals')
-<section class="front-desk-section">
+<section class="front-desk-section" id="arrivals-list">
 <div class="front-desk-section-head">
 <div><h2>Today’s arrivals</h2><p class="muted">Assign a ready matching physical room, take payment if needed, then check the guest in.</p></div>
-<span class="status-badge">{{ $arrivalsToday->count() }} arrival(s)</span>
+<span class="status-badge">{{ $arrivalsToday->total() }} arrival(s)</span>
 </div>
 @forelse($arrivalsToday as $reservation)
 @include('admin.partials.front-desk-reservation-card',['reservation'=>$reservation])
 @empty
 <div class="front-desk-empty">No arrivals match the current search.</div>
 @endforelse
+@include('admin.partials.pagination',['paginator'=>$arrivalsToday,'label'=>'Arrivals pagination','fragment'=>'arrivals-list'])
 </section>
 
 @elseif($tab === 'reservations')
-<section class="front-desk-section">
+<section class="front-desk-section" id="reservations-list">
 <div class="front-desk-section-head">
 <div><h2>Confirmed reservations</h2><p class="muted">Future and same-day confirmed reservations. Edit, take payment, cancel or mark no-show from the booking card.</p></div>
-<span class="status-badge">{{ $reservations->count() }} booking(s)</span>
+<span class="status-badge">{{ $reservations->total() }} booking(s)</span>
 </div>
 @forelse($reservations as $reservation)
 @include('admin.partials.front-desk-reservation-card',['reservation'=>$reservation])
 @empty
 <div class="front-desk-empty">No confirmed reservations match the current search.</div>
 @endforelse
+@include('admin.partials.pagination',['paginator'=>$reservations,'label'=>'Reservations pagination','fragment'=>'reservations-list'])
 </section>
 
 @elseif($tab === 'in-house')

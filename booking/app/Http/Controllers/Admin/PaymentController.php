@@ -26,26 +26,61 @@ class PaymentController extends Controller
         $showRestaurantPayments = in_array($role, ['administrator', 'accounts', 'restaurant'], true);
         $selectedReservationId = max(0, (int) $request->query('reservation_id', 0));
         $selectedFolioId = max(0, (int) $request->query('folio_id', 0));
+        $search = trim((string) $request->query('q', ''));
 
         $reservations = $showHotelPayments
             ? Reservation::query()
+                ->with('guestLinks.guest')
                 ->where('status', 'confirmed')
                 ->when($selectedReservationId > 0, fn ($query) => $query->whereKey($selectedReservationId))
+                ->when($selectedReservationId === 0 && $search !== '', function ($query) use ($search) {
+                    $query->where(function ($searchQuery) use ($search) {
+                        $searchQuery
+                            ->where('booking_number', 'like', '%'.$search.'%')
+                            ->orWhereHas('guestLinks.guest', function ($guestQuery) use ($search) {
+                                $guestQuery->where(function ($guestSearch) use ($search) {
+                                    $guestSearch
+                                        ->where('first_name', 'like', '%'.$search.'%')
+                                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                                        ->orWhere('phone', 'like', '%'.$search.'%')
+                                        ->orWhere('email', 'like', '%'.$search.'%');
+                                });
+                            });
+                    });
+                })
                 ->orderBy('check_in_date')
-                ->limit(50)
-                ->get()
+                ->orderBy('id')
+                ->paginate(25, ['*'], 'reservations_page')
+                ->withQueryString()
             : collect();
 
         $folios = $showHotelPayments
             ? Folio::query()
+                ->with('reservation.guestLinks.guest')
                 ->where('status', 'open')
                 ->where(function ($query) {
                     $query->where('balance', '>', 0.009)
                         ->orWhere('balance', '<', -0.009);
                 })
                 ->when($selectedFolioId > 0, fn ($query) => $query->whereKey($selectedFolioId))
+                ->when($selectedFolioId === 0 && $search !== '', function ($query) use ($search) {
+                    $query->whereHas('reservation', function ($reservationQuery) use ($search) {
+                        $reservationQuery
+                            ->where('booking_number', 'like', '%'.$search.'%')
+                            ->orWhereHas('guestLinks.guest', function ($guestQuery) use ($search) {
+                                $guestQuery->where(function ($guestSearch) use ($search) {
+                                    $guestSearch
+                                        ->where('first_name', 'like', '%'.$search.'%')
+                                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                                        ->orWhere('phone', 'like', '%'.$search.'%')
+                                        ->orWhere('email', 'like', '%'.$search.'%');
+                                });
+                            });
+                    });
+                })
                 ->orderByDesc('id')
-                ->get()
+                ->paginate(25, ['*'], 'folios_page')
+                ->withQueryString()
             : collect();
 
         $restaurantOrders = $showRestaurantPayments
@@ -53,9 +88,18 @@ class PaymentController extends Controller
                 ->whereIn('order_type', ['dine_in', 'takeaway'])
                 ->where('status', 'served')
                 ->whereIn('payment_status', ['unpaid', 'partially_paid'])
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($searchQuery) use ($search) {
+                        $searchQuery
+                            ->where('order_number', 'like', '%'.$search.'%')
+                            ->orWhere('guest_name', 'like', '%'.$search.'%')
+                            ->orWhere('guest_phone', 'like', '%'.$search.'%')
+                            ->orWhere('guest_email', 'like', '%'.$search.'%');
+                    });
+                })
                 ->orderByDesc('id')
-                ->limit(50)
-                ->get()
+                ->paginate(25, ['*'], 'restaurant_page')
+                ->withQueryString()
             : collect();
 
         $payments = Payment::query()
@@ -83,22 +127,29 @@ class PaymentController extends Controller
             ->paginate(25, ['*'], 'payments_page')
             ->withQueryString();
 
-        $reservationOutstanding = $reservations->mapWithKeys(
+        $reservationRows = method_exists($reservations, 'getCollection')
+            ? $reservations->getCollection()
+            : $reservations;
+        $restaurantRows = method_exists($restaurantOrders, 'getCollection')
+            ? $restaurantOrders->getCollection()
+            : $restaurantOrders;
+
+        $reservationOutstanding = $reservationRows->mapWithKeys(
             fn (Reservation $reservation) => [
                 $reservation->id => $service->reservationOutstanding($reservation->id),
             ]
         );
-        $reservationNetPaid = $reservations->mapWithKeys(
+        $reservationNetPaid = $reservationRows->mapWithKeys(
             fn (Reservation $reservation) => [
                 $reservation->id => $service->reservationNetPaid($reservation->id),
             ]
         );
-        $reservationOverpaid = $reservations->mapWithKeys(
+        $reservationOverpaid = $reservationRows->mapWithKeys(
             fn (Reservation $reservation) => [
                 $reservation->id => $service->reservationOverpaid($reservation->id),
             ]
         );
-        $restaurantOutstanding = $restaurantOrders->mapWithKeys(
+        $restaurantOutstanding = $restaurantRows->mapWithKeys(
             fn (RestaurantOrder $order) => [
                 $order->id => $service->restaurantOutstanding($order->id),
             ]
@@ -127,6 +178,7 @@ class PaymentController extends Controller
             'payments' => $payments,
             'selectedReservationId' => $selectedReservationId,
             'selectedFolioId' => $selectedFolioId,
+            'search' => $search,
             'reservationOutstanding' => $reservationOutstanding,
             'reservationNetPaid' => $reservationNetPaid,
             'reservationOverpaid' => $reservationOverpaid,
