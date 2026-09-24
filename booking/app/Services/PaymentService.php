@@ -183,9 +183,18 @@ class PaymentService
                 throw new RuntimeException('Captured provider payment amount must be greater than zero.');
             }
 
+            $openFolio = $reservation->status === 'checked_in'
+                ? Folio::query()
+                    ->where('reservation_id', $reservation->id)
+                    ->where('status', 'open')
+                    ->lockForUpdate()
+                    ->first()
+                : null;
+
             $payment = Payment::query()->create([
                 'idempotency_key' => $idempotencyKey,
-                'reservation_id' => $reservation->id,
+                'reservation_id' => $openFolio === null ? $reservation->id : null,
+                'folio_id' => $openFolio?->id,
                 'method' => 'online_gateway',
                 'status' => 'succeeded',
                 'amount' => $amount,
