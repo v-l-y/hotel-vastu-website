@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Folio;
 use App\Models\Payment;
+use App\Models\PaymentGatewayOrder;
 use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\RestaurantOrder;
@@ -84,6 +85,74 @@ class PaymentService
         }, 3);
     }
 
+    public function reservationNetPaid(int $reservationId): float
+    {
+        $payments = (float) Payment::query()
+            ->where('reservation_id', $reservationId)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        $paymentIds = Payment::query()->where('reservation_id', $reservationId)->pluck('id');
+        $refunds = $paymentIds->isEmpty() ? 0.0 : (float) Refund::query()
+            ->whereIn('payment_id', $paymentIds)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        return round($payments - $refunds, 2);
+    }
+
+    public function reservationOutstanding(int $reservationId): float
+    {
+        $reservation = Reservation::query()->findOrFail($reservationId);
+
+        return max(0, round((float) $reservation->total - $this->reservationNetPaid($reservationId), 2));
+    }
+
+    public function reservationOverpaid(int $reservationId): float
+    {
+        $reservation = Reservation::query()->findOrFail($reservationId);
+
+        return max(0, round($this->reservationNetPaid($reservationId) - (float) $reservation->total, 2));
+    }
+
+    public function restaurantOutstanding(int $restaurantOrderId): float
+    {
+        $order = RestaurantOrder::query()->findOrFail($restaurantOrderId);
+        $payments = (float) Payment::query()
+            ->where('restaurant_order_id', $order->id)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+        $paymentIds = Payment::query()->where('restaurant_order_id', $order->id)->pluck('id');
+        $refunds = $paymentIds->isEmpty() ? 0.0 : (float) Refund::query()
+            ->whereIn('payment_id', $paymentIds)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        return max(0, round((float) $order->total - $payments + $refunds, 2));
+    }
+
+    public function syncReservationPaymentState(
+        Reservation $reservation,
+        bool $staleOpenGatewayOrders = true
+    ): Reservation {
+        if ($staleOpenGatewayOrders) {
+            $this->staleOpenGatewayOrders($reservation->id);
+        }
+
+        $net = $this->reservationNetPaid($reservation->id);
+        $total = (float) $reservation->total;
+
+        $reservation->update([
+            'payment_status' => $net <= 0
+                ? 'unpaid'
+                : ($net > $total + 0.009
+                    ? 'overpaid'
+                    : ($net + 0.009 >= $total ? 'paid' : 'partially_paid')),
+        ]);
+
+        return $reservation->fresh();
+    }
+
     public function recordProviderCaptured(
         int $reservationId,
         float $amount,
@@ -132,6 +201,11 @@ class PaymentService
 
     public function refund(Payment $payment, array $data): Refund
     {
+        $reason = trim((string) ($data['reason'] ?? ''));
+        if ($reason === '') {
+            throw new RuntimeException('Refund reason is required.');
+        }
+
         $existing = Refund::query()->where('idempotency_key', $data['idempotency_key'])->first();
         if ($existing !== null) {
             $sameRequest =
@@ -154,7 +228,7 @@ class PaymentService
             }
 
             $reservedRefunds = (float) $payment->refunds()
-                ->whereIn('status', ['pending', 'succeeded'])
+                ->whereIn('status', ['pending', 'pending_manual', 'succeeded'])
                 ->sum('amount');
             $amount = round((float) $data['amount'], 2);
 
@@ -162,22 +236,30 @@ class PaymentService
                 throw new RuntimeException('Refund amount exceeds the refundable payment balance.');
             }
 
+            $status = $payment->method === 'online_gateway'
+                ? 'pending'
+                : ($payment->method === 'cash' ? 'succeeded' : 'pending_manual');
+
             $refund = Refund::query()->create([
                 'idempotency_key' => $data['idempotency_key'],
                 'payment_id' => $payment->id,
                 'amount' => $amount,
-                'status' => $payment->method === 'online_gateway' ? 'pending' : 'succeeded',
-                'reason' => $data['reason'] ?? null,
-                'external_reference' => $data['external_reference'] ?? null,
-                'refunded_at' => $payment->method === 'online_gateway' ? null : now(),
+                'status' => $status,
+                'reason' => $reason,
+                'external_reference' => null,
+                'refunded_at' => $status === 'succeeded' ? now() : null,
             ]);
 
-            if ($payment->method !== 'online_gateway') {
+            if ($status === 'succeeded') {
                 $this->finalizeRefund($payment, $refund);
             }
 
             return $refund;
         }, 3);
+
+        if ($refund->status === 'pending_manual') {
+            return $refund->fresh();
+        }
 
         if ($refund->status !== 'pending') {
             return $refund->fresh();
@@ -211,6 +293,37 @@ class PaymentService
         }
 
         return $this->reconcileProviderRefund($providerRefund) ?? $refund->fresh();
+    }
+
+    public function confirmManualRefund(Refund $refund, string $externalReference): Refund
+    {
+        $externalReference = trim($externalReference);
+        if ($externalReference === '') {
+            throw new RuntimeException('External refund reference is required.');
+        }
+
+        return DB::transaction(function () use ($refund, $externalReference) {
+            $refund = Refund::query()->whereKey($refund->id)->lockForUpdate()->firstOrFail();
+            $payment = Payment::query()->whereKey($refund->payment_id)->lockForUpdate()->firstOrFail();
+
+            if ($refund->status !== 'pending_manual') {
+                throw new RuntimeException('Only a pending manual refund can be confirmed.');
+            }
+
+            if (! in_array($payment->method, ['upi', 'card', 'bank_transfer'], true)) {
+                throw new RuntimeException('This payment does not require manual refund confirmation.');
+            }
+
+            $refund->update([
+                'status' => 'succeeded',
+                'external_reference' => $externalReference,
+                'refunded_at' => now(),
+            ]);
+
+            $this->finalizeRefund($payment, $refund->fresh());
+
+            return $refund->fresh();
+        }, 3);
     }
 
     public function reconcileProviderRefund(array $providerRefund): ?Refund
@@ -370,7 +483,20 @@ class PaymentService
     private function finalizeRefund(Payment $payment, Refund $refund): void
     {
         $this->syncTarget($payment);
+
+        if ($payment->reservation_id !== null) {
+            $this->staleOpenGatewayOrders($payment->reservation_id);
+        }
+
         $this->creditNotes->createForRefund($payment, $refund);
+    }
+
+    private function staleOpenGatewayOrders(int $reservationId): void
+    {
+        PaymentGatewayOrder::query()
+            ->where('reservation_id', $reservationId)
+            ->where('status', 'created')
+            ->update(['status' => 'stale']);
     }
 
     private function syncTarget(Payment $payment): void
@@ -381,25 +507,10 @@ class PaymentService
 
         if ($payment->reservation_id !== null) {
             $reservation = Reservation::query()->findOrFail($payment->reservation_id);
-            $payments = (float) Payment::query()
-                ->where('reservation_id', $reservation->id)
-                ->where('status', 'succeeded')
-                ->sum('amount');
-            $paymentIds = Payment::query()->where('reservation_id', $reservation->id)->pluck('id');
-            $refunds = $paymentIds->isEmpty() ? 0.0 : (float) Refund::query()
-                ->whereIn('payment_id', $paymentIds)
-                ->where('status', 'succeeded')
-                ->sum('amount');
-            $net = $payments - $refunds;
-
-            $total = (float) $reservation->total;
-            $reservation->update([
-                'payment_status' => $net <= 0
-                    ? 'unpaid'
-                    : ($net > $total + 0.009
-                        ? 'overpaid'
-                        : ($net + 0.009 >= $total ? 'paid' : 'partially_paid')),
-            ]);
+            $this->syncReservationPaymentState(
+                $reservation,
+                $payment->method !== 'online_gateway'
+            );
         }
 
         if ($payment->restaurant_order_id !== null) {
