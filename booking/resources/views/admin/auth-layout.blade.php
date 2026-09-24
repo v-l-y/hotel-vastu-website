@@ -38,6 +38,7 @@ button:focus-visible{outline:3px solid rgba(142,113,89,.32);outline-offset:2px}
 @stack('styles')
 </head>
 <body>
+@include('partials.toast')
 <div class="auth-shell">
 <section class="auth-brand" aria-label="Hotel Vastu Admin">
 <div>
