@@ -17,13 +17,41 @@ use RuntimeException;
 
 class PaymentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, PaymentService $service): View
     {
         $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
         $showHotelPayments = in_array($role, ['administrator', 'front_desk', 'accounts'], true);
         $showRestaurantPayments = in_array($role, ['administrator', 'accounts', 'restaurant'], true);
         $selectedReservationId = max(0, (int) $request->query('reservation_id', 0));
         $selectedFolioId = max(0, (int) $request->query('folio_id', 0));
+
+        $reservations = $showHotelPayments
+            ? Reservation::query()
+                ->where('status', 'confirmed')
+                ->when($selectedReservationId > 0, fn ($query) => $query->whereKey($selectedReservationId))
+                ->orderBy('check_in_date')
+                ->limit(50)
+                ->get()
+            : collect();
+
+        $folios = $showHotelPayments
+            ? Folio::query()
+                ->where('status', 'open')
+                ->where('balance', '>', 0)
+                ->when($selectedFolioId > 0, fn ($query) => $query->whereKey($selectedFolioId))
+                ->orderByDesc('id')
+                ->get()
+            : collect();
+
+        $restaurantOrders = $showRestaurantPayments
+            ? RestaurantOrder::query()
+                ->whereIn('order_type', ['dine_in', 'takeaway'])
+                ->where('status', 'served')
+                ->whereIn('payment_status', ['unpaid', 'partially_paid'])
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get()
+            : collect();
 
         $payments = Payment::query()
             ->with(['refunds', 'reservation', 'folio', 'restaurantOrder'])
@@ -38,45 +66,56 @@ class PaymentController extends Controller
                 $role === 'front_desk',
                 fn ($query) => $query->whereNull('restaurant_order_id')
             )
+            ->when(
+                $selectedReservationId > 0,
+                fn ($query) => $query->where('reservation_id', $selectedReservationId)
+            )
+            ->when(
+                $selectedFolioId > 0,
+                fn ($query) => $query->where('folio_id', $selectedFolioId)
+            )
             ->latest('id')
             ->limit(100)
             ->get();
+
+        $reservationOutstanding = $reservations->mapWithKeys(
+            fn (Reservation $reservation) => [
+                $reservation->id => $service->reservationOutstanding($reservation->id),
+            ]
+        );
+        $reservationNetPaid = $reservations->mapWithKeys(
+            fn (Reservation $reservation) => [
+                $reservation->id => $service->reservationNetPaid($reservation->id),
+            ]
+        );
+        $reservationOverpaid = $reservations->mapWithKeys(
+            fn (Reservation $reservation) => [
+                $reservation->id => $service->reservationOverpaid($reservation->id),
+            ]
+        );
+        $restaurantOutstanding = $restaurantOrders->mapWithKeys(
+            fn (RestaurantOrder $order) => [
+                $order->id => $service->restaurantOutstanding($order->id),
+            ]
+        );
 
         return view('admin.payments', [
             'showHotelPayments' => $showHotelPayments,
             'showRestaurantPayments' => $showRestaurantPayments,
             'canRefund' => in_array($role, ['administrator', 'front_desk', 'accounts'], true),
-            'reservations' => $showHotelPayments
-                ? Reservation::query()
-                    ->where('status', 'confirmed')
-                    ->when($selectedReservationId > 0, fn ($query) => $query->whereKey($selectedReservationId))
-                    ->orderBy('check_in_date')
-                    ->limit(50)
-                    ->get()
-                : collect(),
-            'folios' => $showHotelPayments
-                ? Folio::query()
-                    ->where('status', 'open')
-                    ->where('balance', '>', 0)
-                    ->when($selectedFolioId > 0, fn ($query) => $query->whereKey($selectedFolioId))
-                    ->orderByDesc('id')
-                    ->get()
-                : collect(),
-            'restaurantOrders' => $showRestaurantPayments
-                ? RestaurantOrder::query()
-                    ->whereIn('order_type', ['dine_in', 'takeaway'])
-                    ->where('status', 'served')
-                    ->whereIn('payment_status', ['unpaid', 'partially_paid'])
-                    ->orderByDesc('id')
-                    ->limit(50)
-                    ->get()
-                : collect(),
+            'reservations' => $reservations,
+            'folios' => $folios,
+            'restaurantOrders' => $restaurantOrders,
             'invoices' => $showHotelPayments
                 ? Invoice::query()->latest('id')->limit(50)->get()
                 : collect(),
             'payments' => $payments,
             'selectedReservationId' => $selectedReservationId,
             'selectedFolioId' => $selectedFolioId,
+            'reservationOutstanding' => $reservationOutstanding,
+            'reservationNetPaid' => $reservationNetPaid,
+            'reservationOverpaid' => $reservationOverpaid,
+            'restaurantOutstanding' => $restaurantOutstanding,
         ]);
     }
 
@@ -88,7 +127,7 @@ class PaymentController extends Controller
             'target_id' => ['required', 'integer', 'min:1'],
             'method' => ['required', 'in:cash,upi,card,bank_transfer'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:99999999'],
-            'external_reference' => ['nullable', 'string', 'max:190'],
+            'external_reference' => ['nullable', 'string', 'max:190', 'required_unless:method,cash'],
         ]);
 
         $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
@@ -134,14 +173,14 @@ class PaymentController extends Controller
         $data = $request->validate([
             'idempotency_key' => ['required', 'uuid'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:99999999'],
-            'reason' => ['nullable', 'string', 'max:255'],
+            'reason' => ['required', 'string', 'min:3', 'max:255'],
         ]);
 
         try {
             $refund = $service->refund($payment, [
                 'idempotency_key' => $data['idempotency_key'],
                 'amount' => $data['amount'],
-                'reason' => $data['reason'] ?? null,
+                'reason' => $data['reason'],
             ]);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['refund' => $exception->getMessage()]);
@@ -149,10 +188,33 @@ class PaymentController extends Controller
 
         return back()->with(
             'status',
-            $refund->status === 'pending'
-                ? 'Online refund initiated and awaiting provider processing.'
-                : 'Refund completed.'
+            match ($refund->status) {
+                'pending' => 'Online refund initiated and awaiting provider processing.',
+                'pending_manual' => 'Refund recorded as pending. Complete the external UPI/card/bank refund and confirm its reference.',
+                default => 'Refund completed.',
+            }
         );
+    }
+
+    public function confirmManualRefund(
+        Request $request,
+        Refund $refund,
+        PaymentService $service
+    ): RedirectResponse {
+        $refund->loadMissing('payment');
+        $this->assertFrontDeskHotelPaymentScope($request, $refund->payment);
+
+        $data = $request->validate([
+            'external_reference' => ['required', 'string', 'max:190'],
+        ]);
+
+        try {
+            $service->confirmManualRefund($refund, $data['external_reference']);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['refund' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Manual refund confirmed and ledger updated.');
     }
 
     public function reconcileRefund(
