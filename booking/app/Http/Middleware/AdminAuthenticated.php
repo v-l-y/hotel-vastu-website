@@ -19,6 +19,15 @@ class AdminAuthenticated
             : null;
 
         if (
+            $admin !== null
+            && $sessionVersion === null
+            && (int) $admin->session_version === 1
+        ) {
+            $sessionVersion = 1;
+            $request->session()->put('admin_session_version', 1);
+        }
+
+        if (
             $admin === null
             || $sessionVersion === null
             || (int) $sessionVersion !== (int) $admin->session_version

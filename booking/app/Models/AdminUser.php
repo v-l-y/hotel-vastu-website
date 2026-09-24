@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class AdminUser extends Model
 {
+    protected $attributes = [
+        'session_version' => 1,
+    ];
+
     protected $fillable = [
         'name',
         'email',
