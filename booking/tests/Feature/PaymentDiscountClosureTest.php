@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Folio;
+use App\Models\CreditNote;
 use App\Models\FolioCharge;
+use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\PaymentGatewayOrder;
 use App\Models\PromotionCode;
 use App\Models\RatePlan;
@@ -13,6 +16,7 @@ use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Stay;
 use App\Services\FrontDeskService;
+use App\Services\InvoiceService;
 use App\Services\PaymentService;
 use App\Services\PricingService;
 use App\Services\ReservationLifecycleService;
@@ -381,6 +385,190 @@ class PaymentDiscountClosureTest extends TestCase
         $this->assertNull($payment->reservation_id);
         $this->assertSame($folio->id, $payment->folio_id);
         $this->assertSame('-150.00', $folio->fresh()->balance);
+    }
+
+    public function test_overpayment_return_after_invoice_does_not_create_credit_note(): void
+    {
+        $reservation = $this->reservation('HV-PAY-CLOSE-7', 1000);
+        $reservation->update(['status' => 'checked_out']);
+
+        $stay = Stay::query()->create([
+            'reservation_id' => $reservation->id,
+            'status' => 'checked_out',
+            'checked_in_at' => now()->subDay(),
+            'checked_out_at' => now(),
+        ]);
+        $folio = Folio::query()->create([
+            'stay_id' => $stay->id,
+            'reservation_id' => $reservation->id,
+            'status' => 'closed',
+        ]);
+        FolioCharge::query()->create([
+            'folio_id' => $folio->id,
+            'category' => 'room',
+            'description' => 'Room charge',
+            'quantity' => 1,
+            'subtotal' => 1000,
+            'tax' => 0,
+            'amount' => 1000,
+            'source_key' => 'refund-credit-overpayment',
+        ]);
+        $payment = Payment::query()->create([
+            'idempotency_key' => '11111111-2222-4333-8444-555555555560',
+            'folio_id' => $folio->id,
+            'method' => 'cash',
+            'status' => 'succeeded',
+            'amount' => 1200,
+            'paid_at' => now(),
+        ]);
+        app(\App\Services\FolioService::class)->recalculate($folio);
+        app(InvoiceService::class)->createFromFolio($folio->fresh());
+
+        $this->assertSame('-200.00', $folio->fresh()->balance);
+
+        app(PaymentService::class)->refund($payment, [
+            'idempotency_key' => '11111111-2222-4333-8444-555555555561',
+            'amount' => 200,
+            'refund_type' => 'overpayment',
+            'reason' => 'Return excess payment',
+        ]);
+
+        $this->assertSame('0.00', $folio->fresh()->balance);
+        $this->assertSame(0, CreditNote::query()->count());
+    }
+
+    public function test_revenue_adjustment_refund_creates_credit_note_without_reopening_folio_balance(): void
+    {
+        $reservation = $this->reservation('HV-PAY-CLOSE-8', 1000);
+        $reservation->update(['status' => 'checked_out']);
+
+        $stay = Stay::query()->create([
+            'reservation_id' => $reservation->id,
+            'status' => 'checked_out',
+            'checked_in_at' => now()->subDay(),
+            'checked_out_at' => now(),
+        ]);
+        $folio = Folio::query()->create([
+            'stay_id' => $stay->id,
+            'reservation_id' => $reservation->id,
+            'status' => 'closed',
+        ]);
+        FolioCharge::query()->create([
+            'folio_id' => $folio->id,
+            'category' => 'room',
+            'description' => 'Room charge',
+            'quantity' => 1,
+            'subtotal' => 1000,
+            'tax' => 0,
+            'amount' => 1000,
+            'source_key' => 'refund-credit-service-recovery',
+        ]);
+        $payment = Payment::query()->create([
+            'idempotency_key' => '11111111-2222-4333-8444-555555555562',
+            'folio_id' => $folio->id,
+            'method' => 'cash',
+            'status' => 'succeeded',
+            'amount' => 1000,
+            'paid_at' => now(),
+        ]);
+        app(\App\Services\FolioService::class)->recalculate($folio);
+        $invoice = app(InvoiceService::class)->createFromFolio($folio->fresh());
+
+        app(PaymentService::class)->refund($payment, [
+            'idempotency_key' => '11111111-2222-4333-8444-555555555563',
+            'amount' => 100,
+            'refund_type' => 'service_recovery',
+            'reason' => 'Service recovery adjustment',
+        ]);
+
+        $this->assertSame('0.00', $folio->fresh()->balance);
+        $this->assertDatabaseHas('credit_notes', [
+            'invoice_id' => $invoice->id,
+            'amount' => 100,
+            'reason' => 'Service recovery adjustment',
+        ]);
+    }
+
+    public function test_full_manual_discount_requires_administrator_role(): void
+    {
+        [$type, $plan] = $this->roomFixture('full-discount');
+
+        $reservation = app(ReservationService::class)->createFrontDeskBooking([
+            'first_name' => 'Discount',
+            'phone' => '9000000005',
+            'check_in' => today()->addDay()->toDateString(),
+            'check_out' => today()->addDays(2)->toDateString(),
+            'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
+            'rooms' => 1,
+            'adults' => 1,
+            'children' => 0,
+        ]);
+
+        try {
+            app(PricingService::class)->applyManualDiscount(
+                $reservation,
+                'percent',
+                100,
+                'Complimentary stay',
+                10,
+                'front_desk'
+            );
+            $this->fail('Front desk should not be able to apply a full-value discount.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'A full-value manual discount requires Administrator approval.',
+                $exception->getMessage()
+            );
+        }
+
+        $discounted = app(PricingService::class)->applyManualDiscount(
+            $reservation->fresh(),
+            'percent',
+            100,
+            'Complimentary stay approved',
+            1,
+            'administrator'
+        );
+
+        $this->assertSame('1000.00', $discounted->discount);
+        $this->assertSame('0.00', $discounted->total);
+    }
+
+    public function test_public_promo_preview_matches_booking_pricing(): void
+    {
+        [$type, $plan] = $this->roomFixture('preview');
+
+        PromotionCode::query()->create([
+            'code' => 'PREVIEW10',
+            'name' => 'Preview ten percent',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'min_subtotal' => 0,
+            'times_used' => 0,
+            'is_active' => true,
+        ]);
+
+        $hold = ReservationHold::query()->create([
+            'token' => '99999999-9999-4999-8999-999999999999',
+            'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
+            'check_in_date' => today()->addDays(2),
+            'check_out_date' => today()->addDays(3),
+            'quantity' => 1,
+            'adults' => 1,
+            'children' => 0,
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        $this->postJson('/holds/'.$hold->token.'/promo-preview', [
+            'promo_code' => 'preview10',
+        ])->assertOk()->assertJson([
+            'code' => 'PREVIEW10',
+            'discount' => 100,
+            'tax' => 0,
+            'total' => 900,
+        ]);
     }
 
     private function reservation(string $number, float $total): Reservation
