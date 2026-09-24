@@ -20,5 +20,6 @@ class RestaurantOrder extends Model
     }
 
     public function items(): HasMany { return $this->hasMany(RestaurantOrderItem::class); }
+    public function payments(): HasMany { return $this->hasMany(Payment::class); }
     public function kitchenTicket(): HasOne { return $this->hasOne(KitchenTicket::class); }
 }
