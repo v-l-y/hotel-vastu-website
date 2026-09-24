@@ -8,6 +8,7 @@ use App\Models\PaymentGatewayOrder;
 use App\Models\PromotionCode;
 use App\Models\RatePlan;
 use App\Models\Reservation;
+use App\Models\ReservationHold;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Stay;
@@ -133,6 +134,53 @@ class PaymentDiscountClosureTest extends TestCase
         $this->assertSame('100.00', $reservation->discount);
         $this->assertSame('900.00', $reservation->total);
         $this->assertSame(1, $promo->fresh()->times_used);
+    }
+
+    public function test_public_promo_survives_otp_verification_and_is_applied(): void
+    {
+        [$type, $plan] = $this->roomFixture('otp-promo');
+
+        PromotionCode::query()->create([
+            'code' => 'OTP10',
+            'name' => 'OTP promo',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'min_subtotal' => 0,
+            'times_used' => 0,
+            'is_active' => true,
+        ]);
+
+        $hold = ReservationHold::query()->create([
+            'token' => '88888888-8888-4888-8888-888888888888',
+            'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
+            'check_in_date' => today()->addDays(2),
+            'check_out_date' => today()->addDays(3),
+            'quantity' => 1,
+            'adults' => 1,
+            'children' => 0,
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        $this->post('/holds/'.$hold->token.'/confirm', [
+            'first_name' => 'Promo',
+            'phone' => '9000000004',
+            'email' => 'otp-promo@example.com',
+            'promo_code' => 'otp10',
+        ])->assertRedirect('/holds/'.$hold->token.'/verify');
+
+        $this->assertDatabaseHas('booking_verifications', [
+            'reservation_hold_id' => $hold->id,
+            'promo_code' => 'OTP10',
+        ]);
+
+        $this->post('/holds/'.$hold->token.'/verify', ['otp' => '123456'])
+            ->assertRedirect();
+
+        $reservation = Reservation::query()->where('source', 'website')->firstOrFail();
+        $this->assertSame('OTP10', $reservation->promotion_code_snapshot);
+        $this->assertSame('100.00', $reservation->discount);
+        $this->assertSame('900.00', $reservation->total);
     }
 
     public function test_manual_discount_can_create_visible_overpayment_without_losing_money(): void
