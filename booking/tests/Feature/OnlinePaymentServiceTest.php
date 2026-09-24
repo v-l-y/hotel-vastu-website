@@ -103,6 +103,8 @@ class OnlinePaymentServiceTest extends TestCase
             'external_reference' => 'pay_refund_test',
         ]);
 
+        $refundKey = (string) Str::uuid();
+
         Http::fake([
             'https://api.razorpay.com/v1/payments/pay_refund_test/refund' => Http::response([
                 'id' => 'rfnd_pending',
@@ -110,12 +112,13 @@ class OnlinePaymentServiceTest extends TestCase
                 'payment_id' => 'pay_refund_test',
                 'amount' => 25000,
                 'currency' => 'INR',
+                'receipt' => $refundKey,
                 'status' => 'pending',
             ], 200),
         ]);
 
         $refund = app(PaymentService::class)->refund($payment, [
-            'idempotency_key' => (string) Str::uuid(),
+            'idempotency_key' => $refundKey,
             'amount' => 250,
             'reason' => 'Guest adjustment',
         ]);
@@ -132,6 +135,7 @@ class OnlinePaymentServiceTest extends TestCase
                         'payment_id' => 'pay_refund_test',
                         'amount' => 25000,
                         'currency' => 'INR',
+                        'receipt' => $refundKey,
                         'status' => 'processed',
                     ],
                 ],
@@ -145,6 +149,52 @@ class OnlinePaymentServiceTest extends TestCase
 
         $this->assertSame('succeeded', $refund->fresh()->status);
         $this->assertSame('partially_paid', $reservation->fresh()->payment_status);
+    }
+
+    public function test_stale_gateway_order_capture_is_still_ledgered_for_reconciliation(): void
+    {
+        $reservation = $this->reservation('3');
+
+        Http::fake(function (HttpRequest $request) {
+            if ($request->method() === 'POST' && $request->url() === 'https://api.razorpay.com/v1/orders') {
+                return Http::response([
+                    'id' => 'order_stale',
+                    'amount' => 100000,
+                    'currency' => 'INR',
+                ], 200);
+            }
+
+            if ($request->method() === 'GET' && $request->url() === 'https://api.razorpay.com/v1/payments/pay_stale') {
+                return Http::response([
+                    'id' => 'pay_stale',
+                    'order_id' => 'order_stale',
+                    'amount' => 100000,
+                    'currency' => 'INR',
+                    'status' => 'captured',
+                ], 200);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $service = app(OnlinePaymentService::class);
+        $order = $service->createOrder($reservation);
+        $order->update(['status' => 'stale']);
+
+        $reservation->update(['subtotal' => 800, 'total' => 800]);
+
+        $signature = hash_hmac('sha256', 'order_stale|pay_stale', 'test-secret');
+        $payment = $service->verifyCheckout(
+            $reservation->fresh(),
+            'order_stale',
+            'pay_stale',
+            $signature
+        );
+
+        $this->assertSame('1000.00', $payment->amount);
+        $this->assertSame('pay_stale', $payment->external_reference);
+        $this->assertSame('paid_stale', $order->fresh()->status);
+        $this->assertSame('paid', $reservation->fresh()->payment_status);
     }
 
     public function test_webhook_route_accepts_valid_signed_server_to_server_request_without_csrf_token(): void
