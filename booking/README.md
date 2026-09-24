@@ -54,7 +54,7 @@ Public booking CTAs and the homepage stay form now point to `https://booking.hot
 - MySQL row-lock contract coverage
 - static-site and browser booking-redirect regression guards
 
-No room count, room number, price, tax, capacity, menu item, table count or hotel policy is invented by seed data.
+The default seed path does not invent room counts, room numbers, prices, tax, capacity, menu items, table counts or hotel policy. For local UI testing only, `DemoBookingSeeder` intentionally creates clearly marked demo rooms and demo rates and is never called by `DatabaseSeeder`.
 
 ## Admin roles
 
@@ -96,6 +96,18 @@ Open:
 - admin: `http://127.0.0.1:8000/admin/login`
 
 Configure real rooms, rates, tax rules and restaurant master data before accepting bookings.
+
+### Optional local demo booking data
+
+To make the customer availability flow immediately usable on a local/test database, run:
+
+```bash
+php artisan db:seed --class=DemoBookingSeeder
+```
+
+This manual seeder adds the existing Classic, Club and Premium room types (through the canonical hotel setup seeder), two clearly marked demo rate plans, six `DEMO-*` physical rooms and demo dated room rates. It is idempotent and refuses to run when `APP_ENV=production`.
+
+The demo room numbers and prices are **not Hotel Vastu production facts**. Replace them with the hotel's actual rooms, prices and policies in Admin before any production use.
 
 ## Razorpay activation
 
