@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Payment;
 use App\Models\PaymentGatewayOrder;
+use App\Models\PaymentGatewayOrder;
 use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\RoomType;
@@ -132,6 +133,10 @@ class ReservationLifecycleService
             }
 
             $reservation->update(['status' => 'cancelled']);
+            PaymentGatewayOrder::query()
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'created')
+                ->update(['status' => 'stale']);
 
             return $reservation->fresh();
         }, 3);
@@ -151,6 +156,10 @@ class ReservationLifecycleService
             }
 
             $reservation->update(['status' => 'no_show']);
+            PaymentGatewayOrder::query()
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'created')
+                ->update(['status' => 'stale']);
 
             return $reservation->fresh();
         }, 3);
