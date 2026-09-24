@@ -3,8 +3,31 @@ name: Browser QA
 on:
   push:
     branches: [main]
+    paths:
+      - "*.html"
+      - "css/**"
+      - "js/**"
+      - "images/**"
+      - "scripts/**"
+      - "package.json"
+      - "site.webmanifest"
+      - "robots.txt"
+      - "sitemap.xml"
+      - ".github/workflows/browser-qa.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "*.html"
+      - "css/**"
+      - "js/**"
+      - "images/**"
+      - "scripts/**"
+      - "package.json"
+      - "site.webmanifest"
+      - "robots.txt"
+      - "sitemap.xml"
+      - ".github/workflows/browser-qa.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,8 +44,15 @@ jobs:
         run: npm install --package-lock=false
       - name: Audit browser QA dependencies
         run: npm audit --no-package-lock --audit-level=high
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Resolve system Chrome
+        run: |
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$CHROME_PATH" ]; then
+            echo "No system Chrome/Chromium found on runner."
+            exit 1
+          fi
+          echo "CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+          "$CHROME_PATH" --version
       - name: Start static server
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/hotel-vastu-server.log 2>&1 &
@@ -38,11 +68,10 @@ jobs:
       - name: Run browser and accessibility QA
         env:
           BASE_URL: http://127.0.0.1:4173
+          CHROME_PATH: ${{ env.CHROME_PATH }}
         run: node scripts/browser-check.mjs
-
       - name: Run site-wide Lighthouse quality gates
         run: |
-          CHROME_PATH="$(node -e "const { chromium }=require('playwright'); process.stdout.write(chromium.executablePath())")"
           PAGES=(
             index.html
             rooms.html
@@ -60,24 +89,12 @@ jobs:
           run_lighthouse() {
             local page="$1"
             local report="$2"
-            npx lighthouse "http://127.0.0.1:4173/$page" \
-              --chrome-path="$CHROME_PATH" \
-              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
-              --only-categories=performance,accessibility,best-practices,seo \
-              --output=json \
-              --output-path="$report" \
-              --quiet
+            npx lighthouse "http://127.0.0.1:4173/$page"               --chrome-path="$CHROME_PATH"               --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"               --only-categories=performance,accessibility,best-practices,seo               --output=json               --output-path="$report"               --quiet
             node scripts/lighthouse-check.mjs "$page" "$report"
           }
-          echo "Warming Chromium and Lighthouse before strict scoring..."
+          echo "Warming Chrome and Lighthouse before strict scoring..."
           warmup_report="/tmp/lighthouse-warmup.json"
-          npx lighthouse "http://127.0.0.1:4173/index.html" \
-            --chrome-path="$CHROME_PATH" \
-            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
-            --only-categories=performance \
-            --output=json \
-            --output-path="$warmup_report" \
-            --quiet
+          npx lighthouse "http://127.0.0.1:4173/index.html"             --chrome-path="$CHROME_PATH"             --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"             --only-categories=performance             --output=json             --output-path="$warmup_report"             --quiet
 
           for page in "${PAGES[@]}"; do
             safe_name="$(echo "$page" | tr '/.' '__')"

@@ -11,7 +11,7 @@ const pages=[
 
 const nearbyTransportPages=new Set(["index.html","hotel-near-rps-more.html","hotel-near-danapur-railway-station.html"]);
 const failures=[];
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
 
 async function reviewContext(label,options){
   const context=await browser.newContext({...options,timezoneId:"Asia/Kolkata"});
