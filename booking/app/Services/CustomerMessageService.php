@@ -23,14 +23,12 @@ class CustomerMessageService
     {
         $reservation->loadMissing(['guestLinks.guest']);
         $guest = $reservation->guestLinks->first()?->guest;
-        $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
         $paymentStatus = str_replace('_', ' ', ucfirst((string) $reservation->payment_status));
 
         $message = "Booking confirmed at Hotel Vastu Premium. {$reservation->booking_number}. "
             ."Check-in {$reservation->check_in_date->format('d M Y')}, "
             ."check-out {$reservation->check_out_date->format('d M Y')}. "
-            ."Total INR {$reservation->total}. Payment: {$paymentStatus}. "
-            ."Status: {$statusUrl}";
+            ."Total INR {$reservation->total}. Payment: {$paymentStatus}.";
 
         $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
 
@@ -40,9 +38,7 @@ class CustomerMessageService
                 ."Check-in: {$reservation->check_in_date->format('d M Y')}\n"
                 ."Check-out: {$reservation->check_out_date->format('d M Y')}\n"
                 ."Total: INR {$reservation->total}\n"
-                ."Payment status: {$paymentStatus}\n\n"
-                ."View booking status: {$statusUrl}\n\n"
-                ."Please keep this secure link for your booking updates.\n";
+                ."Payment status: {$paymentStatus}\n";
 
             $this->sendEmailBestEffort(
                 $guest->email,
@@ -56,12 +52,11 @@ class CustomerMessageService
     {
         $reservation->loadMissing(['guestLinks.guest']);
         $guest = $reservation->guestLinks->first()?->guest;
-        $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
 
         $message = "Reminder: your Hotel Vastu Premium stay starts "
             .$reservation->check_in_date->format('d M Y').". "
             ."Booking {$reservation->booking_number}. "
-            ."If your plans changed, please contact the hotel. {$statusUrl}";
+            ."If your plans changed, please contact the hotel.";
 
         $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
 
@@ -69,8 +64,7 @@ class CustomerMessageService
             $body = "Your stay at Hotel Vastu Premium is tomorrow.\n\n"
                 ."Booking number: {$reservation->booking_number}\n"
                 ."Check-in: {$reservation->check_in_date->format('d M Y')}\n"
-                ."Check-out: {$reservation->check_out_date->format('d M Y')}\n"
-                ."Booking status: {$statusUrl}\n\n"
+                ."Check-out: {$reservation->check_out_date->format('d M Y')}\n\n"
                 ."If your plans have changed, please contact the hotel.\n";
 
             $this->sendEmailBestEffort(
@@ -81,14 +75,40 @@ class CustomerMessageService
         }
     }
 
+    public function sendCancellation(Reservation $reservation): void
+    {
+        $reservation->loadMissing(['guestLinks.guest']);
+        $guest = $reservation->guestLinks->first()?->guest;
+
+        $message = "Hotel Vastu Premium booking {$reservation->booking_number} has been cancelled. "
+            ."Check-in was {$reservation->check_in_date->format('d M Y')}. "
+            ."Any refund or payment adjustment follows the hotel's applicable booking policy.";
+
+        $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
+
+        if ($guest?->email) {
+            $body = "Your Hotel Vastu Premium reservation has been cancelled.\n\n"
+                ."Booking number: {$reservation->booking_number}\n"
+                ."Check-in: {$reservation->check_in_date->format('d M Y')}\n"
+                ."Check-out: {$reservation->check_out_date->format('d M Y')}\n"
+                ."Status: Cancelled\n\n"
+                ."Any refund or payment adjustment follows the hotel's applicable booking policy.\n";
+
+            $this->sendEmailBestEffort(
+                $guest->email,
+                'Booking cancelled - '.$reservation->booking_number.' | Hotel Vastu Premium',
+                $body
+            );
+        }
+    }
+
     public function sendNoShow(Reservation $reservation): void
     {
         $reservation->loadMissing(['guestLinks.guest']);
         $guest = $reservation->guestLinks->first()?->guest;
-        $statusUrl = route('booking.confirmation', ['token' => $reservation->public_token]);
 
         $message = "Hotel Vastu Premium booking {$reservation->booking_number} was marked no-show. "
-            ."No refund is processed automatically. Booking status: {$statusUrl}";
+            ."No refund is processed automatically. Please contact the hotel for any applicable adjustment.";
 
         $this->sendSmsBestEffort((string) ($guest?->phone ?? ''), $message);
 
@@ -97,8 +117,7 @@ class CustomerMessageService
                 ."Booking number: {$reservation->booking_number}\n"
                 ."Scheduled check-in: {$reservation->check_in_date->format('d M Y')}\n"
                 ."Status: No show\n\n"
-                ."No refund is processed automatically. Any refund or adjustment follows the hotel's applicable booking policy.\n"
-                ."View booking status: {$statusUrl}\n";
+                ."No refund is processed automatically. Any refund or adjustment follows the hotel's applicable booking policy.\n";
 
             $this->sendEmailBestEffort(
                 $guest->email,
