@@ -15,6 +15,7 @@ use App\Models\Stay;
 use App\Models\StayGuest;
 use App\Models\StayRoom;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -224,8 +225,10 @@ class FrontDeskService
         }, 3);
     }
 
-    public function extendStay(Stay $stay, CarbonImmutable $newCheckout): Stay
+    public function extendStay(Stay $stay, CarbonInterface $newCheckout): Stay
     {
+        $newCheckout = CarbonImmutable::instance($newCheckout);
+
         return DB::transaction(function () use ($stay, $newCheckout) {
             $stay = Stay::query()->whereKey($stay->id)->lockForUpdate()->firstOrFail();
             if ($stay->status !== 'checked_in') {
