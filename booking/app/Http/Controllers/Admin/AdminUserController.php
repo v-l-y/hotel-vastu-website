@@ -20,17 +20,20 @@ class AdminUserController extends Controller
     public function index(): View
     {
         return view('admin.users', [
-            'users' => AdminUser::query()->orderBy('name')->get(),
+            'users' => AdminUser::query()
+                ->orderBy('name')
+                ->paginate(15, ['*'], 'users_page')
+                ->withQueryString(),
             'auditLogs' => AdminAuditLog::query()
                 ->with('adminUser')
                 ->latest('id')
-                ->limit(100)
-                ->get(),
+                ->paginate(25, ['*'], 'audit_page')
+                ->withQueryString(),
             'authEvents' => AdminAuthEvent::query()
                 ->with('adminUser')
                 ->latest('id')
-                ->limit(100)
-                ->get(),
+                ->paginate(25, ['*'], 'auth_page')
+                ->withQueryString(),
             'roles' => self::ROLES,
         ]);
     }
