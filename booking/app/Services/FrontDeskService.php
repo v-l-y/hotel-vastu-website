@@ -270,6 +270,8 @@ class FrontDeskService
 
             $extraSubtotal = 0.0;
             $extraTax = 0.0;
+            $totalStayNights = CarbonImmutable::parse($reservation->check_in_date)
+                ->diffInDays($newCheckout);
 
             foreach ($reservation->rooms as $reservationRoom) {
                 if ($reservationRoom->rate_plan_id === null) {
@@ -281,7 +283,8 @@ class FrontDeskService
                     $reservationRoom->rate_plan_id,
                     $oldCheckout,
                     $newCheckout,
-                    $reservationRoom->quantity
+                    $reservationRoom->quantity,
+                    $totalStayNights
                 );
 
                 foreach ($quote['nights'] as $night) {
