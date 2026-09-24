@@ -171,14 +171,23 @@ class PaymentEndpointIdempotencyTest extends TestCase
             ->assertOk();
     }
 
-    public function test_front_desk_payment_form_renders_required_idempotency_token(): void
+    public function test_targeted_front_desk_payment_form_renders_required_idempotency_token(): void
     {
         $admin = $this->administrator();
+        $reservation = $this->reservation();
 
         $this->withSession(['admin_user_id' => $admin->id])
             ->get('/admin/front-desk')
             ->assertOk()
-            ->assertSee('name="idempotency_key"', false);
+            ->assertDontSee('name="idempotency_key"', false)
+            ->assertDontSee('Target ID');
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->get('/admin/payments?reservation_id='.$reservation->id)
+            ->assertOk()
+            ->assertSee('The booking target is already set.')
+            ->assertSee('name="idempotency_key"', false)
+            ->assertSee($reservation->booking_number);
     }
 
     public function test_restaurant_quick_pay_uses_only_remaining_balance_after_partial_payment(): void
