@@ -90,6 +90,7 @@ class FrontDeskServiceTest extends TestCase
             'reservation_id'=>$reservation->id,
             'method'=>'upi',
             'amount'=>2000,
+            'external_reference'=>'frontdesk-upi-advance',
         ]);
 
         $stay = app(FrontDeskService::class)->checkIn($reservation->fresh(), [$room->id]);
@@ -118,6 +119,7 @@ class FrontDeskServiceTest extends TestCase
             'reservation_id'=>$reservation->id,
             'method'=>'upi',
             'amount'=>2000,
+            'external_reference'=>'frontdesk-upi-housekeeping',
         ]);
 
         $service = app(FrontDeskService::class);
@@ -159,6 +161,7 @@ class FrontDeskServiceTest extends TestCase
             'reservation_id'=>$reservation->id,
             'method'=>'upi',
             'amount'=>2000,
+            'external_reference'=>'frontdesk-upi-lifecycle',
         ]);
 
         $service = app(FrontDeskService::class);
