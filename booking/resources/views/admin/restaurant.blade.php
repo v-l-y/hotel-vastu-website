@@ -233,11 +233,18 @@ if ($kitchenOnly ?? false) {
 </section>
 
 <?php if (!($kitchenOnly ?? false)): ?>
-<section class="panel">
-<div class="toolbar"><div><h2 style="margin:0">Recent completed orders</h2><span class="muted">Last 50 served or cancelled orders.</span></div></div>
-<?php if ($historyOrders->isEmpty()): ?>
+<section class="panel" id="restaurant-history">
+<div class="toolbar">
+<div class="section-title">
+@include('admin.partials.icon',['name'=>'table'])
+<div><h2 style="margin:0">Completed order history</h2><span class="muted">Served and cancelled orders, newest first.</span></div>
+</div>
+<span class="status-badge">{{ $historyOrders->total() }} total</span>
+</div>
+<?php if ($historyOrders->count() === 0): ?>
 <div class="empty-state">No completed restaurant orders yet.</div>
 <?php else: ?>
+<div class="table-wrap">
 <table class="restaurant-history">
 <thead><tr><th>Order / KOT</th><th>Destination & items</th><th>Status</th><th>Total</th><th>Settlement</th></tr></thead>
 <tbody>
@@ -294,6 +301,8 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
+@include('admin.partials.pagination',['paginator'=>$historyOrders,'label'=>'Restaurant order history pagination','fragment'=>'restaurant-history'])
 <?php endif; ?>
 </section>
 <?php endif; ?>
