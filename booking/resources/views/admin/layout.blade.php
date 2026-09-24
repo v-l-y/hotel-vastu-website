@@ -119,7 +119,7 @@ code{word-break:break-all}
 .admin-content{padding:14px}
 .admin-topbar-meta{display:none}
 .page-hero{padding:18px;border-radius:16px}
-table{min-width:620px}
+table{display:block;overflow-x:auto;width:100%}
 }
 </style>
 @stack('styles')
