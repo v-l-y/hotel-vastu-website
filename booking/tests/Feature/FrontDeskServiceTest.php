@@ -108,6 +108,47 @@ class FrontDeskServiceTest extends TestCase
         $this->assertDatabaseHas('invoice_items', ['invoice_id'=>$result['invoice']->id, 'category'=>'room']);
     }
 
+    public function test_occupied_room_housekeeping_status_is_locked_until_release(): void
+    {
+        [$reservation, $room] = $this->createReservationFixture('4');
+        $room->update(['housekeeping_status'=>'inspected']);
+
+        app(PaymentService::class)->record([
+            'idempotency_key'=>'40404040-4040-4040-8040-404040404040',
+            'reservation_id'=>$reservation->id,
+            'method'=>'upi',
+            'amount'=>2000,
+        ]);
+
+        $service = app(FrontDeskService::class);
+        $stay = $service->checkIn($reservation->fresh(), [$room->id]);
+
+        try {
+            $service->updateHousekeeping($room->fresh(), 'out_of_order');
+            $this->fail('Occupied room housekeeping update should have been rejected.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                'Occupied rooms cannot be changed by housekeeping until checkout or room transfer.',
+                $exception->getMessage()
+            );
+        }
+
+        $this->assertSame('inspected', $room->fresh()->housekeeping_status);
+        $this->assertDatabaseHas('stay_rooms', [
+            'stay_id'=>$stay->id,
+            'room_id'=>$room->id,
+            'released_at'=>null,
+        ]);
+
+        $service->checkOut($stay);
+
+        $this->assertSame('dirty', $room->fresh()->housekeeping_status);
+
+        $service->updateHousekeeping($room->fresh(), 'out_of_order');
+
+        $this->assertSame('out_of_order', $room->fresh()->housekeeping_status);
+    }
+
     public function test_room_lifecycle_checkin_checkout_and_housekeeping_is_enforced(): void
     {
         [$reservation, $room] = $this->createReservationFixture('3');
