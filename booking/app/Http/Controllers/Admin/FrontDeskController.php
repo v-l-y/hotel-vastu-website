@@ -253,15 +253,23 @@ class FrontDeskController extends Controller
             ->with('status', 'Checkout completed. Customer invoice and feedback links queued for delivery.');
     }
 
-    public function cancel(Reservation $reservation, ReservationLifecycleService $service): RedirectResponse
-    {
+    public function cancel(
+        Reservation $reservation,
+        ReservationLifecycleService $service,
+        CustomerMessageService $messages
+    ): RedirectResponse {
         try {
-            $service->cancel($reservation);
+            $reservation = $service->cancel($reservation);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['front_desk' => $exception->getMessage()]);
         }
 
-        return back()->with('status', 'Reservation cancelled. Review any collected payment for refund.');
+        $messages->sendCancellation($reservation->load(['guestLinks.guest']));
+
+        return back()->with(
+            'status',
+            'Reservation cancelled. Customer notification sent. Review any collected payment for refund.'
+        );
     }
 
     public function noShow(
