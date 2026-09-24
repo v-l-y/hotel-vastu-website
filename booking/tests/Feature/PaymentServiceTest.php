@@ -108,4 +108,80 @@ class PaymentServiceTest extends TestCase
         ]);
     }
 
+    public function test_payment_idempotency_key_cannot_be_reused_for_a_different_request(): void
+    {
+        $reservation = Reservation::query()->create([
+            'booking_number'=>'HV-PAY-IDEMPOTENCY-CONFLICT',
+            'public_token'=>'15151515-1515-4151-8151-151515151515',
+            'check_in_date'=>today(),
+            'check_out_date'=>today()->addDay(),
+            'status'=>'confirmed',
+            'pricing_status'=>'priced',
+            'payment_status'=>'unpaid',
+            'subtotal'=>1000,
+            'tax'=>0,
+            'total'=>1000,
+        ]);
+
+        $service = app(PaymentService::class);
+        $key = '16161616-1616-4161-8161-161616161616';
+
+        $service->record([
+            'idempotency_key'=>$key,
+            'reservation_id'=>$reservation->id,
+            'method'=>'cash',
+            'amount'=>100,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('different payment request');
+
+        $service->record([
+            'idempotency_key'=>$key,
+            'reservation_id'=>$reservation->id,
+            'method'=>'cash',
+            'amount'=>200,
+        ]);
+    }
+
+    public function test_refund_idempotency_key_cannot_be_reused_for_a_different_request(): void
+    {
+        $reservation = Reservation::query()->create([
+            'booking_number'=>'HV-REFUND-IDEMPOTENCY-CONFLICT',
+            'public_token'=>'17171717-1717-4171-8171-171717171717',
+            'check_in_date'=>today(),
+            'check_out_date'=>today()->addDay(),
+            'status'=>'confirmed',
+            'pricing_status'=>'priced',
+            'payment_status'=>'unpaid',
+            'subtotal'=>1000,
+            'tax'=>0,
+            'total'=>1000,
+        ]);
+
+        $service = app(PaymentService::class);
+        $payment = $service->record([
+            'idempotency_key'=>'18181818-1818-4181-8181-181818181818',
+            'reservation_id'=>$reservation->id,
+            'method'=>'cash',
+            'amount'=>500,
+        ]);
+
+        $key = '19191919-1919-4191-8191-191919191919';
+        $service->refund($payment, [
+            'idempotency_key'=>$key,
+            'amount'=>100,
+            'reason'=>'First refund',
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('different refund request');
+
+        $service->refund($payment, [
+            'idempotency_key'=>$key,
+            'amount'=>150,
+            'reason'=>'Changed refund',
+        ]);
+    }
+
 }
