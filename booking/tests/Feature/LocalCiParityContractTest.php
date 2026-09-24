@@ -30,6 +30,7 @@ class LocalCiParityContractTest extends TestCase
 
         foreach ([
             'VERSION',
+            'composer.lock',
             'docs/MASTER_BLUEPRINT.md',
             'MASTER BLUEPRINT v1.0 — BOOKING SYSTEM SCOPE FREEZE',
             'Booking System v1.0 is scope-frozen',
