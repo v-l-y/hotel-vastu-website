@@ -1,5 +1,8 @@
 @if($paginator->hasPages())
 @php
+    if (! empty($fragment ?? null)) {
+        $paginator->fragment($fragment);
+    }
     $current = $paginator->currentPage();
     $last = $paginator->lastPage();
     $start = max(1, $current - 2);
