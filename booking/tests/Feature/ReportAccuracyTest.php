@@ -24,6 +24,9 @@ class ReportAccuracyTest extends TestCase
 
     public function test_reports_use_saleable_room_nights_and_actual_restaurant_served_time(): void
     {
+        $reportDate = '2026-10-15';
+        $reportCheckout = '2026-10-16';
+
         $admin = AdminUser::query()->create([
             'name'=>'Accounts',
             'email'=>'accounts-report@example.com',
@@ -52,8 +55,8 @@ class ReportAccuracyTest extends TestCase
         ]);
         RoomBlock::query()->create([
             'room_id'=>$roomB->id,
-            'starts_on'=>today()->toDateString(),
-            'ends_on'=>today()->addDay()->toDateString(),
+            'starts_on'=>$reportDate,
+            'ends_on'=>$reportCheckout,
             'reason'=>'Maintenance',
             'status'=>'active',
         ]);
@@ -65,8 +68,8 @@ class ReportAccuracyTest extends TestCase
         ]);
         $reservation = Reservation::query()->create([
             'booking_number'=>'HV-REPORT-1',
-            'check_in_date'=>today(),
-            'check_out_date'=>today()->addDay(),
+            'check_in_date'=>\Carbon\CarbonImmutable::parse($reportDate),
+            'check_out_date'=>\Carbon\CarbonImmutable::parse($reportDate)->addDay(),
             'status'=>'confirmed',
             'pricing_status'=>'priced',
             'payment_status'=>'unpaid',
@@ -86,7 +89,7 @@ class ReportAccuracyTest extends TestCase
             'reservation_room_id'=>$reservationRoom->id,
             'room_type_id'=>$type->id,
             'rate_plan_id'=>$plan->id,
-            'stay_date'=>today()->toDateString(),
+            'stay_date'=>$reportDate,
             'quantity'=>1,
             'unit_rate'=>1000,
             'line_total'=>1000,
@@ -127,14 +130,14 @@ class ReportAccuracyTest extends TestCase
             'ticket_number'=>'KOT-REPORT-1',
             'restaurant_order_id'=>$order->id,
             'status'=>'served',
-            'served_at'=>now(),
+            'served_at'=>\Carbon\CarbonImmutable::parse('2026-10-15 19:30:00'),
         ]);
         RestaurantOrder::query()->whereKey($order->id)->update([
-            'updated_at'=>now()->addDays(5),
+            'updated_at'=>\Carbon\CarbonImmutable::parse('2026-10-20 12:00:00'),
         ]);
 
         $response = $this->withSession(['admin_user_id'=>$admin->id])
-            ->get('/admin/reports?from='.today()->toDateString().'&to='.today()->toDateString());
+            ->get('/admin/reports?from='.$reportDate.'&to='.$reportDate);
 
         $response->assertOk();
         $response->assertViewHas('bookedRoomNights', 1);
