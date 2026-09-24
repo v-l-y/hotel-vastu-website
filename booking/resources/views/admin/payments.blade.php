@@ -3,6 +3,7 @@
 @section('content')
 <h1>Payments & refunds</h1>
 
+@if($showHotelPayments ?? false)
 <section class="panel">
 <h2>Open hotel balances</h2>
 @forelse($folios as $folio)
@@ -32,7 +33,9 @@
 </form><hr>
 @empty<p>No confirmed reservations.</p>@endforelse
 </section>
+@endif
 
+@if($showRestaurantPayments ?? false)
 <section class="panel">
 <h2>Restaurant balances</h2>
 @forelse($restaurantOrders as $order)
@@ -47,6 +50,16 @@
 </form><hr>
 @empty<p>No restaurant balances.</p>@endforelse
 </section>
+@endif
+
+@if($showHotelPayments ?? false)
+<section class="panel">
+<h2>Recent invoices</h2>
+@forelse($invoices as $invoice)
+<p><a href="{{ route('admin.invoices.show',$invoice) }}"><strong>{{ $invoice->invoice_number }}</strong></a> · {{ $invoice->issued_at->format('d M Y, h:i A') }} · ₹{{ number_format((float)$invoice->total,2) }}</p>
+@empty<p>No invoices available.</p>@endforelse
+</section>
+@endif
 
 <section class="panel">
 <h2>Recent payments / refunds</h2>
