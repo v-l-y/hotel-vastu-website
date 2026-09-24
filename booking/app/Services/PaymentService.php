@@ -531,13 +531,12 @@ class PaymentService
 
     private function finalizeRefund(Payment $payment, Refund $refund): void
     {
+        $this->creditNotes->createForRefund($payment, $refund);
         $this->syncTarget($payment);
 
         if ($payment->reservation_id !== null) {
             $this->staleOpenGatewayOrders($payment->reservation_id);
         }
-
-        $this->creditNotes->createForRefund($payment, $refund);
     }
 
     private function staleOpenGatewayOrders(int $reservationId): void
