@@ -24,6 +24,7 @@ class Folio extends Model
     }
 
     public function charges(): HasMany { return $this->hasMany(FolioCharge::class); }
+    public function payments(): HasMany { return $this->hasMany(Payment::class); }
     public function stay(): BelongsTo { return $this->belongsTo(Stay::class); }
     public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class); }
 }
