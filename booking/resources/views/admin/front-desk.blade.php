@@ -309,6 +309,15 @@
 <label>New checkout<input type="date" name="new_checkout" min="{{ $stay->reservation->check_out_date->addDay()->toDateString() }}" required></label>
 <div style="margin-top:10px"><button>Check availability & extend</button></div>
 </form>
+<form method="post" action="{{ route('admin.front-desk.billing',$stay) }}">@csrf
+<h3>Checkout billing</h3>
+<p class="muted">Final invoice snapshots these details at checkout.</p>
+<label>GSTIN<input name="gstin" value="{{ $stayGuest?->gstin }}" maxlength="20"></label>
+<label>Billing address<textarea name="billing_address" rows="2" maxlength="500">{{ $stayGuest?->billing_address }}</textarea></label>
+<label>Billing State<input name="billing_state" value="{{ $stayGuest?->billing_state }}" maxlength="100"></label>
+<label>State code<input name="billing_state_code" value="{{ $stayGuest?->billing_state_code }}" maxlength="2" inputmode="numeric"></label>
+<div style="margin-top:10px"><button type="submit">Save billing details</button></div>
+</form>
 </div>
 </details>
 </article>
@@ -392,6 +401,17 @@
 <input type="email" name="email" value="{{ old('email') }}" maxlength="190" autocomplete="email" placeholder="guest@example.com">
 <span class="front-desk-field-help">Used for booking confirmation when provided.</span>
 </label>
+<div class="full">
+<details>
+<summary><strong>Billing / GST details</strong> <span class="muted">Optional</span></summary>
+<div class="grid" style="margin-top:12px">
+<label><span class="front-desk-field-title"><span>GSTIN</span><small>Optional</small></span><input name="gstin" value="{{ old('gstin') }}" maxlength="20" autocomplete="off"></label>
+<label><span class="front-desk-field-title"><span>Billing State</span><small>Optional</small></span><input name="billing_state" value="{{ old('billing_state') }}" maxlength="100"></label>
+<label><span class="front-desk-field-title"><span>State code</span><small>2 digits</small></span><input name="billing_state_code" value="{{ old('billing_state_code') }}" maxlength="2" inputmode="numeric"></label>
+<label class="full"><span class="front-desk-field-title"><span>Billing address</span><small>Optional unless required on GST invoice</small></span><textarea name="billing_address" rows="2" maxlength="500">{{ old('billing_address') }}</textarea></label>
+</div>
+</details>
+</div>
 </div>
 </fieldset>
 
