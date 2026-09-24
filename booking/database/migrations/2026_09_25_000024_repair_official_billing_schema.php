@@ -104,7 +104,9 @@ return new class extends Migration {
             return;
         }
 
-        if (Schema::hasColumn('invoices', 'folio_id')) {
+        $restaurantOrderColumnMissing = ! Schema::hasColumn('invoices', 'restaurant_order_id');
+
+        if ($restaurantOrderColumnMissing && Schema::hasColumn('invoices', 'folio_id')) {
             Schema::table('invoices', function (Blueprint $table) {
                 $table->unsignedBigInteger('folio_id')->nullable()->change();
             });
