@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Refund extends Model
 {
     protected $fillable = [
-        'idempotency_key', 'payment_id', 'amount', 'status',
+        'idempotency_key', 'payment_id', 'amount', 'status', 'refund_type',
         'reason', 'external_reference', 'refunded_at',
     ];
 
