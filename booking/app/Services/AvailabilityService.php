@@ -27,23 +27,24 @@ class AvailabilityService
             ->where('housekeeping_status', '!=', 'out_of_order')
             ->count();
 
-        $blockedRooms = RoomBlock::query()
-            ->where('status', 'active')
-            ->whereHas('room', fn ($query) => $query
-                ->where('room_type_id', $roomTypeId)
-                ->where('status', 'active')
-                ->where('housekeeping_status', '!=', 'out_of_order'))
-            ->whereDate('starts_on', '<', $checkOut->toDateString())
-            ->whereDate('ends_on', '>', $checkIn->toDateString())
-            ->distinct()
-            ->count('room_id');
-
         $committedPeak = 0;
+        $blockedAtPeak = 0;
         $reservedAtPeak = 0;
         $heldAtPeak = 0;
 
         for ($date = $checkIn; $date->lessThan($checkOut); $date = $date->addDay()) {
             $stayDate = $date->toDateString();
+
+            $blockedRooms = RoomBlock::query()
+                ->where('status', 'active')
+                ->whereHas('room', fn ($query) => $query
+                    ->where('room_type_id', $roomTypeId)
+                    ->where('status', 'active')
+                    ->where('housekeeping_status', '!=', 'out_of_order'))
+                ->whereDate('starts_on', '<=', $stayDate)
+                ->whereDate('ends_on', '>', $stayDate)
+                ->distinct()
+                ->count('room_id');
 
             $reservedRooms = (int) ReservationRoom::query()
                 ->where('room_type_id', $roomTypeId)
@@ -78,9 +79,10 @@ class AvailabilityService
                 ->whereDate('check_out_date', '>', $stayDate)
                 ->sum('quantity');
 
-            $committed = $reservedRooms + $heldRooms;
+            $committed = $blockedRooms + $reservedRooms + $heldRooms;
             if ($committed > $committedPeak) {
                 $committedPeak = $committed;
+                $blockedAtPeak = $blockedRooms;
                 $reservedAtPeak = $reservedRooms;
                 $heldAtPeak = $heldRooms;
             }
@@ -88,10 +90,10 @@ class AvailabilityService
 
         return [
             'total_rooms' => $totalRooms,
-            'blocked_rooms' => $blockedRooms,
+            'blocked_rooms' => $blockedAtPeak,
             'reserved_rooms' => $reservedAtPeak,
             'held_rooms' => $heldAtPeak,
-            'available_rooms' => max(0, $totalRooms - $blockedRooms - $committedPeak),
+            'available_rooms' => max(0, $totalRooms - $committedPeak),
         ];
     }
 }
