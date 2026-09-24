@@ -3,8 +3,14 @@ name: Static Site QA
 on:
   push:
     branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/site-qa.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/site-qa.yml"
 
 permissions:
   contents: read
