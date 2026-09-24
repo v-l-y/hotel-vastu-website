@@ -87,6 +87,7 @@ class PaymentEndpointIdempotencyTest extends TestCase
         $payload = [
             'idempotency_key' => $idempotencyKey,
             'amount' => 100,
+            'refund_type' => 'overpayment',
             'reason' => 'Duplicate-submit regression',
         ];
 
