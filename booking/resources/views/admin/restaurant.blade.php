@@ -222,7 +222,7 @@ default => ucfirst(str_replace('_',' ',$order->order_type)),
 @php($succeededRefunds=(float)$order->payments->flatMap->refunds->where('status','succeeded')->sum('amount'))
 @php($outstanding=max(0,round((float)$order->total-$succeededPayments+$succeededRefunds,2)))
 @if($outstanding>0)
-<form class="actions" method="post" action="{{ route('admin.payments.store') }}">
+<form class="actions" data-restaurant-payment method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <input type="hidden" name="target_type" value="restaurant_order">
@@ -230,6 +230,7 @@ default => ucfirst(str_replace('_',' ',$order->order_type)),
 <input type="hidden" name="amount" value="{{ number_format($outstanding,2,'.','') }}">
 <span>Due ₹{{ number_format($outstanding,2) }}</span>
 <select name="method"><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select>
+<input name="external_reference" maxlength="190" placeholder="Transaction reference" aria-label="Payment transaction reference">
 <button>Pay balance</button>
 </form>
 @else
@@ -251,6 +252,22 @@ default => ucfirst(str_replace('_',' ',$order->order_type)),
 
 <script>
 (() => {
+  document.querySelectorAll('[data-restaurant-payment]').forEach((paymentForm) => {
+    const method = paymentForm.querySelector('select[name="method"]');
+    const reference = paymentForm.querySelector('input[name="external_reference"]');
+    if (!method || !reference) return;
+
+    const syncReference = () => {
+      const needsReference = method.value !== 'cash';
+      reference.required = needsReference;
+      reference.hidden = !needsReference;
+      if (!needsReference) reference.value = '';
+    };
+
+    method.addEventListener('change', syncReference);
+    syncReference();
+  });
+
   const form = document.getElementById('restaurant-order-form');
   if (!form) return;
 
