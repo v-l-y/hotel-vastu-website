@@ -193,18 +193,38 @@ class SetupController extends Controller
             'max_stay' => ['nullable', 'integer', 'gte:min_stay', 'max:365'],
         ]);
 
-        $overlap = RoomRate::query()
-            ->where('room_type_id', $data['room_type_id'])
-            ->where('rate_plan_id', $data['rate_plan_id'])
-            ->whereDate('starts_on', '<=', $data['ends_on'])
-            ->whereDate('ends_on', '>=', $data['starts_on'])
-            ->exists();
+        try {
+            DB::transaction(function () use ($data) {
+                // Lock the canonical configuration rows so two concurrent requests for the
+                // same room-type/rate-plan pair cannot both pass the overlap check.
+                RoomType::query()
+                    ->whereKey($data['room_type_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        if ($overlap) {
-            return back()->withInput()->withErrors(['starts_on' => 'A dated rate already overlaps this room type and rate plan.']);
+                RatePlan::query()
+                    ->whereKey($data['rate_plan_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $overlap = RoomRate::query()
+                    ->where('room_type_id', $data['room_type_id'])
+                    ->where('rate_plan_id', $data['rate_plan_id'])
+                    ->whereDate('starts_on', '<=', $data['ends_on'])
+                    ->whereDate('ends_on', '>=', $data['starts_on'])
+                    ->exists();
+
+                if ($overlap) {
+                    throw new RuntimeException('A dated rate already overlaps this room type and rate plan.');
+                }
+
+                RoomRate::query()->create($data);
+            }, 3);
+        } catch (RuntimeException $exception) {
+            return back()
+                ->withInput()
+                ->withErrors(['starts_on' => $exception->getMessage()]);
         }
-
-        RoomRate::query()->create($data);
 
         return back()->with('status', 'Dated room rate added.');
     }
