@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReservationFeedback extends Model
 {
+    protected $table = 'reservation_feedbacks';
+
     protected $fillable = [
         'reservation_id', 'token', 'overall_rating', 'cleanliness_rating',
         'service_rating', 'food_rating', 'comment', 'submitted_at',
