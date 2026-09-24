@@ -38,6 +38,8 @@ class CustomerCommunicationTest extends TestCase
             ->assertSee('Booking confirmation')
             ->assertSee('Booking confirmed successfully!')
             ->assertSee('Your room has been booked at Hotel Vastu Premium.')
+            ->assertSee('Please keep your booking number for check-in.')
+            ->assertDontSee('A confirmation has been sent')
             ->assertDontSee('Keep this secure link to check the latest booking status.')
             ->assertDontSee('<strong>Status</strong>', false);
     }
