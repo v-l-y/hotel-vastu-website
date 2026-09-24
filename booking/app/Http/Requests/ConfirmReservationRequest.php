@@ -19,6 +19,7 @@ class ConfirmReservationRequest extends FormRequest
             'phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+() -]{7,30}$/'],
             'email' => ['nullable', 'email:rfc', 'max:190'],
             'special_request' => ['nullable', 'string', 'max:2000'],
+            'promo_code' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
         ];
     }
 }
