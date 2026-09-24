@@ -666,6 +666,7 @@ These may be considered for a future version, but a v1.0 review must not convert
 
 A repository revision is valid for v1.0 only when the applicable gates are green:
 
+- `booking/VERSION` remains `1.0` and the scope-freeze contract is present;
 - Composer validation;
 - dependency installation;
 - SQLite feature suite with warnings treated as failures;
