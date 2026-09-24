@@ -67,6 +67,14 @@ class PaymentService
                 throw new RuntimeException('Payment amount exceeds the outstanding balance.');
             }
 
+            $externalReference = trim((string) ($data['external_reference'] ?? ''));
+            if (
+                $externalReference !== ''
+                && Payment::query()->where('external_reference', $externalReference)->exists()
+            ) {
+                throw new RuntimeException('Payment reference has already been recorded.');
+            }
+
             $payment = Payment::query()->create([
                 'idempotency_key' => $data['idempotency_key'],
                 'reservation_id' => $data['reservation_id'] ?? null,
@@ -75,7 +83,7 @@ class PaymentService
                 'method' => $data['method'],
                 'status' => $data['status'] ?? 'succeeded',
                 'amount' => $amount,
-                'external_reference' => $data['external_reference'] ?? null,
+                'external_reference' => $externalReference !== '' ? $externalReference : null,
                 'paid_at' => ($data['status'] ?? 'succeeded') === 'succeeded' ? now() : null,
             ]);
 
@@ -316,6 +324,15 @@ class PaymentService
         return DB::transaction(function () use ($refund, $externalReference) {
             $refund = Refund::query()->whereKey($refund->id)->lockForUpdate()->firstOrFail();
             $payment = Payment::query()->whereKey($refund->payment_id)->lockForUpdate()->firstOrFail();
+
+            if (
+                Refund::query()
+                    ->where('external_reference', $externalReference)
+                    ->whereKeyNot($refund->id)
+                    ->exists()
+            ) {
+                throw new RuntimeException('Refund reference has already been recorded.');
+            }
 
             if ($refund->status !== 'pending_manual') {
                 throw new RuntimeException('Only a pending manual refund can be confirmed.');
