@@ -67,7 +67,9 @@ jobs:
           DB_DATABASE: hotel_vastu_booking
           DB_USERNAME: root
           DB_PASSWORD: root
-        run: php artisan test --fail-on-warning
+        run: |
+          php artisan test --fail-on-warning
+          php artisan test --fail-on-warning tests/MySql/MySqlLockingContractTest.php
       - name: Docker + Redis production stack smoke
         shell: bash
         run: |
