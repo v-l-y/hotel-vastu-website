@@ -1,5 +1,5 @@
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:calc(var(--header) + 24px)}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--header) + 24px);scrollbar-gutter:stable}
 body{margin:0;background:var(--paper-2);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.72;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 body::selection{background:var(--gold-light);color:var(--ink)}
 img{max-width:100%;display:block}
