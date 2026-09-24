@@ -43,7 +43,7 @@
 .payment-ledger-amount{text-align:right}
 .payment-ledger-amount strong{display:block;font-size:1.18rem}
 .payment-refund-panel{margin-top:12px;padding-top:12px;border-top:1px solid #eee7e1}
-.payment-refund-form{display:grid;grid-template-columns:minmax(130px,.55fr) minmax(220px,1fr) auto;gap:8px;align-items:end}
+.payment-refund-form{display:grid;grid-template-columns:minmax(130px,.55fr) minmax(180px,.75fr) minmax(220px,1fr) auto;gap:8px;align-items:end}
 .payment-refund-form input{width:100%;box-sizing:border-box}
 .payment-method-badge{text-transform:capitalize}
 .payment-context{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -350,6 +350,14 @@
 <label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Why this refund is being issued" required></label>
 <button class="danger">Refund</button>
 </form>
+@endif
+
+@if($payment->refunds->isNotEmpty())
+<div class="payment-ledger-meta" style="margin-top:10px">
+@foreach($payment->refunds as $refund)
+<span>Refund #{{ $refund->id }} · {{ str_replace('_',' ',$refund->refund_type ?? 'other') }} · ₹{{ number_format((float)$refund->amount,2) }} · {{ str_replace('_',' ',$refund->status) }}</span>
+@endforeach
+</div>
 @endif
 
 @if($canRefund ?? false)
