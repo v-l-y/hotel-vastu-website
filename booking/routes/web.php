@@ -32,7 +32,8 @@ Route::post('/holds/{token}/confirm', [BookingVerificationController::class, 'se
 Route::get('/holds/{token}/verify', [BookingVerificationController::class, 'show'])->name('booking.otp.form');
 Route::post('/holds/{token}/verify', [BookingVerificationController::class, 'verify'])->middleware('throttle:10,1')->name('booking.otp.verify');
 Route::get('/confirmation/{token}', [ReservationController::class, 'show'])->name('booking.confirmation');
-Route::get('/confirmation/{token}/invoice', [PublicInvoiceController::class, 'show'])->name('booking.invoice');
+Route::get('/confirmation/{token}/invoice', [PublicInvoiceController::class, 'showForReservation'])->name('booking.invoice');
+Route::get('/invoice/{token}', [PublicInvoiceController::class, 'show'])->name('billing.invoice');
 Route::get('/feedback/{token}', [FeedbackController::class, 'show'])->name('booking.feedback.show');
 Route::post('/feedback/{token}', [FeedbackController::class, 'store'])->middleware('throttle:10,1')->name('booking.feedback.store');
 Route::get('/payment/{token}/razorpay', [RazorpayPaymentController::class, 'start'])->middleware('throttle:10,1')->name('booking.payment.razorpay');
@@ -107,6 +108,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,restaurant')->group(function () {
             Route::post('/restaurant/orders', [RestaurantController::class, 'store'])->name('restaurant.orders.store');
+            Route::post('/restaurant/orders/{order}/billing', [RestaurantController::class, 'billingDetails'])->name('restaurant.orders.billing');
+            Route::post('/restaurant/orders/{order}/invoice', [RestaurantController::class, 'issueInvoice'])->name('restaurant.orders.invoice');
         });
 
         Route::middleware('admin.role:administrator,front_desk,accounts,restaurant')->group(function () {
@@ -120,8 +123,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/payments/refunds/{refund}/reconcile', [PaymentController::class, 'reconcileRefund'])->name('payments.refunds.reconcile');
         });
 
-        Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
+        Route::middleware('admin.role:administrator,front_desk,accounts,restaurant')->group(function () {
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+        });
+
+        Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
             Route::get('/reports', [ReportController::class, 'index'])->name('reports');
         });
     });
