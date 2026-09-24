@@ -135,8 +135,8 @@ function applyHotelIcons(){
 function syncBookingUrlsForEnvironment(){
  const isLocal=["localhost","127.0.0.1","::1","[::1]"].includes(location.hostname);
  if(!isLocal)return;
- document.querySelectorAll("a[href],form[action]").forEach(el=>{
-  const attr=el.tagName==="FORM"?"action":"href";
+ document.querySelectorAll("a[href]").forEach(el=>{
+  const attr="href";
   const raw=el.getAttribute(attr);
   if(!raw)return;
   let url;
