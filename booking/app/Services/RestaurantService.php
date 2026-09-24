@@ -32,7 +32,11 @@ class RestaurantService
             $table = null;
 
             if ($type === 'room_service') {
-                $folio = Folio::query()->whereKey($data['folio_id'] ?? 0)->where('status', 'open')->first();
+                $folio = Folio::query()
+                    ->whereKey($data['folio_id'] ?? 0)
+                    ->where('status', 'open')
+                    ->lockForUpdate()
+                    ->first();
                 if ($folio === null) {
                     throw new RuntimeException('Room service requires an open guest folio.');
                 }
