@@ -185,6 +185,7 @@ class FrontDeskController extends Controller
             'inHouseCount' => $allStays->count(),
             'departureCountToday' => $departureCountToday,
             'readyRoomCount' => $readyUnoccupiedRooms->count(),
+            'occupiedRoomIds' => $occupiedRoomIds,
             'dirtyRoomCount' => $rooms->where('housekeeping_status', 'dirty')->count(),
             'outOfOrderRoomCount' => $rooms->where('housekeeping_status', 'out_of_order')->count(),
             'roomTypes' => RoomType::query()->where('is_active', true)->orderBy('name')->get(),
