@@ -11,6 +11,7 @@ use App\Models\ReservationNightRate;
 use App\Models\RestaurantOrder;
 use App\Models\RestaurantOrderItem;
 use App\Models\Room;
+use App\Models\RoomBlock;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,12 +38,41 @@ class ReportController extends Controller
 
         $bookedRoomNights = (int) (clone $nightQuery)->sum('reservation_night_rates.quantity');
         $roomRevenue = (float) (clone $nightQuery)->sum('reservation_night_rates.line_total');
-        $activeRooms = Room::query()
-            ->where('status', 'active')
-            ->where('housekeeping_status', '!=', 'out_of_order')
-            ->count();
-        $days = $from->startOfDay()->diffInDays($to->startOfDay()) + 1;
-        $availableRoomNights = $activeRooms * $days;
+        $availableRoomNights = 0;
+        for (
+            $date = $from->startOfDay();
+            $date->lte($to->startOfDay());
+            $date = $date->addDay()
+        ) {
+            $dateString = $date->toDateString();
+
+            $saleableRoomIds = Room::query()
+                ->where('status', 'active')
+                ->whereDate('created_at', '<=', $dateString)
+                ->when(
+                    $date->isToday(),
+                    fn ($query) => $query->where('housekeeping_status', '!=', 'out_of_order')
+                )
+                ->pluck('id');
+
+            if ($saleableRoomIds->isEmpty()) {
+                continue;
+            }
+
+            $blockedRooms = RoomBlock::query()
+                ->whereIn('room_id', $saleableRoomIds)
+                ->whereDate('starts_on', '<=', $dateString)
+                ->whereDate('ends_on', '>', $dateString)
+                ->where(function ($query) use ($dateString) {
+                    $query
+                        ->whereNull('closed_at')
+                        ->orWhereDate('closed_at', '>', $dateString);
+                })
+                ->distinct()
+                ->count('room_id');
+
+            $availableRoomNights += max(0, $saleableRoomIds->count() - $blockedRooms);
+        }
 
         $paymentsByMethod = Payment::query()
             ->select('method', DB::raw('SUM(amount) as total'))
@@ -54,13 +84,15 @@ class ReportController extends Controller
 
         $topRestaurantItems = RestaurantOrderItem::query()
             ->join('restaurant_orders', 'restaurant_orders.id', '=', 'restaurant_order_items.restaurant_order_id')
+            ->join('kitchen_tickets', 'kitchen_tickets.restaurant_order_id', '=', 'restaurant_orders.id')
             ->select(
                 'restaurant_order_items.item_name',
                 DB::raw('SUM(restaurant_order_items.quantity) as quantity_sold'),
                 DB::raw('SUM(restaurant_order_items.line_total) as sales')
             )
             ->where('restaurant_orders.status', 'served')
-            ->whereBetween('restaurant_orders.updated_at', [$from, $to])
+            ->whereNotNull('kitchen_tickets.served_at')
+            ->whereBetween('kitchen_tickets.served_at', [$from, $to])
             ->groupBy('restaurant_order_items.item_name')
             ->orderByDesc('quantity_sold')
             ->limit(10)
@@ -88,9 +120,11 @@ class ReportController extends Controller
                 ->whereBetween('updated_at', [$from, $to])
                 ->count(),
             'restaurantSales' => (float) RestaurantOrder::query()
-                ->where('status', 'served')
-                ->whereBetween('updated_at', [$from, $to])
-                ->sum('total'),
+                ->join('kitchen_tickets', 'kitchen_tickets.restaurant_order_id', '=', 'restaurant_orders.id')
+                ->where('restaurant_orders.status', 'served')
+                ->whereNotNull('kitchen_tickets.served_at')
+                ->whereBetween('kitchen_tickets.served_at', [$from, $to])
+                ->sum('restaurant_orders.total'),
             'bookedRoomNights' => $bookedRoomNights,
             'occupancyPercent' => $availableRoomNights > 0
                 ? round(($bookedRoomNights / $availableRoomNights) * 100, 2)
