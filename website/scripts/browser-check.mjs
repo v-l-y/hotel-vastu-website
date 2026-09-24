@@ -56,6 +56,10 @@ async function reviewContext(label,options){
 await reviewContext("desktop",{viewport:{width:1440,height:1000}});
 await reviewContext("mobile",{viewport:{width:390,height:844},isMobile:true,hasTouch:true});
 
+const bookingBase=new URL(base);
+const expectedBookingHref=["localhost","127.0.0.1","::1","[::1]"].includes(bookingBase.hostname)
+  ?"http://127.0.0.1:8001/"
+  :"https://booking.hotelvastu.com/";
 const bookingContext=await browser.newContext({viewport:{width:1280,height:900},timezoneId:"Asia/Kolkata"});
 const home=await bookingContext.newPage();
 await home.goto(`${base}/index.html`,{waitUntil:"networkidle"});
@@ -114,14 +118,14 @@ if(bookingFormState.checkInName!=="check_in"||bookingFormState.checkOutName!=="c
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
 await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
-const bookingLinks=mobile.locator('a[href="https://booking.hotelvastu.com/"]');
+const bookingLinks=mobile.locator(`a[href="${expectedBookingHref}"]`);
 if(await bookingLinks.count()<2)failures.push("shared booking CTAs did not point to the online booking system");
 await mobile.locator("[data-menu-button]").click();
 if(!await mobile.locator("[data-nav-links]").evaluate(el=>el.classList.contains("open")))failures.push("mobile nav did not open");
-const mobileHeaderBooking=mobile.locator('[data-nav-links] a[href="https://booking.hotelvastu.com/"]');
+const mobileHeaderBooking=mobile.locator(`[data-nav-links] a[href="${expectedBookingHref}"]`);
 const headerBookingWrap=await mobileHeaderBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
 if(headerBookingWrap.whiteSpace!=="nowrap"||headerBookingWrap.overflow)failures.push("mobile header booking CTA wrapped or overflowed");
-const mobileQuickBooking=mobile.locator('.mobile-actions a[href="https://booking.hotelvastu.com/"]');
+const mobileQuickBooking=mobile.locator(`.mobile-actions a[href="${expectedBookingHref}"]`);
 const quickBookingWrap=await mobileQuickBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
 if(quickBookingWrap.whiteSpace!=="nowrap"||quickBookingWrap.overflow)failures.push("mobile quick-action booking CTA wrapped or overflowed");
 
