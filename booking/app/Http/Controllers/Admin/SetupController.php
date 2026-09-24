@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\StayRoom;
+use App\Services\AvailabilityService;
+use Carbon\CarbonImmutable;
 use App\Models\RatePlan;
 use App\Models\RestaurantCategory;
 use App\Models\RestaurantMenuItem;
@@ -14,7 +17,9 @@ use App\Models\RoomType;
 use App\Models\TaxRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Illuminate\View\View;
 
 class SetupController extends Controller
@@ -66,16 +71,79 @@ class SetupController extends Controller
         return back()->with('status', 'Room added.');
     }
 
-    public function storeRoomBlock(Request $request): RedirectResponse
-    {
+    public function storeRoomBlock(
+        Request $request,
+        AvailabilityService $availability
+    ): RedirectResponse {
         $data = $request->validate([
             'room_id' => ['required', 'exists:rooms,id'],
-            'starts_on' => ['required', 'date_format:Y-m-d'],
+            'starts_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'ends_on' => ['required', 'date_format:Y-m-d', 'after:starts_on'],
             'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
-        RoomBlock::query()->create($data + ['status' => 'active']);
+        try {
+            DB::transaction(function () use ($data, $availability) {
+                $roomSnapshot = Room::query()->findOrFail($data['room_id']);
+
+                RoomType::query()
+                    ->whereKey($roomSnapshot->room_type_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $room = Room::query()
+                    ->whereKey($data['room_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $overlap = RoomBlock::query()
+                    ->where('room_id', $room->id)
+                    ->where('status', 'active')
+                    ->whereDate('starts_on', '<', $data['ends_on'])
+                    ->whereDate('ends_on', '>', $data['starts_on'])
+                    ->exists();
+
+                if ($overlap) {
+                    throw new RuntimeException('An active room block already overlaps these dates.');
+                }
+
+                $assignedGuestConflict = StayRoom::query()
+                    ->where('room_id', $room->id)
+                    ->whereNull('released_at')
+                    ->whereHas('stay', function ($stayQuery) use ($data) {
+                        $stayQuery
+                            ->where('status', 'checked_in')
+                            ->whereHas('reservation', fn ($reservationQuery) => $reservationQuery
+                                ->whereDate('check_out_date', '>', $data['starts_on']));
+                    })
+                    ->exists();
+
+                if ($assignedGuestConflict) {
+                    throw new RuntimeException('This room is assigned to an active guest during the requested block.');
+                }
+
+                $removesSaleableInventory = $room->status === 'active'
+                    && $room->housekeeping_status !== 'out_of_order';
+
+                if ($removesSaleableInventory) {
+                    $state = $availability->forRoomType(
+                        $room->room_type_id,
+                        CarbonImmutable::parse($data['starts_on']),
+                        CarbonImmutable::parse($data['ends_on'])
+                    );
+
+                    if ($state['available_rooms'] < 1) {
+                        throw new RuntimeException('This block would reduce room inventory below existing bookings or holds.');
+                    }
+                }
+
+                RoomBlock::query()->create($data + ['status' => 'active']);
+            }, 3);
+        } catch (RuntimeException $exception) {
+            return back()
+                ->withInput()
+                ->withErrors(['room_block' => $exception->getMessage()]);
+        }
 
         return back()->with('status', 'Room block added.');
     }
