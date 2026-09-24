@@ -9,7 +9,7 @@ class BookingVerification extends Model
 {
     protected $fillable = [
         'reservation_hold_id', 'first_name', 'last_name', 'phone', 'email',
-        'special_request', 'code_hash', 'attempts', 'expires_at', 'verified_at',
+        'special_request', 'promo_code', 'code_hash', 'attempts', 'expires_at', 'verified_at',
     ];
 
     protected function casts(): array
