@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class BookingVerification extends Model
+{
+    protected $fillable = [
+        'reservation_hold_id', 'first_name', 'last_name', 'phone', 'email',
+        'special_request', 'code_hash', 'attempts', 'expires_at', 'verified_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'expires_at' => 'datetime',
+            'verified_at' => 'datetime',
+        ];
+    }
+
+    public function hold(): BelongsTo
+    {
+        return $this->belongsTo(ReservationHold::class, 'reservation_hold_id');
+    }
+}

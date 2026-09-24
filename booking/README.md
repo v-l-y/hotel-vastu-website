@@ -56,6 +56,27 @@ Public booking CTAs and the homepage stay form now point to `https://booking.hot
 
 The default seed path does not invent room counts, room numbers, prices, tax, capacity, menu items, table counts or hotel policy. For local UI testing only, `DemoBookingSeeder` intentionally creates clearly marked demo rooms and demo rates and is never called by `DatabaseSeeder`.
 
+## Customer booking v1.0 flow
+
+The public customer flow intentionally avoids account/password creation:
+
+```text
+Website search → availability + price → guest details → mobile OTP
+→ booking confirmation → secure status link → checkout invoice → feedback
+```
+
+- Guest details do **not** create a customer account.
+- A reservation is created only after a valid 6-digit mobile OTP.
+- The existing 10-minute inventory hold still expires automatically if verification is not completed.
+- Confirmation sends the booking number and secure status link by SMS; when an email is supplied it also sends an email.
+- After checkout, the same customer receives a secure invoice link and a one-time feedback link.
+- Submitted feedback is visible to the front desk/admin.
+- Local development uses `SMS_DRIVER=log` and `MAIL_MAILER=log`; inspect `storage/logs/laravel.log`.
+- Production must configure a real SMS webhook provider. OTP confirmation is blocked in production when SMS is still using the log driver.
+- Production email can use the SMTP mailer through the standard `MAIL_*` environment variables.
+
+No public customer password/account is required for v1.0.
+
 ## Admin roles
 
 - `administrator`

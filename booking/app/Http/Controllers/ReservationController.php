@@ -2,40 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ConfirmReservationRequest;
+use App\Models\Folio;
+use App\Models\Invoice;
 use App\Models\Reservation;
-use App\Services\ReservationService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use RuntimeException;
 
 class ReservationController extends Controller
 {
-    public function store(
-        string $token,
-        ConfirmReservationRequest $request,
-        ReservationService $reservationService
-    ): RedirectResponse {
-        try {
-            $reservation = $reservationService->confirmHold($token, $request->validated());
-        } catch (RuntimeException $exception) {
-            return redirect()
-                ->route('booking.search')
-                ->withErrors(['booking' => $exception->getMessage()]);
-        }
-
-        return redirect()->route('booking.confirmation', [
-            'token' => $reservation->public_token,
-        ]);
-    }
-
     public function show(string $token): View
     {
         $reservation = Reservation::query()
             ->where('public_token', $token)
-            ->with(['rooms', 'guestLinks.guest'])
+            ->with(['rooms', 'guestLinks.guest', 'feedback'])
             ->firstOrFail();
 
-        return view('booking.confirmation', ['reservation' => $reservation]);
+        $invoice = null;
+        if ($reservation->status === 'checked_out') {
+            $folio = Folio::query()->where('reservation_id', $reservation->id)->first();
+            if ($folio !== null) {
+                $invoice = Invoice::query()
+                    ->where('folio_id', $folio->id)
+                    ->latest('id')
+                    ->first();
+            }
+        }
+
+        return view('booking.confirmation', compact('reservation', 'invoice'));
     }
 }

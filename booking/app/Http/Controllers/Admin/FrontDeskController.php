@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Folio;
 use App\Models\RatePlan;
 use App\Models\Reservation;
+use App\Models\ReservationFeedback;
 use App\Models\Room;
 use App\Models\RoomBlock;
 use App\Models\RoomType;
 use App\Models\Stay;
 use App\Models\StayRoom;
+use App\Services\CustomerMessageService;
 use App\Services\FrontDeskService;
 use App\Services\ReservationLifecycleService;
 use Carbon\CarbonImmutable;
@@ -126,6 +128,12 @@ class FrontDeskController extends Controller
             'checkInWindowOpenByReservation' => $checkInWindowOpenByReservation,
             'checkInReadyByReservation' => $checkInReadyByReservation,
             'transferRoomsByAssignment' => $transferRoomsByAssignment,
+            'feedbacks' => ReservationFeedback::query()
+                ->whereNotNull('submitted_at')
+                ->with('reservation')
+                ->latest('submitted_at')
+                ->limit(20)
+                ->get(),
         ]);
     }
 
@@ -224,17 +232,25 @@ class FrontDeskController extends Controller
         return back()->with('status', 'Housekeeping status updated.');
     }
 
-    public function checkOut(Stay $stay, FrontDeskService $service): RedirectResponse
-    {
+    public function checkOut(
+        Stay $stay,
+        FrontDeskService $service,
+        CustomerMessageService $messages
+    ): RedirectResponse {
         try {
             $result = $service->checkOut($stay);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['front_desk' => $exception->getMessage()]);
         }
 
+        $reservation = Reservation::query()
+            ->with(['guestLinks.guest', 'feedback'])
+            ->findOrFail($stay->reservation_id);
+        $messages->sendCheckout($reservation, $result['invoice']);
+
         return redirect()
             ->route('admin.invoices.show', $result['invoice'])
-            ->with('status', 'Checkout completed.');
+            ->with('status', 'Checkout completed. Customer invoice and feedback links queued for delivery.');
     }
 
     public function cancel(Reservation $reservation, ReservationLifecycleService $service): RedirectResponse

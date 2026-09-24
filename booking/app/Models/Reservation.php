@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Reservation extends Model
 {
@@ -40,5 +41,10 @@ class Reservation extends Model
     public function nightRates(): HasMany
     {
         return $this->hasMany(ReservationNightRate::class);
+    }
+
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(ReservationFeedback::class);
     }
 }

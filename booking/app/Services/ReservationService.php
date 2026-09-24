@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Guest;
 use App\Models\Reservation;
+use App\Models\ReservationFeedback;
 use App\Models\ReservationGuest;
 use App\Models\ReservationHold;
 use App\Models\ReservationRoom;
@@ -85,7 +86,12 @@ class ReservationService
             $reservation = $this->pricing->priceReservation($reservation);
             $hold->update(['converted_reservation_id' => $reservation->id]);
 
-            return $reservation->load(['rooms', 'guestLinks.guest']);
+            ReservationFeedback::query()->create([
+                'reservation_id' => $reservation->id,
+                'token' => (string) Str::uuid(),
+            ]);
+
+            return $reservation->load(['rooms', 'guestLinks.guest', 'feedback']);
         }, 3);
     }
 

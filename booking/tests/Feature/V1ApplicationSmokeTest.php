@@ -72,12 +72,23 @@ class V1ApplicationSmokeTest extends TestCase
             ->assertSee('Guest details')
             ->assertSee('V1 Smoke Room');
 
-        $confirmResponse = $this->post('/holds/'.$hold->token.'/confirm', [
+        $otpResponse = $this->post('/holds/'.$hold->token.'/confirm', [
             'first_name' => 'V1',
             'last_name' => 'Guest',
             'phone' => '+91 90000 00000',
             'email' => 'v1-smoke@example.com',
             'special_request' => 'Smoke flow',
+        ]);
+
+        $otpResponse->assertRedirect('/holds/'.$hold->token.'/verify');
+        $this->assertSame(0, Reservation::query()->count());
+
+        $this->get('/holds/'.$hold->token.'/verify')
+            ->assertOk()
+            ->assertSee('Verify your mobile');
+
+        $confirmResponse = $this->post('/holds/'.$hold->token.'/verify', [
+            'otp' => '123456',
         ]);
 
         $reservation = Reservation::query()->firstOrFail();

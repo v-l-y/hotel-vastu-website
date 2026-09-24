@@ -23,13 +23,13 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 @if ($errors->any()) <div class="error"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 
 <section class="panel">
-<form class="grid" method="post" action="{{ route('booking.confirm', ['token' => $hold->token]) }}">@csrf
+<form class="grid" method="post" action="{{ route('booking.otp.send', ['token' => $hold->token]) }}">@csrf
 <label>First name<input name="first_name" autocomplete="given-name" required value="{{ old('first_name') }}"></label>
 <label>Last name<input name="last_name" autocomplete="family-name" value="{{ old('last_name') }}"></label>
 <label>Phone<input name="phone" inputmode="tel" autocomplete="tel" required value="{{ old('phone') }}"></label>
 <label>Email<input name="email" type="email" autocomplete="email" value="{{ old('email') }}"></label>
 <label class="full">Special request<textarea name="special_request" rows="4">{{ old('special_request') }}</textarea></label>
-<div class="full"><button type="submit">Confirm booking</button></div>
+<div class="full"><button type="submit">Send verification code</button></div>
 </form>
 </section>
 </main>

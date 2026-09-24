@@ -90,6 +90,24 @@
 @empty<p>No in-house stays.</p>@endforelse
 </section>
 
+
+<section class="panel">
+<h2>Recent guest feedback</h2>
+@forelse($feedbacks as $feedback)
+<article>
+<strong>{{ $feedback->reservation->booking_number }}</strong>
+· {{ $feedback->overall_rating }}/5 overall
+· Cleanliness {{ $feedback->cleanliness_rating }}/5
+· Service {{ $feedback->service_rating }}/5
+@if($feedback->food_rating) · Food {{ $feedback->food_rating }}/5 @endif
+@if($feedback->comment)<p>{{ $feedback->comment }}</p>@endif
+<p class="muted">Submitted {{ $feedback->submitted_at->format('d M Y, h:i A') }}</p>
+</article><hr>
+@empty
+<p>No guest feedback submitted yet.</p>
+@endforelse
+</section>
+
 <section class="panel">
 <h2>Housekeeping</h2>
 <table><thead><tr><th>Room</th><th>Current status</th><th>Update</th></tr></thead><tbody>
