@@ -107,4 +107,44 @@ class FrontDeskServiceTest extends TestCase
         $this->assertDatabaseHas('invoices', ['folio_id'=>$result['folio']->id]);
         $this->assertDatabaseHas('invoice_items', ['invoice_id'=>$result['invoice']->id, 'category'=>'room']);
     }
+
+    public function test_room_lifecycle_checkin_checkout_and_housekeeping_is_enforced(): void
+    {
+        [$reservation, $room] = $this->createReservationFixture('3');
+        $room->update(['housekeeping_status'=>'inspected']);
+
+        app(PaymentService::class)->record([
+            'idempotency_key'=>'30303030-3030-4030-8030-303030303030',
+            'reservation_id'=>$reservation->id,
+            'method'=>'upi',
+            'amount'=>2000,
+        ]);
+
+        $service = app(FrontDeskService::class);
+        $stay = $service->checkIn($reservation->fresh(), [$room->id]);
+
+        $this->assertSame('checked_in', $stay->status);
+        $this->assertSame('checked_in', $reservation->fresh()->status);
+        $this->assertSame('inspected', $room->fresh()->housekeeping_status);
+        $this->assertDatabaseHas('stay_rooms', [
+            'stay_id'=>$stay->id,
+            'room_id'=>$room->id,
+            'released_at'=>null,
+        ]);
+
+        $result = $service->checkOut($stay);
+
+        $this->assertSame('checked_out', $result['stay']->status);
+        $this->assertSame('checked_out', $reservation->fresh()->status);
+        $this->assertSame('dirty', $room->fresh()->housekeeping_status);
+        $this->assertDatabaseMissing('stay_rooms', [
+            'stay_id'=>$stay->id,
+            'room_id'=>$room->id,
+            'released_at'=>null,
+        ]);
+
+        $service->updateHousekeeping($room->fresh(), 'clean');
+
+        $this->assertSame('clean', $room->fresh()->housekeeping_status);
+    }
 }
