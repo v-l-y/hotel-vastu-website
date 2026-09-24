@@ -37,9 +37,10 @@ class RestaurantController extends Controller
             'restaurant_table_id' => ['nullable', 'integer', 'exists:restaurant_tables,id'],
             'guest_name' => ['nullable', 'string', 'max:160'],
             'guest_phone' => ['nullable', 'string', 'max:30'],
-            'menu_item_id' => ['required', 'integer', 'exists:restaurant_menu_items,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:50'],
-            'note' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1', 'max:30'],
+            'items.*.menu_item_id' => ['nullable', 'integer', 'exists:restaurant_menu_items,id'],
+            'items.*.quantity' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'items.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
         try {
@@ -49,14 +50,10 @@ class RestaurantController extends Controller
                 'restaurant_table_id' => $data['restaurant_table_id'] ?? null,
                 'guest_name' => $data['guest_name'] ?? null,
                 'guest_phone' => $data['guest_phone'] ?? null,
-                'items' => [[
-                    'menu_item_id' => $data['menu_item_id'],
-                    'quantity' => $data['quantity'],
-                    'note' => $data['note'] ?? null,
-                ]],
+                'items' => $data['items'],
             ]);
         } catch (RuntimeException $exception) {
-            return back()->withErrors(['restaurant' => $exception->getMessage()]);
+            return back()->withInput()->withErrors(['restaurant' => $exception->getMessage()]);
         }
 
         return back()->with('status', 'Restaurant order created and KOT generated.');

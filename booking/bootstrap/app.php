@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AdminAudit;
 use App\Http\Middleware\AdminAuthenticated;
 use App\Http\Middleware\AdminRole;
 use Illuminate\Foundation\Application;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => AdminAuthenticated::class,
+            'admin.audit' => AdminAudit::class,
             'admin.role' => AdminRole::class,
         ]);
     })

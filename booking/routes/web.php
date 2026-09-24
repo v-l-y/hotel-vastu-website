@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FrontDeskController;
@@ -30,7 +31,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'show'])->name('login');
     Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:6,1')->name('login.submit');
 
-    Route::middleware('admin')->group(function () {
+    Route::middleware(['admin', 'admin.audit'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/', DashboardController::class)->name('dashboard');
 
@@ -46,6 +47,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/setup/restaurant/categories', [SetupController::class, 'storeRestaurantCategory'])->name('setup.restaurant-categories.store');
             Route::post('/setup/restaurant/menu-items', [SetupController::class, 'storeRestaurantMenuItem'])->name('setup.restaurant-menu-items.store');
             Route::post('/setup/restaurant/tables', [SetupController::class, 'storeRestaurantTable'])->name('setup.restaurant-tables.store');
+
+            Route::get('/users', [AdminUserController::class, 'index'])->name('users');
+            Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+            Route::post('/users/{adminUser}', [AdminUserController::class, 'update'])->name('users.update');
+            Route::post('/users/{adminUser}/password', [AdminUserController::class, 'resetPassword'])->name('users.password');
         });
 
         Route::middleware('admin.role:administrator,front_desk')->group(function () {
@@ -53,7 +59,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/front-desk/reservations/{reservation}/check-in', [FrontDeskController::class, 'checkIn'])->name('front-desk.check-in');
             Route::post('/front-desk/reservations/{reservation}/cancel', [FrontDeskController::class, 'cancel'])->name('front-desk.cancel');
             Route::post('/front-desk/reservations/{reservation}/no-show', [FrontDeskController::class, 'noShow'])->name('front-desk.no-show');
+            Route::post('/front-desk/stays/{stay}/transfer', [FrontDeskController::class, 'transfer'])->name('front-desk.transfer');
+            Route::post('/front-desk/stays/{stay}/extend', [FrontDeskController::class, 'extend'])->name('front-desk.extend');
             Route::post('/front-desk/stays/{stay}/check-out', [FrontDeskController::class, 'checkOut'])->name('front-desk.check-out');
+            Route::post('/front-desk/rooms/{room}/housekeeping', [FrontDeskController::class, 'housekeeping'])->name('front-desk.housekeeping');
         });
 
         Route::middleware('admin.role:administrator,restaurant,kitchen')->group(function () {

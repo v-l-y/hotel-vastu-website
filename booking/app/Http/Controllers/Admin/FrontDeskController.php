@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\Models\Stay;
 use App\Services\FrontDeskService;
 use App\Services\ReservationLifecycleService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -49,6 +50,52 @@ class FrontDeskController extends Controller
         }
 
         return back()->with('status', 'Guest checked in.');
+    }
+
+    public function transfer(Request $request, Stay $stay, FrontDeskService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'from_room_id' => ['required', 'integer', 'exists:rooms,id'],
+            'to_room_id' => ['required', 'integer', 'different:from_room_id', 'exists:rooms,id'],
+        ]);
+
+        try {
+            $service->transferRoom($stay, (int) $data['from_room_id'], (int) $data['to_room_id']);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['front_desk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Room transfer completed.');
+    }
+
+    public function extend(Request $request, Stay $stay, FrontDeskService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'new_checkout' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        try {
+            $service->extendStay($stay, CarbonImmutable::parse($data['new_checkout']));
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['front_desk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Stay extended and additional room charges posted.');
+    }
+
+    public function housekeeping(Request $request, Room $room, FrontDeskService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'housekeeping_status' => ['required', 'in:clean,dirty,inspected,out_of_order'],
+        ]);
+
+        try {
+            $service->updateHousekeeping($room, $data['housekeeping_status']);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['front_desk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Housekeeping status updated.');
     }
 
     public function checkOut(Stay $stay, FrontDeskService $service): RedirectResponse
