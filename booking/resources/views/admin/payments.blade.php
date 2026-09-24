@@ -336,7 +336,18 @@
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <label>Refund amount<input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" inputmode="decimal" placeholder="Amount" required></label>
-<label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Cancellation / overpayment / duplicate payment / adjustment" required></label>
+<label>Refund type
+<select name="refund_type" required>
+<option value="overpayment">Overpayment return</option>
+<option value="duplicate_payment">Duplicate payment</option>
+<option value="cancellation">Cancellation</option>
+<option value="rate_adjustment">Rate adjustment</option>
+<option value="service_recovery">Service recovery</option>
+<option value="other">Other</option>
+</select>
+<span class="payment-help">Only revenue adjustments create a credit note after invoice.</span>
+</label>
+<label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Why this refund is being issued" required></label>
 <button class="danger">Refund</button>
 </form>
 @endif
@@ -346,7 +357,7 @@
 <form class="payment-refund-form" method="post" action="{{ route('admin.payments.refunds.confirm-manual',$pendingRefund) }}" style="margin-top:10px">
 @csrf
 <label>External refund reference<input name="external_reference" maxlength="190" placeholder="UPI / card / bank refund reference" required></label>
-<div><span class="status-badge warn">₹{{ number_format((float)$pendingRefund->amount,2) }} pending manual confirmation</span><div class="payment-help">{{ $pendingRefund->reason }}</div></div>
+<div><span class="status-badge warn">₹{{ number_format((float)$pendingRefund->amount,2) }} pending manual confirmation</span><div class="payment-help">{{ str_replace('_',' ',$pendingRefund->refund_type) }} · {{ $pendingRefund->reason }}</div></div>
 <button type="submit">Confirm refunded</button>
 </form>
 @endforeach
