@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payment extends Model
@@ -18,4 +19,7 @@ class Payment extends Model
     }
 
     public function refunds(): HasMany { return $this->hasMany(Refund::class); }
+    public function reservation(): BelongsTo { return $this->belongsTo(Reservation::class); }
+    public function folio(): BelongsTo { return $this->belongsTo(Folio::class); }
+    public function restaurantOrder(): BelongsTo { return $this->belongsTo(RestaurantOrder::class); }
 }

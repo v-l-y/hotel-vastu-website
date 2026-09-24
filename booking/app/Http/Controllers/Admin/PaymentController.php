@@ -3,15 +3,47 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Folio;
 use App\Models\Payment;
+use App\Models\Reservation;
+use App\Models\RestaurantOrder;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use RuntimeException;
 
 class PaymentController extends Controller
 {
+    public function index(): View
+    {
+        return view('admin.payments', [
+            'reservations' => Reservation::query()
+                ->where('status', 'confirmed')
+                ->orderBy('check_in_date')
+                ->limit(50)
+                ->get(),
+            'folios' => Folio::query()
+                ->where('status', 'open')
+                ->where('balance', '>', 0)
+                ->orderByDesc('id')
+                ->get(),
+            'restaurantOrders' => RestaurantOrder::query()
+                ->whereIn('order_type', ['dine_in', 'takeaway'])
+                ->where('status', 'served')
+                ->whereIn('payment_status', ['unpaid', 'partially_paid'])
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get(),
+            'payments' => Payment::query()
+                ->with(['refunds', 'reservation', 'folio', 'restaurantOrder'])
+                ->latest('id')
+                ->limit(100)
+                ->get(),
+        ]);
+    }
+
     public function store(Request $request, PaymentService $service): RedirectResponse
     {
         $data = $request->validate([

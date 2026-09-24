@@ -11,8 +11,12 @@ use InvalidArgumentException;
 
 class AvailabilityService
 {
-    public function forRoomType(int $roomTypeId, CarbonImmutable $checkIn, CarbonImmutable $checkOut): array
-    {
+    public function forRoomType(
+        int $roomTypeId,
+        CarbonImmutable $checkIn,
+        CarbonImmutable $checkOut,
+        ?int $excludeReservationId = null
+    ): array {
         if ($checkOut->lessThanOrEqualTo($checkIn)) {
             throw new InvalidArgumentException('Check-out must be after check-in.');
         }
@@ -34,7 +38,11 @@ class AvailabilityService
 
         $reservedRooms = (int) ReservationRoom::query()
             ->where('room_type_id', $roomTypeId)
-            ->whereHas('reservation', function ($query) use ($checkIn, $checkOut) {
+            ->whereHas('reservation', function ($query) use ($checkIn, $checkOut, $excludeReservationId) {
+                if ($excludeReservationId !== null) {
+                    $query->where('id', '!=', $excludeReservationId);
+                }
+
                 $query
                     ->whereDate('check_in_date', '<', $checkOut->toDateString())
                     ->whereDate('check_out_date', '>', $checkIn->toDateString())
