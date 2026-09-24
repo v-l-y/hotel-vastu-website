@@ -6,6 +6,8 @@ use App\Http\Requests\ConfirmReservationRequest;
 use App\Models\BookingVerification;
 use App\Models\ReservationHold;
 use App\Services\CustomerMessageService;
+use App\Services\PricingService;
+use App\Services\PromotionService;
 use App\Services\ReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,9 @@ class BookingVerificationController extends Controller
     public function send(
         string $token,
         ConfirmReservationRequest $request,
-        CustomerMessageService $messages
+        CustomerMessageService $messages,
+        PricingService $pricing,
+        PromotionService $promotions
     ): RedirectResponse {
         $hold = ReservationHold::query()
             ->active()
@@ -26,6 +30,23 @@ class BookingVerificationController extends Controller
             ->firstOrFail();
 
         $data = $request->validated();
+        $promoCode = strtoupper(trim((string) ($data['promo_code'] ?? '')));
+
+        if ($promoCode !== '') {
+            try {
+                $quote = $pricing->quote(
+                    $hold->room_type_id,
+                    $hold->rate_plan_id,
+                    \Carbon\CarbonImmutable::parse($hold->check_in_date),
+                    \Carbon\CarbonImmutable::parse($hold->check_out_date),
+                    $hold->quantity
+                );
+                $promotions->preview($promoCode, (float) $quote['subtotal']);
+            } catch (RuntimeException $exception) {
+                return back()->withInput()->withErrors(['promo_code' => $exception->getMessage()]);
+            }
+        }
+
         $code = app()->environment('testing')
             ? '123456'
             : str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -38,6 +59,7 @@ class BookingVerificationController extends Controller
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
                 'special_request' => $data['special_request'] ?? null,
+                'promo_code' => $promoCode !== '' ? $promoCode : null,
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
                 'expires_at' => now()->addMinutes(10),
@@ -109,6 +131,7 @@ class BookingVerificationController extends Controller
                 'phone' => $verification->phone,
                 'email' => $verification->email,
                 'special_request' => $verification->special_request,
+                'promo_code' => $verification->promo_code,
             ]);
         } catch (RuntimeException $exception) {
             return redirect()->route('booking.search')->withErrors(['booking' => $exception->getMessage()]);
