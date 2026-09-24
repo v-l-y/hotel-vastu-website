@@ -131,7 +131,7 @@ class CustomerMessageService
     {
         $reservation->loadMissing(['guestLinks.guest', 'feedback']);
         $guest = $reservation->guestLinks->first()?->guest;
-        $invoiceUrl = route('booking.invoice', ['token' => $reservation->public_token]);
+        $invoiceUrl = route('billing.invoice', ['token' => $invoice->public_token]);
         $feedbackUrl = $reservation->feedback
             ? route('booking.feedback.show', ['token' => $reservation->feedback->token])
             : null;
@@ -155,6 +155,60 @@ class CustomerMessageService
 
             $this->sendEmailBestEffort($guest->email, 'Hotel Vastu checkout '.$reservation->booking_number, $body);
         }
+
+        $invoice->update(['last_sent_at' => now()]);
+    }
+
+    public function sendRestaurantInvoice(Invoice $invoice): void
+    {
+        $invoice->loadMissing('restaurantOrder');
+        $order = $invoice->restaurantOrder;
+        $invoiceUrl = route('billing.invoice', ['token' => $invoice->public_token]);
+        $message = "Hotel Vastu restaurant bill {$invoice->invoice_number}. Total INR {$invoice->total}. {$invoiceUrl}";
+
+        $this->sendSmsBestEffort((string) ($invoice->recipient_phone ?? ''), $message);
+
+        if ($invoice->recipient_email) {
+            $body = "Thank you for dining at Hotel Vastu Premium.\n\n"
+                ."Order: ".($order?->order_number ?? 'Restaurant order')."\n"
+                ."Invoice: {$invoice->invoice_number}\n"
+                ."Total: INR {$invoice->total}\n"
+                ."View / print bill: {$invoiceUrl}\n";
+
+            $this->sendEmailBestEffort(
+                $invoice->recipient_email,
+                'Restaurant bill '.$invoice->invoice_number.' | Hotel Vastu Premium',
+                $body
+            );
+        }
+
+        $invoice->update(['last_sent_at' => now()]);
+    }
+
+    public function resendInvoice(Invoice $invoice): void
+    {
+        if ($invoice->document_type === 'restaurant') {
+            $this->sendRestaurantInvoice($invoice);
+            return;
+        }
+
+        $invoiceUrl = route('billing.invoice', ['token' => $invoice->public_token]);
+        $message = "Hotel Vastu invoice {$invoice->invoice_number}. Total INR {$invoice->total}. {$invoiceUrl}";
+        $this->sendSmsBestEffort((string) ($invoice->recipient_phone ?? ''), $message);
+
+        if ($invoice->recipient_email) {
+            $body = "Hotel Vastu Premium invoice copy.\n\n"
+                ."Invoice: {$invoice->invoice_number}\n"
+                ."Total: INR {$invoice->total}\n"
+                ."View / print invoice: {$invoiceUrl}\n";
+            $this->sendEmailBestEffort(
+                $invoice->recipient_email,
+                'Invoice '.$invoice->invoice_number.' | Hotel Vastu Premium',
+                $body
+            );
+        }
+
+        $invoice->update(['last_sent_at' => now()]);
     }
 
     private function sendSmsBestEffort(string $phone, string $message): void
