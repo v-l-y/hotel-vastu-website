@@ -39,10 +39,12 @@ class FrontDeskBookingTest extends TestCase
                 'special_request' => 'Late dinner',
             ]);
 
-        $response->assertRedirect('/admin/front-desk');
         $response->assertSessionHas('status');
 
         $reservation = Reservation::query()->firstOrFail();
+        $response->assertRedirect(
+            route('admin.front-desk', ['tab' => 'arrivals']).'#reservation-'.$reservation->id
+        );
 
         $this->assertSame('front_desk', $reservation->source);
         $this->assertSame('confirmed', $reservation->status);
@@ -65,12 +67,18 @@ class FrontDeskBookingTest extends TestCase
         });
 
         $this->withSession($this->sessionFor($admin))
-            ->get('/admin/front-desk')
+            ->get('/admin/front-desk?tab=arrivals')
             ->assertOk()
             ->assertSee($reservation->booking_number)
             ->assertSee('Walkin Guest')
             ->assertSee('Desk booking')
             ->assertSee('Check in');
+
+        $this->withSession($this->sessionFor($admin))
+            ->get('/admin/payments?reservation_id='.$reservation->id)
+            ->assertOk()
+            ->assertSee('The booking target is already set.')
+            ->assertSee($reservation->booking_number);
     }
 
     public function test_front_desk_booking_respects_live_inventory_and_does_not_oversell(): void
@@ -93,10 +101,14 @@ class FrontDeskBookingTest extends TestCase
             'children' => 0,
         ];
 
-        $this->withSession($this->sessionFor($admin))
-            ->from('/admin/front-desk')
-            ->post('/admin/front-desk/reservations', $payload)
-            ->assertRedirect('/admin/front-desk');
+        $firstResponse = $this->withSession($this->sessionFor($admin))
+            ->from('/admin/front-desk?new=1')
+            ->post('/admin/front-desk/reservations', $payload);
+
+        $firstReservation = Reservation::query()->firstOrFail();
+        $firstResponse->assertRedirect(
+            route('admin.front-desk', ['tab' => 'reservations']).'#reservation-'.$firstReservation->id
+        );
 
         $second = $payload;
         $second['first_name'] = 'Second';
@@ -104,9 +116,9 @@ class FrontDeskBookingTest extends TestCase
         $second['email'] = 'second@example.com';
 
         $this->withSession($this->sessionFor($admin))
-            ->from('/admin/front-desk')
+            ->from('/admin/front-desk?new=1')
             ->post('/admin/front-desk/reservations', $second)
-            ->assertRedirect('/admin/front-desk')
+            ->assertRedirect('/admin/front-desk?new=1')
             ->assertSessionHasErrors('front_desk_booking');
 
         $this->assertSame(1, Reservation::query()->count());
@@ -119,7 +131,19 @@ class FrontDeskBookingTest extends TestCase
         $this->withSession($this->sessionFor($frontDesk))
             ->get('/admin/front-desk')
             ->assertOk()
-            ->assertSee('New / walk-in booking')
+            ->assertSee('+ New booking')
+            ->assertSee('Overview')
+            ->assertSee('Arrivals')
+            ->assertSee('In-house')
+            ->assertSee('Reservations')
+            ->assertSee('Housekeeping')
+            ->assertDontSee('Check availability & confirm booking', false)
+            ->assertDontSee('Target ID');
+
+        $this->withSession($this->sessionFor($frontDesk))
+            ->get('/admin/front-desk?new=1')
+            ->assertOk()
+            ->assertSee('New booking')
             ->assertSee('Check availability & confirm booking', false);
 
         $accounts = AdminUser::query()->create([
