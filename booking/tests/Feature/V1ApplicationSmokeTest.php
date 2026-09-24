@@ -125,6 +125,7 @@ class V1ApplicationSmokeTest extends TestCase
             '/admin/reports',
             '/admin/setup',
             '/admin/users',
+            '/admin/security',
         ] as $uri) {
             $this->withSession(['admin_user_id' => $admin->id])
                 ->get($uri)
