@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
+use App\Models\Payment;
+use App\Models\RestaurantOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -60,4 +62,74 @@ class AdminRbacTest extends TestCase
             ->get('/admin')
             ->assertRedirect('/admin/login');
     }
+    public function test_restaurant_role_cannot_post_hotel_reservation_payment(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Restaurant',
+            'email'=>'restaurant@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'restaurant',
+            'is_active'=>true,
+        ]);
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->post('/admin/payments', [
+                'target_type'=>'reservation',
+                'target_id'=>1,
+                'method'=>'cash',
+                'amount'=>100,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_restaurant_role_cannot_refund_payments(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Restaurant',
+            'email'=>'restaurant-refund@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'restaurant',
+            'is_active'=>true,
+        ]);
+        $payment = Payment::query()->create([
+            'idempotency_key'=>'11111111-1111-4111-8111-111111111111',
+            'method'=>'cash',
+            'status'=>'succeeded',
+            'amount'=>100,
+            'paid_at'=>now(),
+        ]);
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->post('/admin/payments/'.$payment->id.'/refund', ['amount'=>10])
+            ->assertForbidden();
+    }
+
+    public function test_kitchen_role_cannot_create_restaurant_orders_or_serve_them(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Kitchen',
+            'email'=>'kitchen@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'kitchen',
+            'is_active'=>true,
+        ]);
+        $order = RestaurantOrder::query()->create([
+            'order_number'=>'RO-RBAC-1',
+            'order_type'=>'takeaway',
+            'status'=>'ready',
+            'payment_status'=>'unpaid',
+            'subtotal'=>100,
+            'tax'=>0,
+            'total'=>100,
+        ]);
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->post('/admin/restaurant/orders', [])
+            ->assertForbidden();
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->post('/admin/restaurant/orders/'.$order->id.'/status', ['status'=>'served'])
+            ->assertForbidden();
+    }
+
 }
