@@ -3,6 +3,7 @@
 @section('content')
 <h1>Restaurant & KOT</h1>
 
+@unless($kitchenOnly ?? false)
 <section class="panel">
 <h2>New order</h2>
 <form class="grid" method="post" action="{{ route('admin.restaurant.orders.store') }}">@csrf
@@ -41,6 +42,7 @@
 <h2>Restaurant tables</h2>
 <div class="cards">@foreach($tables as $table)<div class="card"><strong>{{ $table->name }}</strong>{{ $table->status }}@if($table->capacity)<br><span class="muted">Capacity {{ $table->capacity }}</span>@endif</div>@endforeach</div>
 </section>
+@endunless
 
 <section class="panel">
 <h2>Orders</h2>
@@ -51,13 +53,14 @@
 <td>@foreach($order->items as $item){{ $item->quantity }}× {{ $item->item_name }}@if(!$loop->last)<br>@endif @endforeach</td>
 <td>{{ str_replace('_',' ',$order->order_type) }}</td>
 <td>{{ $order->kitchenTicket?->ticket_number }}</td>
-<td>{{ $order->status }} / {{ $order->payment_status }}</td>
-<td>₹{{ number_format((float)$order->total,2) }}</td>
+<td>{{ $order->status }}@unless($kitchenOnly ?? false) / {{ $order->payment_status }}@endunless</td>
+<td>@unless($kitchenOnly ?? false)₹{{ number_format((float)$order->total,2) }}@else—@endunless</td>
 <td>
 @if(!in_array($order->status,['served','cancelled'],true))
-<form class="actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">@csrf<select name="status">@foreach(['preparing','ready','served','cancelled'] as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select><button>Update</button></form>
+@php($statusOptions = ($kitchenOnly ?? false) ? ['preparing','ready'] : ['preparing','ready','served','cancelled'])
+<form class="actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">@csrf<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select><button>Update</button></form>
 @endif
-@if($order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status!=='cancelled')
+@if(!($kitchenOnly ?? false) && $order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status!=='cancelled')
 <form class="actions" method="post" action="{{ route('admin.payments.store') }}">@csrf<input type="hidden" name="target_type" value="restaurant_order"><input type="hidden" name="target_id" value="{{ $order->id }}"><input type="hidden" name="amount" value="{{ $order->total }}"><select name="method"><option>cash</option><option>upi</option><option>card</option></select><button>Pay</button></form>
 @endif
 </td>
