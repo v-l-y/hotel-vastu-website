@@ -10,18 +10,17 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 </style>
 </head>
 <body>
+@include('partials.toast')
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Rate your stay</h1>
 <p>Booking <strong>{{ $feedback->reservation->booking_number }}</strong></p>
 
-@if(session('status')) <p class="notice">{{ session('status') }}</p> @endif
 @if($feedback->submitted_at)
 <section class="panel"><h2>Thank you</h2><p>Your feedback has been received.</p></section>
 @elseif($feedback->reservation->status!=='checked_out')
 <section class="panel"><p>Feedback becomes available after checkout.</p></section>
 @else
-@if ($errors->any()) <div class="error"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 <section class="panel">
 <form class="grid" method="post" action="{{ route('booking.feedback.store',['token'=>$feedback->token]) }}">@csrf
 @foreach([
