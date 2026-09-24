@@ -6,6 +6,7 @@ use App\Models\Reservation;
 use App\Models\ReservationHold;
 use App\Models\ReservationRoom;
 use App\Models\Room;
+use App\Models\RoomBlock;
 use App\Models\RoomType;
 use App\Services\AvailabilityService;
 use Carbon\CarbonImmutable;
@@ -156,6 +157,57 @@ class AvailabilityServiceTest extends TestCase
 
         $this->assertSame(1, $result['reserved_rooms']);
         $this->assertSame(0, $result['held_rooms']);
+        $this->assertSame(2, $result['available_rooms']);
+    }
+
+    public function test_sequential_room_blocks_are_not_union_counted_across_multi_night_search(): void
+    {
+        $type = RoomType::query()->create([
+            'code' => 'sequential-blocks',
+            'name' => 'Sequential Blocks',
+            'is_active' => true,
+        ]);
+
+        $roomA = Room::query()->create([
+            'room_type_id' => $type->id,
+            'number' => 'SB101',
+            'status' => 'active',
+            'housekeeping_status' => 'clean',
+        ]);
+        $roomB = Room::query()->create([
+            'room_type_id' => $type->id,
+            'number' => 'SB102',
+            'status' => 'active',
+            'housekeeping_status' => 'clean',
+        ]);
+        Room::query()->create([
+            'room_type_id' => $type->id,
+            'number' => 'SB103',
+            'status' => 'active',
+            'housekeeping_status' => 'clean',
+        ]);
+
+        RoomBlock::query()->create([
+            'room_id' => $roomA->id,
+            'starts_on' => '2026-10-10',
+            'ends_on' => '2026-10-11',
+            'status' => 'active',
+        ]);
+        RoomBlock::query()->create([
+            'room_id' => $roomB->id,
+            'starts_on' => '2026-10-11',
+            'ends_on' => '2026-10-12',
+            'status' => 'active',
+        ]);
+
+        $result = app(AvailabilityService::class)->forRoomType(
+            $type->id,
+            CarbonImmutable::parse('2026-10-10'),
+            CarbonImmutable::parse('2026-10-12')
+        );
+
+        $this->assertSame(3, $result['total_rooms']);
+        $this->assertSame(1, $result['blocked_rooms']);
         $this->assertSame(2, $result['available_rooms']);
     }
 
