@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\CreditNote;
 use App\Models\Folio;
 use App\Models\FolioCharge;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Refund;
 
@@ -54,11 +56,18 @@ class FolioService
                 ->where('status', 'succeeded')
                 ->sum('amount');
 
+        $invoiceId = Invoice::query()->where('folio_id', $folio->id)->value('id');
+        $creditNotes = $invoiceId === null
+            ? 0.0
+            : (float) CreditNote::query()
+                ->where('invoice_id', $invoiceId)
+                ->sum('amount');
+
         $folio->update([
             'charges_total' => round($charges, 2),
             'payments_total' => round($payments, 2),
             'refunds_total' => round($refunds, 2),
-            'balance' => round($charges - $payments + $refunds, 2),
+            'balance' => round($charges - $creditNotes - $payments + $refunds, 2),
         ]);
 
         return $folio->fresh();
