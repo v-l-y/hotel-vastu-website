@@ -38,45 +38,60 @@ class AvailabilityService
             ->distinct()
             ->count('room_id');
 
-        $reservedRooms = (int) ReservationRoom::query()
-            ->where('room_type_id', $roomTypeId)
-            ->whereHas('reservation', function ($query) use ($checkIn, $checkOut, $excludeReservationId) {
-                if ($excludeReservationId !== null) {
-                    $query->where('id', '!=', $excludeReservationId);
-                }
+        $committedPeak = 0;
+        $reservedAtPeak = 0;
+        $heldAtPeak = 0;
 
-                $query
-                    ->whereDate('check_in_date', '<', $checkOut->toDateString())
-                    ->whereDate('check_out_date', '>', $checkIn->toDateString())
-                    ->where(function ($statusQuery) {
-                        $statusQuery
-                            ->whereIn('status', ['confirmed', 'checked_in'])
-                            ->orWhere(function ($pendingQuery) {
-                                $pendingQuery
-                                    ->where('status', 'pending')
-                                    ->where(function ($expiryQuery) {
-                                        $expiryQuery
-                                            ->whereNull('expires_at')
-                                            ->orWhere('expires_at', '>', now());
-                                    });
-                            });
-                    });
-            })
-            ->sum('quantity');
+        for ($date = $checkIn; $date->lessThan($checkOut); $date = $date->addDay()) {
+            $stayDate = $date->toDateString();
 
-        $heldRooms = (int) ReservationHold::query()
-            ->active()
-            ->where('room_type_id', $roomTypeId)
-            ->whereDate('check_in_date', '<', $checkOut->toDateString())
-            ->whereDate('check_out_date', '>', $checkIn->toDateString())
-            ->sum('quantity');
+            $reservedRooms = (int) ReservationRoom::query()
+                ->where('room_type_id', $roomTypeId)
+                ->whereHas('reservation', function ($query) use ($stayDate, $excludeReservationId) {
+                    if ($excludeReservationId !== null) {
+                        $query->where('id', '!=', $excludeReservationId);
+                    }
+
+                    $query
+                        ->whereDate('check_in_date', '<=', $stayDate)
+                        ->whereDate('check_out_date', '>', $stayDate)
+                        ->where(function ($statusQuery) {
+                            $statusQuery
+                                ->whereIn('status', ['confirmed', 'checked_in'])
+                                ->orWhere(function ($pendingQuery) {
+                                    $pendingQuery
+                                        ->where('status', 'pending')
+                                        ->where(function ($expiryQuery) {
+                                            $expiryQuery
+                                                ->whereNull('expires_at')
+                                                ->orWhere('expires_at', '>', now());
+                                        });
+                                });
+                        });
+                })
+                ->sum('quantity');
+
+            $heldRooms = (int) ReservationHold::query()
+                ->active()
+                ->where('room_type_id', $roomTypeId)
+                ->whereDate('check_in_date', '<=', $stayDate)
+                ->whereDate('check_out_date', '>', $stayDate)
+                ->sum('quantity');
+
+            $committed = $reservedRooms + $heldRooms;
+            if ($committed > $committedPeak) {
+                $committedPeak = $committed;
+                $reservedAtPeak = $reservedRooms;
+                $heldAtPeak = $heldRooms;
+            }
+        }
 
         return [
             'total_rooms' => $totalRooms,
             'blocked_rooms' => $blockedRooms,
-            'reserved_rooms' => $reservedRooms,
-            'held_rooms' => $heldRooms,
-            'available_rooms' => max(0, $totalRooms - $blockedRooms - $reservedRooms - $heldRooms),
+            'reserved_rooms' => $reservedAtPeak,
+            'held_rooms' => $heldAtPeak,
+            'available_rooms' => max(0, $totalRooms - $blockedRooms - $committedPeak),
         ];
     }
 }
