@@ -325,8 +325,12 @@ class PaymentService
             ->lockForUpdate()
             ->firstOrFail();
 
-        if ($order->status === 'cancelled') {
-            throw new RuntimeException('A cancelled restaurant order cannot accept payment.');
+        if ($order->status !== 'served') {
+            throw new RuntimeException('Only a served restaurant order can accept direct payment.');
+        }
+
+        if ($order->order_type === 'room_service') {
+            throw new RuntimeException('Room-service orders must be settled through the guest folio.');
         }
 
         $payments = (float) Payment::query()
