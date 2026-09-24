@@ -220,7 +220,7 @@ class PaymentService
             return $existing;
         }
 
-        $refund = DB::transaction(function () use ($payment, $data) {
+        $refund = DB::transaction(function () use ($payment, $data, $reason) {
             $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($payment->status !== 'succeeded') {
