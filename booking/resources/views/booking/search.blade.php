@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
 <title>Book Hotel Vastu Premium</title>
 <style>
 body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}main{max-width:920px;margin:auto;padding:32px 20px 64px}.panel{background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:grid;gap:7px;font-weight:600}input,select,button{min-height:44px;font:inherit}input,select{border:1px solid #b9b0a7;border-radius:8px;padding:0 12px}button{border:0;border-radius:8px;padding:0 18px;background:#2b211b;color:#fff;cursor:pointer}.full{grid-column:1/-1}.result{margin-top:24px}.notice,.error{padding:12px 14px;border-radius:8px}.notice{background:#eef6ee}.error{background:#fff0f0;color:#791717}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.metric{border:1px solid #e2ddd7;border-radius:10px;padding:14px}.metric strong{display:block;font-size:1.5rem}.price{font-size:1.3rem;font-weight:700}@media(max-width:640px){.grid,.metrics{grid-template-columns:1fr}}

@@ -12,14 +12,12 @@ use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\RazorpayPaymentController;
 use App\Http\Controllers\GuestDetailsController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ReservationHoldController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json([
-    'status' => 'ok',
-    'service' => 'hotel-vastu-booking',
-]));
+Route::get('/health', HealthController::class)->name('health');
 
 Route::get('/', [AvailabilityController::class, 'index'])->name('booking.search');
 Route::get('/availability', [AvailabilityController::class, 'search'])->name('booking.availability');

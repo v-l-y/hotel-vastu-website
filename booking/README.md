@@ -108,11 +108,11 @@ Never commit live gateway credentials.
 
 ## Production deployment checklist
 
-1. Point `booking.hotelvastu.com` DNS to the Laravel hosting environment.
+1. Point `booking.hotelvastu.com` DNS to the Laravel hosting environment and set the web document root to `booking/public`.
 2. Set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://booking.hotelvastu.com`.
 3. Use production MySQL credentials and take a backup before migrations.
 4. Run `php artisan migrate --force`.
-5. Run `php artisan config:cache`, `php artisan route:cache` and `php artisan view:cache`.
+5. Run `php artisan optimize` after the production environment is configured.
 6. Ensure `storage/` and `bootstrap/cache/` are writable by PHP.
 7. Create the first administrator securely.
 8. Enter real rooms, rates, taxes, tables and menu items in Admin.
