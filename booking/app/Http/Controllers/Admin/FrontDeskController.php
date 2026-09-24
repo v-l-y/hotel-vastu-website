@@ -182,6 +182,7 @@ class FrontDeskController extends Controller
             'reservations' => $reservations,
             'arrivalsToday' => $arrivalsToday,
             'arrivalCountToday' => $arrivalCountToday,
+            'inHouseCount' => $allStays->count(),
             'departureCountToday' => $departureCountToday,
             'readyRoomCount' => $readyUnoccupiedRooms->count(),
             'dirtyRoomCount' => $rooms->where('housekeeping_status', 'dirty')->count(),
