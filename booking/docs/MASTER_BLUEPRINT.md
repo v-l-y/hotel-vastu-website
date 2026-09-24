@@ -270,6 +270,7 @@ Razorpay remains hidden when live credentials are not configured.
 
 v1.0 front desk supports:
 
+- new desk / walk-in confirmed booking creation with live availability and pricing validation;
 - reservation list/work queue;
 - reservation modification;
 - cancellation;
