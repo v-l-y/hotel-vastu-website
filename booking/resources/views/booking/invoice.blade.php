@@ -19,8 +19,22 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <thead><tr><th>Description</th><th>Total</th></tr></thead>
 <tbody>@foreach($invoice->items as $item)<tr><td>{{ $item->description }}</td><td>₹{{ number_format((float)$item->amount,2) }}</td></tr>@endforeach</tbody>
 </table>
+@if((float)$reservation->discount > 0)
+<p><strong>Room charges before discount</strong> ₹{{ number_format((float)$reservation->subtotal,2) }}<br>
+Discount −₹{{ number_format((float)$reservation->discount,2) }}
+@if($reservation->promotion_code_snapshot) · Promo {{ $reservation->promotion_code_snapshot }}@endif
+</p>
+@endif
 <p><strong>Total ₹{{ number_format((float)$invoice->total,2) }}</strong><br>Paid ₹{{ number_format((float)$invoice->paid,2) }}<br>Balance ₹{{ number_format((float)$invoice->balance,2) }}</p>
 </section>
+@if($invoice->creditNotes->isNotEmpty())
+<section class="panel" style="margin-top:16px">
+<h2>Credit notes</h2>
+@foreach($invoice->creditNotes as $creditNote)
+<p><strong>{{ $creditNote->credit_note_number }}</strong> · ₹{{ number_format((float)$creditNote->amount,2) }} · {{ str_replace('_',' ',$creditNote->refund?->refund_type ?? 'adjustment') }}@if($creditNote->reason) · {{ $creditNote->reason }}@endif</p>
+@endforeach
+</section>
+@endif
 </main>
 </body>
 </html>
