@@ -112,7 +112,7 @@ class FrontDeskBookingTest extends TestCase
             ->get('/admin/front-desk')
             ->assertOk()
             ->assertSee('New / walk-in booking')
-            ->assertSee('Check availability & confirm booking');
+            ->assertSee('Check availability & confirm booking', false);
 
         $accounts = AdminUser::query()->create([
             'name' => 'Accounts',
