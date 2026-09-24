@@ -182,7 +182,6 @@ class OnlinePaymentService
                 $gatewayOrder = PaymentGatewayOrder::query()
                     ->where('provider', 'razorpay')
                     ->where('provider_order_id', $providerOrderId)
-                    ->lockForUpdate()
                     ->first();
 
                 if ($gatewayOrder !== null) {
@@ -225,6 +224,11 @@ class OnlinePaymentService
         }
 
         return DB::transaction(function () use ($gatewayOrder, $providerPaymentId, $amountSubunits) {
+            Reservation::query()
+                ->whereKey($gatewayOrder->reservation_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $lockedOrder = PaymentGatewayOrder::query()
                 ->whereKey($gatewayOrder->id)
                 ->lockForUpdate()
