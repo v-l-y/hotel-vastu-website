@@ -38,6 +38,7 @@ Public booking CTAs and the homepage stay form now point to `https://booking.hot
 - optional verified Razorpay online checkout, signature verification and captured-payment verification
 - signed Razorpay webhooks for captured payments and refund reconciliation
 - provider-backed online refunds with pending/processed/failed lifecycle
+- front desk new / walk-in booking creation with live availability and pricing validation
 - front desk check-in with physical-room assignment
 - room transfers, stay extensions and housekeeping workflow
 - guest stays and guest folios
@@ -66,7 +67,7 @@ Website search → availability + price → guest details → mobile OTP
 ```
 
 - Guest details do **not** create a customer account.
-- A reservation is created only after a valid 6-digit mobile OTP.
+- A public website reservation is created only after a valid 6-digit mobile OTP. Authorized front-desk staff can create desk / walk-in reservations without the public OTP flow.
 - The existing 10-minute inventory hold still expires automatically if verification is not completed.
 - Confirmation sends the booking number and secure status link by SMS; when an email is supplied it also sends an email.
 - After checkout, the same customer receives a secure invoice link and a one-time feedback link.
