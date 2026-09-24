@@ -78,11 +78,17 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </label>
 </div>
 
-<div class="order-context" data-order-context="takeaway">
-<label>Guest name<input name="guest_name" value="{{ old('guest_name') }}" maxlength="160" data-context-control autocomplete="name"></label>
+<div class="order-context full" data-order-context="direct">
+<div class="grid">
+<label>Customer name <span class="muted">Optional</span><input name="guest_name" value="{{ old('guest_name') }}" maxlength="160" data-context-control autocomplete="name"></label>
+<label>Registered mobile <span class="muted">Optional</span><input name="guest_phone" value="{{ old('guest_phone') }}" maxlength="30" data-context-control autocomplete="tel" placeholder="+91 98765 43210"></label>
+<label>Email / Gmail <span class="muted">Optional</span><input type="email" name="guest_email" value="{{ old('guest_email') }}" maxlength="190" data-context-control autocomplete="email" placeholder="guest@gmail.com"></label>
+<label>Customer GSTIN <span class="muted">Optional</span><input name="guest_gstin" value="{{ old('guest_gstin') }}" maxlength="20" data-context-control autocomplete="off" placeholder="For business GST invoice"></label>
+<label class="full">Billing address <span class="muted">Optional unless required for GST invoice</span><textarea name="guest_billing_address" rows="2" maxlength="500" data-context-control>{{ old('guest_billing_address') }}</textarea></label>
+<label>Billing State <span class="muted">Optional</span><input name="guest_billing_state" value="{{ old('guest_billing_state') }}" maxlength="100" data-context-control placeholder="e.g. Bihar"></label>
+<label>State code <span class="muted">Optional</span><input name="guest_billing_state_code" value="{{ old('guest_billing_state_code') }}" maxlength="2" inputmode="numeric" data-context-control placeholder="2 digits"></label>
 </div>
-<div class="order-context" data-order-context="takeaway">
-<label>Phone<input name="guest_phone" value="{{ old('guest_phone') }}" maxlength="30" data-context-control autocomplete="tel"></label>
+<p class="muted">These details are snapshotted only when the final bill is issued. Room-service billing uses the in-house guest folio instead.</p>
 </div>
 
 <div class="full">
@@ -296,6 +302,33 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
 <?php else: ?>
 <span class="muted">No settlement action</span>
 <?php endif; ?>
+
+<?php if ($order->order_type !== 'room_service' && $order->status === 'served'): ?>
+<div class="actions" style="margin-top:8px">
+@if($order->invoice)
+<a class="button-link primary" href="{{ route('admin.invoices.show',$order->invoice) }}">Print bill</a>
+@elseif($order->payment_status === 'paid' || $outstanding <= 0)
+<form method="post" action="{{ route('admin.restaurant.orders.invoice',$order) }}">@csrf<button type="submit">Issue bill</button></form>
+@endif
+</div>
+
+@if(!$order->invoice)
+<details class="action-menu" style="margin-top:8px">
+<summary>Billing details</summary>
+<form class="grid" method="post" action="{{ route('admin.restaurant.orders.billing',$order) }}">
+@csrf
+<label>Customer name<input name="guest_name" value="{{ $order->guest_name }}" maxlength="160"></label>
+<label>Mobile<input name="guest_phone" value="{{ $order->guest_phone }}" maxlength="30"></label>
+<label>Email / Gmail<input type="email" name="guest_email" value="{{ $order->guest_email }}" maxlength="190"></label>
+<label>GSTIN<input name="guest_gstin" value="{{ $order->guest_gstin }}" maxlength="20"></label>
+<label class="full">Billing address<textarea name="guest_billing_address" rows="2" maxlength="500">{{ $order->guest_billing_address }}</textarea></label>
+<label>Billing State<input name="guest_billing_state" value="{{ $order->guest_billing_state }}" maxlength="100"></label>
+<label>State code<input name="guest_billing_state_code" value="{{ $order->guest_billing_state_code }}" maxlength="2" inputmode="numeric"></label>
+<div class="full"><button type="submit">Save billing details</button></div>
+</form>
+</details>
+@endif
+<?php endif; ?>
 </td>
 </tr>
 <?php endforeach; ?>
@@ -340,7 +373,7 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
   const refreshContext = () => {
     const selected = type.value;
     document.querySelectorAll('[data-order-context]').forEach((section) => {
-      const active = section.dataset.orderContext === selected;
+      const active = section.dataset.orderContext === selected || (section.dataset.orderContext === 'direct' && selected !== 'room_service');
       section.hidden = !active;
       section.querySelectorAll('[data-context-control]').forEach((control) => {
         control.disabled = !active;
