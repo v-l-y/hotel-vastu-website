@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,7 +33,34 @@ class PaymentServiceTest extends TestCase
         $second = $service->record($payload);
 
         $this->assertSame($first->id, $second->id);
-        $this->assertSame(1, \App\Models\Payment::query()->count());
+        $this->assertSame(1, Payment::query()->count());
         $this->assertSame('paid', $reservation->fresh()->payment_status);
+    }
+
+    public function test_partial_refund_updates_reservation_payment_status(): void
+    {
+        $reservation = Reservation::query()->create([
+            'booking_number'=>'HV-PAY-2','public_token'=>'67676767-6767-4767-8767-676767676767',
+            'check_in_date'=>today(),'check_out_date'=>today()->addDay(),
+            'status'=>'confirmed','pricing_status'=>'priced','payment_status'=>'unpaid',
+            'subtotal'=>1000,'tax'=>0,'total'=>1000,
+        ]);
+
+        $service = app(PaymentService::class);
+        $payment = $service->record([
+            'idempotency_key'=>'78787878-7878-4787-8787-787878787878',
+            'reservation_id'=>$reservation->id,
+            'method'=>'card',
+            'amount'=>1000,
+        ]);
+
+        $service->refund($payment, [
+            'idempotency_key'=>'79797979-7979-4797-8797-797979797979',
+            'amount'=>250,
+            'reason'=>'Guest adjustment',
+        ]);
+
+        $this->assertSame('partially_paid', $reservation->fresh()->payment_status);
+        $this->assertDatabaseHas('refunds', ['payment_id'=>$payment->id, 'amount'=>250]);
     }
 }

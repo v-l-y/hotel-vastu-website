@@ -127,7 +127,10 @@ class FrontDeskService
             Payment::query()
                 ->where('reservation_id', $reservation->id)
                 ->whereNull('folio_id')
-                ->update(['folio_id' => $folio->id]);
+                ->update([
+                    'folio_id' => $folio->id,
+                    'reservation_id' => null,
+                ]);
 
             $this->folios->recalculate($folio->fresh());
             $reservation->update(['status' => 'checked_in']);
