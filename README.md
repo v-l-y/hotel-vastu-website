@@ -18,7 +18,6 @@ npm run check
 
 Open `website/index.html` directly or serve the `website/` directory with a static HTTP server.
 
-The root `vercel.json` is a compatibility router so the existing Vercel project can keep serving the static site after this repository split. The website's own deployment configuration is in `website/vercel.json`.
 
 See `website/README.md` and `website/DEPLOYMENT.md` for website-specific documentation.
 
