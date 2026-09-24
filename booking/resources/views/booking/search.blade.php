@@ -10,13 +10,12 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 </style>
 </head>
 <body>
+@include('partials.toast')
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Check room availability</h1>
 <p>The public hotel website remains separate from this booking application.</p>
 
-@if (session('status')) <p class="notice">{{ session('status') }}</p> @endif
-@if ($errors->any()) <div class="error"><strong>Please fix the following:</strong><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 
 <section class="panel">
 <form class="grid" method="get" action="{{ route('booking.availability') }}">
