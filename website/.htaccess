@@ -7,8 +7,13 @@ RewriteRule ^facilities/?$ /facilities.html [R=301,L]
 RewriteRule ^room/classic-room/?$ /classic-room.html [R=301,L]
 RewriteRule ^room/club-room/?$ /club-room.html [R=301,L]
 RewriteRule ^room/premium-room/?$ /premium-room.html [R=301,L]
-RewriteCond %{HTTPS} !=on [OR]
+
+# Production canonical host only. Localhost/127.0.0.1 must remain local.
 RewriteCond %{HTTP_HOST} ^www\.hotelvastu\.com$ [NC]
+RewriteRule ^ https://hotelvastu.com%{REQUEST_URI} [R=301,L]
+
+RewriteCond %{HTTP_HOST} ^hotelvastu\.com$ [NC]
+RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://hotelvastu.com%{REQUEST_URI} [R=301,L]
 </IfModule>
 
