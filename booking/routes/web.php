@@ -95,6 +95,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/front-desk/reservations/{reservation}/check-in', [FrontDeskController::class, 'checkIn'])->name('front-desk.check-in');
             Route::post('/front-desk/reservations/{reservation}/cancel', [FrontDeskController::class, 'cancel'])->name('front-desk.cancel');
             Route::post('/front-desk/reservations/{reservation}/no-show', [FrontDeskController::class, 'noShow'])->name('front-desk.no-show');
+            Route::post('/front-desk/stays/{stay}/billing', [FrontDeskController::class, 'billingDetails'])->name('front-desk.billing');
             Route::post('/front-desk/stays/{stay}/transfer', [FrontDeskController::class, 'transfer'])->name('front-desk.transfer');
             Route::post('/front-desk/stays/{stay}/extend', [FrontDeskController::class, 'extend'])->name('front-desk.extend');
             Route::post('/front-desk/stays/{stay}/check-out', [FrontDeskController::class, 'checkOut'])->name('front-desk.check-out');
