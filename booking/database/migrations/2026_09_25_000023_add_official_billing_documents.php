@@ -9,6 +9,20 @@ use Illuminate\Support\Str;
 return new class extends Migration {
     public function up(): void
     {
+        // If a prior attempt partially changed the database but was not recorded in
+        // the migrations table, let the following repair migration reconcile the
+        // entire billing schema instead of failing here on duplicate objects.
+        $partiallyApplied = Schema::hasTable('billing_document_sequences')
+            || (Schema::hasTable('guests') && Schema::hasColumn('guests', 'gstin'))
+            || (Schema::hasTable('booking_verifications') && Schema::hasColumn('booking_verifications', 'gstin'))
+            || (Schema::hasTable('restaurant_orders') && Schema::hasColumn('restaurant_orders', 'guest_email'))
+            || (Schema::hasTable('invoices') && Schema::hasColumn('invoices', 'public_token'))
+            || (Schema::hasTable('invoice_items') && Schema::hasColumn('invoice_items', 'sac_code'));
+
+        if ($partiallyApplied) {
+            return;
+        }
+
         Schema::create('billing_document_sequences', function (Blueprint $table) {
             $table->id();
             $table->string('series', 2);
