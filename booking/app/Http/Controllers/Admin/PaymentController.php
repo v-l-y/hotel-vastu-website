@@ -16,19 +16,26 @@ use RuntimeException;
 
 class PaymentController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
+        $restaurantOnly = $role === 'restaurant';
+
         return view('admin.payments', [
-            'reservations' => Reservation::query()
-                ->where('status', 'confirmed')
-                ->orderBy('check_in_date')
-                ->limit(50)
-                ->get(),
-            'folios' => Folio::query()
-                ->where('status', 'open')
-                ->where('balance', '>', 0)
-                ->orderByDesc('id')
-                ->get(),
+            'reservations' => $restaurantOnly
+                ? collect()
+                : Reservation::query()
+                    ->where('status', 'confirmed')
+                    ->orderBy('check_in_date')
+                    ->limit(50)
+                    ->get(),
+            'folios' => $restaurantOnly
+                ? collect()
+                : Folio::query()
+                    ->where('status', 'open')
+                    ->where('balance', '>', 0)
+                    ->orderByDesc('id')
+                    ->get(),
             'restaurantOrders' => RestaurantOrder::query()
                 ->whereIn('order_type', ['dine_in', 'takeaway'])
                 ->where('status', 'served')
@@ -38,6 +45,7 @@ class PaymentController extends Controller
                 ->get(),
             'payments' => Payment::query()
                 ->with(['refunds', 'reservation', 'folio', 'restaurantOrder'])
+                ->when($restaurantOnly, fn ($query) => $query->whereNotNull('restaurant_order_id'))
                 ->latest('id')
                 ->limit(100)
                 ->get(),
@@ -53,6 +61,18 @@ class PaymentController extends Controller
             'amount' => ['required', 'numeric', 'gt:0', 'max:99999999'],
             'external_reference' => ['nullable', 'string', 'max:190'],
         ]);
+
+        $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
+        if ($role === 'restaurant') {
+            if ($data['target_type'] !== 'restaurant_order') {
+                abort(403);
+            }
+
+            $order = RestaurantOrder::query()->findOrFail($data['target_id']);
+            if (! in_array($order->order_type, ['dine_in', 'takeaway'], true)) {
+                abort(403);
+            }
+        }
 
         $payload = [
             'idempotency_key' => (string) Str::uuid(),
