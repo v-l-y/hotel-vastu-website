@@ -22,6 +22,8 @@ class PaymentController extends Controller
         $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
         $showHotelPayments = in_array($role, ['administrator', 'front_desk', 'accounts'], true);
         $showRestaurantPayments = in_array($role, ['administrator', 'accounts', 'restaurant'], true);
+        $selectedReservationId = max(0, (int) $request->query('reservation_id', 0));
+        $selectedFolioId = max(0, (int) $request->query('folio_id', 0));
 
         $payments = Payment::query()
             ->with(['refunds', 'reservation', 'folio', 'restaurantOrder'])
@@ -47,6 +49,7 @@ class PaymentController extends Controller
             'reservations' => $showHotelPayments
                 ? Reservation::query()
                     ->where('status', 'confirmed')
+                    ->when($selectedReservationId > 0, fn ($query) => $query->whereKey($selectedReservationId))
                     ->orderBy('check_in_date')
                     ->limit(50)
                     ->get()
@@ -55,6 +58,7 @@ class PaymentController extends Controller
                 ? Folio::query()
                     ->where('status', 'open')
                     ->where('balance', '>', 0)
+                    ->when($selectedFolioId > 0, fn ($query) => $query->whereKey($selectedFolioId))
                     ->orderByDesc('id')
                     ->get()
                 : collect(),
@@ -71,6 +75,8 @@ class PaymentController extends Controller
                 ? Invoice::query()->latest('id')->limit(50)->get()
                 : collect(),
             'payments' => $payments,
+            'selectedReservationId' => $selectedReservationId,
+            'selectedFolioId' => $selectedFolioId,
         ]);
     }
 
