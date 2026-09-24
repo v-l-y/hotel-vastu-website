@@ -11,6 +11,7 @@ use App\Models\Stay;
 use App\Models\TaxRule;
 use App\Services\RestaurantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 class RestaurantServiceTest extends TestCase
@@ -71,4 +72,38 @@ class RestaurantServiceTest extends TestCase
         $this->assertSame('served', $order->fresh()->kitchenTicket->status);
         $this->assertSame('charged_to_room', $order->fresh()->payment_status);
     }
+
+    public function test_restaurant_order_creation_is_idempotent_and_rejects_key_reuse_for_a_different_request(): void
+    {
+        $category = RestaurantCategory::query()->create(['name'=>'Main','is_active'=>true]);
+        $item = RestaurantMenuItem::query()->create([
+            'restaurant_category_id'=>$category->id,'name'=>'Idempotent Meal','price'=>250,'is_active'=>true,
+        ]);
+
+        $service = app(RestaurantService::class);
+        $payload = [
+            'idempotency_key'=>'45454545-4545-4454-8454-454545454545',
+            'order_type'=>'takeaway',
+            'guest_name'=>'Counter Guest',
+            'guest_phone'=>'9999999999',
+            'items'=>[['menu_item_id'=>$item->id,'quantity'=>1,'note'=>'No onion']],
+        ];
+
+        $first = $service->createOrder($payload);
+        $second = $service->createOrder($payload);
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertDatabaseCount('restaurant_orders', 1);
+        $this->assertDatabaseCount('kitchen_tickets', 1);
+        $this->assertDatabaseCount('restaurant_order_items', 1);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('idempotency key was already used for a different request');
+
+        $service->createOrder([
+            ...$payload,
+            'items'=>[['menu_item_id'=>$item->id,'quantity'=>2,'note'=>'No onion']],
+        ]);
+    }
+
 }
