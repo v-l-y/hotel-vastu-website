@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Models\RestaurantOrder;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -84,4 +85,27 @@ class PaymentServiceTest extends TestCase
         $this->assertSame('partially_paid', $reservation->fresh()->payment_status);
         $this->assertDatabaseHas('refunds', ['payment_id'=>$payment->id, 'amount'=>250]);
     }
+    public function test_restaurant_payment_requires_a_served_non_room_service_order(): void
+    {
+        $order = RestaurantOrder::query()->create([
+            'order_number'=>'RO-PAY-GUARD',
+            'order_type'=>'dine_in',
+            'status'=>'accepted',
+            'payment_status'=>'unpaid',
+            'subtotal'=>500,
+            'tax'=>0,
+            'total'=>500,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('served restaurant order');
+
+        app(PaymentService::class)->record([
+            'idempotency_key'=>'91919191-9191-4191-8191-919191919191',
+            'restaurant_order_id'=>$order->id,
+            'method'=>'cash',
+            'amount'=>500,
+        ]);
+    }
+
 }
