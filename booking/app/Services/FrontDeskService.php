@@ -34,6 +34,11 @@ class FrontDeskService
                 throw new RuntimeException('Reservation pricing must be finalized before check-in.');
             }
 
+            $today = today();
+            if ($today->lt($reservation->check_in_date) || ! $today->lt($reservation->check_out_date)) {
+                throw new RuntimeException('Check-in is only allowed during the reserved stay window.');
+            }
+
             if (Stay::query()->where('reservation_id', $reservation->id)->exists()) {
                 throw new RuntimeException('This reservation already has a stay record.');
             }
@@ -73,12 +78,12 @@ class FrontDeskService
             $blocked = RoomBlock::query()
                 ->whereIn('room_id', $roomIds)
                 ->where('status', 'active')
-                ->whereDate('starts_on', '<=', today()->toDateString())
-                ->whereDate('ends_on', '>', today()->toDateString())
+                ->whereDate('starts_on', '<', $reservation->check_out_date->toDateString())
+                ->whereDate('ends_on', '>', $reservation->check_in_date->toDateString())
                 ->exists();
 
             if ($blocked) {
-                throw new RuntimeException('One or more selected rooms are blocked from use.');
+                throw new RuntimeException('One or more selected rooms are blocked during this stay.');
             }
 
             $stay = Stay::query()->create([
