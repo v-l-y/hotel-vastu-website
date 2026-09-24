@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Folio;
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Models\Refund;
 use App\Models\RestaurantOrder;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -121,4 +122,23 @@ class PaymentController extends Controller
                 : 'Refund completed.'
         );
     }
+    public function reconcileRefund(Refund $refund, PaymentService $service): RedirectResponse
+    {
+        try {
+            $refund = $service->reconcilePendingOnlineRefund($refund);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['refund' => $exception->getMessage()]);
+        }
+
+        return back()->with(
+            'status',
+            $refund->status === 'pending'
+                ? 'Online refund is still pending provider processing.'
+                : ($refund->status === 'succeeded'
+                    ? 'Online refund reconciled successfully.'
+                    : 'Online refund reconciliation completed with status: '.$refund->status.'.')
+        );
+    }
+
+
 }
