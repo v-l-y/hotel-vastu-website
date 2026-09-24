@@ -222,6 +222,10 @@ try {
         php artisan test --fail-on-warning
     }
 
+    Invoke-ExternalStep "MySQL row-lock contract" {
+        php artisan test --fail-on-warning tests/MySql/MySqlLockingContractTest.php
+    }
+
     Write-Host ""
     Write-Host "ALL LOCAL v1.0 CI GATES PASSED" -ForegroundColor Green
     Write-Host "SQLite + route/view cache + MySQL production contracts match the GitHub Booking CI sequence." -ForegroundColor Green
