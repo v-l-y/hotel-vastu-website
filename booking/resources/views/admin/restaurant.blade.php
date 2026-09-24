@@ -47,7 +47,9 @@
 <select name="restaurant_table_id" data-context-control data-context-required>
 <option value="">Choose available table</option>
 @foreach($tables as $table)
-<option value="{{ $table->id }}" @selected((string)old('restaurant_table_id')===(string)$table->id) @disabled($table->status!=='available')>{{ $table->name }} · {{ ucfirst($table->status) }}@if($table->capacity) · {{ $table->capacity }} seats@endif</option>
+<option value="{{ $table->id }}" {{ (string)old('restaurant_table_id') === (string)$table->id ? 'selected' : '' }} {{ $table->status !== 'available' ? 'disabled' : '' }}>
+{{ $table->name }} · {{ ucfirst($table->status) }}@if($table->capacity) · {{ $table->capacity }} seats@endif
+</option>
 @endforeach
 </select>
 </label>
@@ -59,7 +61,9 @@
 <option value="">Choose in-house guest folio</option>
 @foreach($folios as $folio)
 @php($folioRooms = $folio->stay?->rooms?->whereNull('released_at')->pluck('room.number')->filter()->implode(', '))
-<option value="{{ $folio->id }}" @selected((string)old('folio_id')===(string)$folio->id)>Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}@if($folioRooms) · Room {{ $folioRooms }}@endif</option>
+<option value="{{ $folio->id }}" {{ (string)old('folio_id') === (string)$folio->id ? 'selected' : '' }}>
+Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}@if($folioRooms) · Room {{ $folioRooms }}@endif
+</option>
 @endforeach
 </select>
 </label>
@@ -87,7 +91,7 @@
 @foreach($menuGroups as $categoryName => $items)
 <optgroup label="{{ $categoryName }}">
 @foreach($items as $item)
-<option value="{{ $item->id }}" data-price="{{ number_format((float)$item->price,2,'.','') }}" data-search="{{ strtolower($categoryName.' '.$item->name) }}" @selected((string)($oldItem['menu_item_id'] ?? '')===(string)$item->id)>{{ $item->name }} · ₹{{ number_format((float)$item->price,2) }}{{ $item->is_vegetarian ? ' · Veg' : '' }}</option>
+<option value="{{ $item->id }}" data-price="{{ number_format((float)$item->price,2,'.','') }}" data-search="{{ strtolower($categoryName.' '.$item->name) }}" {{ (string)($oldItem['menu_item_id'] ?? '') === (string)$item->id ? 'selected' : '' }}>{{ $item->name }} · ₹{{ number_format((float)$item->price,2) }}{{ $item->is_vegetarian ? ' · Veg' : '' }}</option>
 @endforeach
 </optgroup>
 @endforeach
@@ -95,7 +99,7 @@
 </label>
 <label>Qty<input type="number" min="1" max="50" name="items[{{ $index }}][quantity]" value="{{ $oldItem['quantity'] ?? 1 }}" data-quantity required></label>
 <label>Kitchen note<input name="items[{{ $index }}][note]" value="{{ $oldItem['note'] ?? '' }}" maxlength="500" placeholder="e.g. no onion"></label>
-<button type="button" data-remove-item @disabled(count($oldItems)===1)>Remove</button>
+<button type="button" data-remove-item {{ count($oldItems) === 1 ? 'disabled' : '' }}>Remove</button>
 </div>
 @endforeach
 </div>
@@ -141,7 +145,7 @@
 
 <section class="panel">
 <div class="toolbar">
-<div><h2 style="margin:0">{{ ($kitchenOnly ?? false) ? 'Active KOT queue' : 'Active orders & KOT' }}</h2><span class="muted">Oldest waiting order is shown first.</span></div>
+<div><h2 style="margin:0">{{ ($kitchenOnly ?? false) ? 'Active Orders / KOT queue' : 'Active orders & KOT' }}</h2><span class="muted">Oldest waiting order is shown first.</span></div>
 </div>
 
 @if($activeOrders->isEmpty())
@@ -150,12 +154,14 @@
 <div class="kot-grid">
 @foreach($activeOrders as $order)
 @php($roomNumbers = $order->folio?->stay?->rooms?->whereNull('released_at')->pluck('room.number')->filter()->implode(', '))
-@php($destination = match($order->order_type) {
-'dine_in' => $order->restaurantTable ? $order->restaurantTable->name : 'Table unavailable',
-'room_service' => $roomNumbers ? 'Room '.$roomNumbers : 'Folio #'.($order->folio_id ?? '—'),
-'takeaway' => trim((string)$order->guest_name) !== '' ? 'Takeaway · '.$order->guest_name : 'Takeaway counter',
-default => ucfirst(str_replace('_',' ',$order->order_type)),
-})
+@php
+$destination = match ($order->order_type) {
+    'dine_in' => $order->restaurantTable ? $order->restaurantTable->name : 'Table unavailable',
+    'room_service' => $roomNumbers ? 'Room '.$roomNumbers : 'Folio #'.($order->folio_id ?? '—'),
+    'takeaway' => trim((string) $order->guest_name) !== '' ? 'Takeaway · '.$order->guest_name : 'Takeaway counter',
+    default => ucfirst(str_replace('_', ' ', $order->order_type)),
+};
+@endphp
 <div class="kot-card">
 <div class="kot-card-head">
 <div><h3>{{ $order->kitchenTicket?->ticket_number ?? 'KOT pending' }}</h3><span class="muted">{{ $order->order_number }}</span></div>
@@ -182,7 +188,7 @@ default => ucfirst(str_replace('_',' ',$order->order_type)),
 @if($statusOptions !== [])
 <form class="kot-actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">
 @csrf
-<label>Next status<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ ucfirst($status) }}</option>@endforeach</select></label>
+<label>Next status<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select></label>
 <button>Update KOT</button>
 </form>
 @endif
@@ -203,15 +209,24 @@ default => ucfirst(str_replace('_',' ',$order->order_type)),
 <tbody>
 @foreach($historyOrders as $order)
 @php($roomNumbers = $order->folio?->stay?->rooms?->whereNull('released_at')->pluck('room.number')->filter()->implode(', '))
-@php($destination = match($order->order_type) {
-'dine_in' => $order->restaurantTable ? $order->restaurantTable->name : 'Table unavailable',
-'room_service' => $roomNumbers ? 'Room '.$roomNumbers : 'Folio #'.($order->folio_id ?? '—'),
-'takeaway' => trim((string)$order->guest_name) !== '' ? 'Takeaway · '.$order->guest_name : 'Takeaway counter',
-default => ucfirst(str_replace('_',' ',$order->order_type)),
-})
+@php
+$destination = match ($order->order_type) {
+    'dine_in' => $order->restaurantTable ? $order->restaurantTable->name : 'Table unavailable',
+    'room_service' => $roomNumbers ? 'Room '.$roomNumbers : 'Folio #'.($order->folio_id ?? '—'),
+    'takeaway' => trim((string) $order->guest_name) !== '' ? 'Takeaway · '.$order->guest_name : 'Takeaway counter',
+    default => ucfirst(str_replace('_', ' ', $order->order_type)),
+};
+@endphp
 <tr>
 <td><strong>{{ $order->order_number }}</strong><br><span class="muted">{{ $order->kitchenTicket?->ticket_number ?? '—' }}</span></td>
-<td><strong>{{ $destination }}</strong><br>@foreach($order->items as $item){{ $item->quantity }}× {{ $item->item_name }}@if($item->note) <span class="muted">({{ $item->note }})</span>@endif@if(!$loop->last)<br>@endif @endforeach</td>
+<td>
+<strong>{{ $destination }}</strong><br>
+@foreach($order->items as $item)
+{{ $item->quantity }}× {{ $item->item_name }}
+@if($item->note)<span class="muted">({{ $item->note }})</span>@endif
+@if(!$loop->last)<br>@endif
+@endforeach
+</td>
 <td><span class="status-badge {{ $order->status }}">{{ ucfirst($order->status) }}</span><br><span class="muted">{{ str_replace('_',' ',$order->payment_status) }}</span></td>
 <td>₹{{ number_format((float)$order->total,2) }}</td>
 <td>
