@@ -7,17 +7,23 @@ use App\Models\CreditNoteItem;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Refund;
-use Illuminate\Support\Str;
 
 class CreditNoteService
 {
+    public function __construct(private BillingDocumentNumberService $numbers)
+    {
+    }
+
     public function createForRefund(Payment $payment, Refund $refund): ?CreditNote
     {
-        if ($payment->folio_id === null) {
-            return null;
+        $invoice = null;
+
+        if ($payment->folio_id !== null) {
+            $invoice = Invoice::query()->where('folio_id', $payment->folio_id)->first();
+        } elseif ($payment->restaurant_order_id !== null) {
+            $invoice = Invoice::query()->where('restaurant_order_id', $payment->restaurant_order_id)->first();
         }
 
-        $invoice = Invoice::query()->where('folio_id', $payment->folio_id)->first();
         if ($invoice === null) {
             return null;
         }
@@ -28,7 +34,7 @@ class CreditNoteService
         }
 
         $creditNote = CreditNote::query()->create([
-            'credit_note_number' => 'HVCN-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
+            'credit_note_number' => $this->numbers->next((string) config('billing.series.credit_note', 'HC')),
             'invoice_id' => $invoice->id,
             'refund_id' => $refund->id,
             'amount' => $refund->amount,
