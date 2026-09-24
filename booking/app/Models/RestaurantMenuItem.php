@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RestaurantMenuItem extends Model
 {
@@ -13,5 +14,10 @@ class RestaurantMenuItem extends Model
     protected function casts(): array
     {
         return ['price' => 'decimal:2', 'is_vegetarian' => 'boolean', 'is_active' => 'boolean'];
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(RestaurantCategory::class, 'restaurant_category_id');
     }
 }
