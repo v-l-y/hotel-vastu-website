@@ -111,7 +111,7 @@
 @if(($showHotelPayments ?? false) && !$targetedReservation)
 <section class="payments-section">
 <div class="payments-section-head">
-<div><h2>Open hotel balances</h2><p class="muted">Settle outstanding in-house folios before checkout.</p></div>
+<div><h2>Open hotel balances</h2><p class="muted">Settle amounts due or refund in-house credits before checkout.</p></div>
 <span class="status-badge">{{ $folios->count() }} open</span>
 </div>
 <div class="payments-card-list">
@@ -228,7 +228,7 @@
 </section>
 @endif
 
-@if($showRestaurantPayments ?? false)
+@if(($showRestaurantPayments ?? false) && !$isTargeted)
 <section class="payments-section">
 <div class="payments-section-head">
 <div><h2>Restaurant balances</h2><p class="muted">Collect direct payment for served dine-in and takeaway orders.</p></div>
