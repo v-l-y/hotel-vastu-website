@@ -247,38 +247,26 @@ for(const file of bundledPublicPages){
   }
 }
 
-// Honest direct-booking guard.
+// Booking-system integration guard.
+const bookingUrl="https://booking.hotelvastu.com/";
 const contactPage=read("contact.html");
-const bookingSource=read("js/booking.js");
-const bookingFormMarkup=contactPage.match(/<form[^>]*data-booking-form[^>]*>[\s\S]*?<\/form>/i)?.[0]||"";
-if(!bookingFormMarkup.includes('action="contact.html#booking"')||!bookingFormMarkup.includes('method="get"')) fail("contact.html","stay planner must have an explicit same-page no-PII fallback action");
-if(/\bname=["'][^"']+["']/i.test(bookingFormMarkup)) fail("contact.html","browser-only stay planner controls must not expose named fields to native submission");
-if(bookingSource.includes("new FormData(form)")) fail("js/booking.js","stay planner must read values locally by element id, not depend on named form submission fields");
-for(const token of ["Stay planner","does not send or store personal details","Prepare booking details"]){
-  if(!contactPage.includes(token)) fail("contact.html","missing truthful stay-planner token "+token);
-}
-for(const token of ["Nothing has been sent or stored","tel:+918002007466","Call hotel to book"]){
-  if(!bookingSource.includes(token)) fail("js/booking.js","missing direct-booking completion token "+token);
-}
-if(!read("js/main.js").includes('["Book / Enquire","Send enquiry","Send an enquiry","Enquire now"]')) fail("js/main.js","shared stay-planner CTA normalization missing");
+if(contactPage.includes("Stay planner")||contactPage.includes("Prepare booking details")) fail("contact.html","legacy local stay planner must not return");
+if(!contactPage.includes(`href="${bookingUrl}"`)) fail("contact.html","online booking CTA missing");
 const homeBookingSource=read("js/home-booking.js");
 const homeBookingMarkup=read("index.html").match(/<form[^>]*data-home-booking[^>]*>[\s\S]*?<\/form>/i)?.[0]||"";
-if(!homeBookingMarkup.includes('action="contact.html#booking"')||!homeBookingMarkup.includes('method="get"')) fail("index.html","homepage stay planner must have an explicit contact-page no-query fallback");
-if(/\bname=["'][^"']+["']/i.test(homeBookingMarkup)) fail("index.html","homepage stay planner controls must not expose named fields to native submission");
-if(homeBookingSource.includes("new FormData(form)")) fail("js/home-booking.js","homepage stay planner must assemble its local draft without native submission fields");
-const homeTruth=read("index.html");
-if(homeTruth.includes("booking enquiry form")) fail("index.html","FAQ structured data must describe the local stay planner");
-if(homeTruth.includes("security support")) fail("index.html","unverified security-support claim must not appear");
-if(read("facilities.html").includes("send an enquiry")) fail("facilities.html","CTA must not imply the local planner transmits an enquiry");
-if(read("restaurant.html").includes(">Ask the hotel</a>")) fail("restaurant.html","planner CTA must not imply a message is sent");
+if(!homeBookingMarkup.includes(`action="${bookingUrl}"`)||!homeBookingMarkup.includes('method="get"')) fail("index.html","homepage booking form must submit to booking.hotelvastu.com");
+for(const name of ["check_in","check_out","adults","room_code"]){
+  if(!homeBookingMarkup.includes(`name="${name}"`)) fail("index.html","homepage booking form missing field "+name);
+}
+if(homeBookingSource.includes("sessionStorage")||homeBookingSource.includes("contact.html#booking")) fail("js/home-booking.js","homepage booking must redirect directly without local draft storage");
 for(const file of htmlFiles){
   const html=read(file);
-  if(/<a[^>]*href=["']contact\.html#booking["'][^>]*>\s*(?:Book \/ Enquire|Send enquiry|Send an enquiry|Enquire now|Ask the hotel|Contact hotel|Booking enquiry)\s*<\/a>/i.test(html)){
-    fail(file,"stay-planner CTA must not imply transmission or direct contact");
-  }
+  if(html.includes("contact.html#booking")) fail(file,"legacy local booking anchor must not return");
 }
-if(read("privacy.html").includes("booking enquiry form")) fail("privacy.html","privacy copy must describe the browser-only stay planner");
-if(read("js/booking.js").includes("Hotel Vastu Premium booking enquiry")) fail("js/booking.js","prepared summary must be labelled booking details, not a transmitted enquiry");
+const homeTruth=read("index.html");
+if(homeTruth.includes("local stay planner")) fail("index.html","FAQ must describe the online booking system");
+if(homeTruth.includes("security support")) fail("index.html","unverified security-support claim must not appear");
+if(read("privacy.html").includes("browser-only stay planner")) fail("privacy.html","privacy copy must not describe the removed local planner");
 const homeSitemapBlock=sitemap.match(/<url>\s*<loc>https:\/\/hotelvastu\.com\/<\/loc>[\s\S]*?<\/url>/)?.[0]||"";
 if(!homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/home-banner-1.webp")) fail("sitemap.xml","homepage image mapping must include the actual desktop hero");
 if(homeSitemapBlock.includes("https://hotelvastu.com/images/hotel/hero.webp")) fail("sitemap.xml","homepage image mapping must not use unrelated hero.webp");
@@ -319,10 +307,9 @@ const homeUx=read("index.html");
 const roomSectionPos=homeUx.indexOf(">Accommodation</p>");
 const transportSectionPos=homeUx.indexOf("data-nearby-transport");
 if(roomSectionPos<0||transportSectionPos<0||roomSectionPos>transportSectionPos) fail("index.html","room discovery must appear before nearby-transport content");
-if(homeUx.includes(">Check stay</button>")) fail("index.html","homepage planner CTA must not imply live inventory checking");
-if(!homeUx.includes(">Prepare stay details</button>")) fail("index.html","homepage planner needs the truthful Prepare stay details CTA");
-if(read("rooms.html").includes('href="contact.html#booking">Check availability</a>')) fail("rooms.html","room browse CTA must not imply live availability checking");
-if(read("facilities.html").includes('href="contact.html#booking">Plan an event</a>')) fail("facilities.html","event CTA must use an event-specific direct contact path");
+if(!homeUx.includes(">Check availability</button>")) fail("index.html","homepage booking form needs the live Check availability CTA");
+
+
 const responsiveCss=read("css/responsive.css");
 if(!responsiveCss.includes('url("../images/hotel/home-banner-1.webp") center/cover')) fail("css/responsive.css","mobile homepage hero must retain real hotel photography");
 if(!responsiveCss.includes(".hero-actions{display:none}")) fail("css/responsive.css","mobile hero utility actions must not duplicate the fixed quick-action bar");
@@ -347,7 +334,7 @@ else{
 }
 
 // Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
-for(const file of ["js/booking.js","js/home-booking.js"]){
+for(const file of ["js/home-booking.js"]){
   const source=read(file);
   if(source.includes("toISOString()")) fail(file,"date validation must use local calendar dates, not UTC toISOString()");
   for(const token of ["getFullYear()","getMonth()+1","getDate()","setDate("]){

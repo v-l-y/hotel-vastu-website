@@ -98,50 +98,28 @@ const nextState=await home.evaluate(()=>{
 });
 if(nextState.actual!==nextState.expected)failures.push(`booking: checkout min ${nextState.actual} != next local day ${nextState.expected}`);
 
-const contactPlanner=await bookingContext.newPage();
-await contactPlanner.goto(`${base}/contact.html#booking`,{waitUntil:"networkidle"});
-await contactPlanner.locator("#name").fill("Test Guest");
-await contactPlanner.locator("#phone").fill("9999999999");
-const plannerToday=await contactPlanner.evaluate(()=>{const d=new Date();const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`});
-await contactPlanner.locator("#checkin").fill(plannerToday);
-await contactPlanner.locator("#checkin").dispatchEvent("change");
-const plannerCheckout=await contactPlanner.locator("#checkout").getAttribute("min");
-await contactPlanner.locator("#checkout").fill(plannerCheckout);
-await contactPlanner.getByRole("button",{name:"Prepare booking details"}).click();
-const plannerStatus=contactPlanner.locator("[data-form-status]");
-if(await plannerStatus.isHidden())failures.push("booking planner did not reveal the prepared summary");
-const plannerText=await plannerStatus.textContent();
-if(!plannerText?.includes("Nothing has been sent or stored"))failures.push("booking planner transmission disclaimer missing");
-if(!plannerText?.includes("Call hotel to book"))failures.push("booking planner direct-call completion action missing");
-await contactPlanner.close();
-
-const noJsContext=await browser.newContext({viewport:{width:1280,height:900},javaScriptEnabled:false});
-const noJsPlanner=await noJsContext.newPage();
-await noJsPlanner.goto(`${base}/contact.html#booking`,{waitUntil:"networkidle"});
-await noJsPlanner.locator("#name").fill("Privacy Test Guest");
-await noJsPlanner.locator("#phone").fill("9999999999");
-await noJsPlanner.locator("#checkin").fill("2026-09-23");
-await noJsPlanner.locator("#checkout").fill("2026-09-24");
-await noJsPlanner.locator("#guests").fill("2");
-await Promise.all([
-  noJsPlanner.waitForNavigation({waitUntil:"networkidle"}),
-  noJsPlanner.getByRole("button",{name:"Prepare booking details"}).click(),
-]);
-const noJsUrl=new URL(noJsPlanner.url());
-if(noJsUrl.search)failures.push(`booking privacy: JavaScript-disabled fallback leaked form data into URL query ${noJsUrl.search}`);
-if(noJsUrl.hash!=="#booking")failures.push(`booking privacy: JavaScript-disabled fallback did not return to #booking (${noJsPlanner.url()})`);
-await noJsContext.close();
+const bookingFormState=await home.locator("[data-home-booking]").evaluate(form=>({
+  action:form.action,
+  method:form.method,
+  checkInName:document.getElementById("home-checkin")?.name,
+  checkOutName:document.getElementById("home-checkout")?.name,
+  adultsName:document.getElementById("home-guests")?.name,
+  roomName:document.getElementById("home-room")?.name
+}));
+if(bookingFormState.action!=="https://booking.hotelvastu.com/")failures.push(`booking form action ${bookingFormState.action} != https://booking.hotelvastu.com/`);
+if(bookingFormState.method!=="get")failures.push("booking form must use GET for non-PII stay-prefill fields");
+if(bookingFormState.checkInName!=="check_in"||bookingFormState.checkOutName!=="check_out"||bookingFormState.adultsName!=="adults"||bookingFormState.roomName!=="room_code")failures.push("booking form prefill field names are incomplete");
 
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
 await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
-if((await mobile.locator('a[href="contact.html#booking"]').last().textContent())?.trim()!=="Plan your stay")failures.push("shared booking CTA did not normalize to Plan your stay");
+if((await mobile.locator('a[href="https://booking.hotelvastu.com/"]').last().textContent())?.trim()!=="Plan your stay")failures.push("shared booking CTA did not point to the online booking system");
 await mobile.locator("[data-menu-button]").click();
 if(!await mobile.locator("[data-nav-links]").evaluate(el=>el.classList.contains("open")))failures.push("mobile nav did not open");
-const mobileHeaderBooking=mobile.locator('[data-nav-links] a[href="contact.html#booking"]');
+const mobileHeaderBooking=mobile.locator('[data-nav-links] a[href="https://booking.hotelvastu.com/"]');
 const headerBookingWrap=await mobileHeaderBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
 if(headerBookingWrap.whiteSpace!=="nowrap"||headerBookingWrap.overflow)failures.push("mobile header Plan your stay CTA wrapped or overflowed");
-const mobileQuickBooking=mobile.locator('.mobile-actions a[href="contact.html#booking"]');
+const mobileQuickBooking=mobile.locator('.mobile-actions a[href="https://booking.hotelvastu.com/"]');
 const quickBookingWrap=await mobileQuickBooking.evaluate(el=>({whiteSpace:getComputedStyle(el).whiteSpace,overflow:el.scrollWidth>el.clientWidth+1}));
 if(quickBookingWrap.whiteSpace!=="nowrap"||quickBookingWrap.overflow)failures.push("mobile quick-action Plan your stay CTA wrapped or overflowed");
 
