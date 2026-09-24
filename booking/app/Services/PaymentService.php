@@ -328,7 +328,7 @@ class PaymentService
             if (
                 Refund::query()
                     ->where('external_reference', $externalReference)
-                    ->whereKeyNot($refund->id)
+                    ->where('id', '!=', $refund->id)
                     ->exists()
             ) {
                 throw new RuntimeException('Refund reference has already been recorded.');
