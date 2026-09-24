@@ -10,6 +10,7 @@ use App\Models\RestaurantOrder;
 use App\Models\RestaurantOrderItem;
 use App\Models\RestaurantTable;
 use App\Models\TaxRule;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -22,122 +23,157 @@ class RestaurantService
 
     public function createOrder(array $data): RestaurantOrder
     {
-        return DB::transaction(function () use ($data) {
-            $type = $data['order_type'];
-            if (! in_array($type, ['dine_in', 'room_service', 'takeaway'], true)) {
-                throw new RuntimeException('Unsupported restaurant order type.');
-            }
+        $idempotencyKey = trim((string) ($data['idempotency_key'] ?? Str::uuid()));
+        if (! Str::isUuid($idempotencyKey)) {
+            throw new RuntimeException('Restaurant order idempotency key is invalid.');
+        }
 
-            $folio = null;
-            $table = null;
+        $data['idempotency_key'] = $idempotencyKey;
 
-            if ($type === 'room_service') {
-                $folio = Folio::query()
-                    ->whereKey($data['folio_id'] ?? 0)
-                    ->where('status', 'open')
-                    ->lockForUpdate()
-                    ->first();
-                if ($folio === null) {
-                    throw new RuntimeException('Room service requires an open guest folio.');
-                }
-            }
-
-            if ($type === 'dine_in') {
-                $table = RestaurantTable::query()
-                    ->whereKey($data['restaurant_table_id'] ?? 0)
-                    ->where('is_active', true)
+        try {
+            return DB::transaction(function () use ($data, $idempotencyKey) {
+                $existing = RestaurantOrder::query()
+                    ->where('idempotency_key', $idempotencyKey)
                     ->lockForUpdate()
                     ->first();
 
-                if ($table === null) {
-                    throw new RuntimeException('Dine-in orders require an active restaurant table.');
+                if ($existing !== null) {
+                    $this->assertSameIdempotentRequest($existing, $data);
+
+                    return $existing->load(['items', 'kitchenTicket.items']);
                 }
 
-                if ($table->status !== 'available') {
-                    throw new RuntimeException('The selected restaurant table is already occupied.');
+                $type = $data['order_type'];
+                if (! in_array($type, ['dine_in', 'room_service', 'takeaway'], true)) {
+                    throw new RuntimeException('Unsupported restaurant order type.');
                 }
-            }
 
-            $requestedItems = array_values(array_filter(
-                $data['items'] ?? [],
-                fn ($item) => ! empty($item['menu_item_id'])
-            ));
+                $folio = null;
+                $table = null;
 
-            if ($requestedItems === []) {
-                throw new RuntimeException('At least one restaurant item is required.');
-            }
+                if ($type === 'room_service') {
+                    $folio = Folio::query()
+                        ->whereKey($data['folio_id'] ?? 0)
+                        ->where('status', 'open')
+                        ->lockForUpdate()
+                        ->first();
+                    if ($folio === null) {
+                        throw new RuntimeException('Room service requires an open guest folio.');
+                    }
+                }
 
-            $lines = [];
-            $subtotal = 0.0;
+                if ($type === 'dine_in') {
+                    $table = RestaurantTable::query()
+                        ->whereKey($data['restaurant_table_id'] ?? 0)
+                        ->where('is_active', true)
+                        ->lockForUpdate()
+                        ->first();
 
-            foreach ($requestedItems as $requested) {
-                $quantity = max(1, (int) ($requested['quantity'] ?? 1));
-                $item = RestaurantMenuItem::query()
-                    ->whereKey((int) $requested['menu_item_id'])
-                    ->where('is_active', true)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                    if ($table === null) {
+                        throw new RuntimeException('Dine-in orders require an active restaurant table.');
+                    }
 
-                $lineTotal = round((float) $item->price * $quantity, 2);
-                $subtotal = round($subtotal + $lineTotal, 2);
+                    if ($table->status !== 'available') {
+                        throw new RuntimeException('The selected restaurant table is already occupied.');
+                    }
+                }
 
-                $lines[] = [
-                    'item' => $item,
-                    'quantity' => $quantity,
-                    'line_total' => $lineTotal,
-                    'note' => $requested['note'] ?? null,
-                ];
-            }
+                $requestedItems = $this->requestedItems($data);
+                if ($requestedItems === []) {
+                    throw new RuntimeException('At least one restaurant item is required.');
+                }
 
-            $taxRate = (float) TaxRule::query()
-                ->effectiveOn(today()->toDateString())
-                ->whereIn('applies_to', ['restaurant', 'all'])
-                ->sum('rate_percent');
-            $tax = round($subtotal * ($taxRate / 100), 2);
+                $lines = [];
+                $subtotal = 0.0;
 
-            $order = RestaurantOrder::query()->create([
-                'order_number' => 'RO-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
-                'order_type' => $type,
-                'folio_id' => $folio?->id,
-                'restaurant_table_id' => $table?->id,
-                'guest_name' => $data['guest_name'] ?? null,
-                'guest_phone' => $data['guest_phone'] ?? null,
-                'status' => 'accepted',
-                'payment_status' => $type === 'room_service' ? 'room_charge_pending' : 'unpaid',
-                'subtotal' => $subtotal,
-                'tax' => $tax,
-                'total' => round($subtotal + $tax, 2),
-            ]);
+                foreach ($requestedItems as $requested) {
+                    $item = RestaurantMenuItem::query()
+                        ->whereKey($requested['menu_item_id'])
+                        ->where('is_active', true)
+                        ->lockForUpdate()
+                        ->first();
 
-            if ($table !== null) {
-                $table->update(['status' => 'occupied']);
-            }
+                    if ($item === null) {
+                        throw new RuntimeException('A selected restaurant menu item is no longer available.');
+                    }
 
-            $ticket = KitchenTicket::query()->create([
-                'ticket_number' => 'KOT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
-                'restaurant_order_id' => $order->id,
-                'status' => 'pending',
-            ]);
+                    $lineTotal = round((float) $item->price * $requested['quantity'], 2);
+                    $subtotal = round($subtotal + $lineTotal, 2);
 
-            foreach ($lines as $line) {
-                $orderItem = RestaurantOrderItem::query()->create([
+                    $lines[] = [
+                        'item' => $item,
+                        'quantity' => $requested['quantity'],
+                        'line_total' => $lineTotal,
+                        'note' => $requested['note'] !== '' ? $requested['note'] : null,
+                    ];
+                }
+
+                $taxRate = (float) TaxRule::query()
+                    ->effectiveOn(today()->toDateString())
+                    ->whereIn('applies_to', ['restaurant', 'all'])
+                    ->sum('rate_percent');
+                $tax = round($subtotal * ($taxRate / 100), 2);
+
+                $guestName = trim((string) ($data['guest_name'] ?? ''));
+                $guestPhone = trim((string) ($data['guest_phone'] ?? ''));
+
+                $order = RestaurantOrder::query()->create([
+                    'order_number' => 'RO-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
+                    'idempotency_key' => $idempotencyKey,
+                    'order_type' => $type,
+                    'folio_id' => $folio?->id,
+                    'restaurant_table_id' => $table?->id,
+                    'guest_name' => $guestName !== '' ? $guestName : null,
+                    'guest_phone' => $guestPhone !== '' ? $guestPhone : null,
+                    'status' => 'accepted',
+                    'payment_status' => $type === 'room_service' ? 'room_charge_pending' : 'unpaid',
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'total' => round($subtotal + $tax, 2),
+                ]);
+
+                if ($table !== null) {
+                    $table->update(['status' => 'occupied']);
+                }
+
+                $ticket = KitchenTicket::query()->create([
+                    'ticket_number' => 'KOT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
                     'restaurant_order_id' => $order->id,
-                    'restaurant_menu_item_id' => $line['item']->id,
-                    'item_name' => $line['item']->name,
-                    'quantity' => $line['quantity'],
-                    'unit_price' => $line['item']->price,
-                    'line_total' => $line['line_total'],
-                    'note' => $line['note'],
+                    'status' => 'pending',
                 ]);
 
-                KitchenTicketItem::query()->create([
-                    'kitchen_ticket_id' => $ticket->id,
-                    'restaurant_order_item_id' => $orderItem->id,
-                ]);
+                foreach ($lines as $line) {
+                    $orderItem = RestaurantOrderItem::query()->create([
+                        'restaurant_order_id' => $order->id,
+                        'restaurant_menu_item_id' => $line['item']->id,
+                        'item_name' => $line['item']->name,
+                        'quantity' => $line['quantity'],
+                        'unit_price' => $line['item']->price,
+                        'line_total' => $line['line_total'],
+                        'note' => $line['note'],
+                    ]);
+
+                    KitchenTicketItem::query()->create([
+                        'kitchen_ticket_id' => $ticket->id,
+                        'restaurant_order_item_id' => $orderItem->id,
+                    ]);
+                }
+
+                return $order->load(['items', 'kitchenTicket.items']);
+            }, 3);
+        } catch (QueryException $exception) {
+            $existing = RestaurantOrder::query()
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existing === null) {
+                throw $exception;
             }
 
-            return $order->load(['items', 'kitchenTicket.items']);
-        }, 3);
+            $this->assertSameIdempotentRequest($existing, $data);
+
+            return $existing->load(['items', 'kitchenTicket.items']);
+        }
     }
 
     public function changeStatus(RestaurantOrder $order, string $nextStatus): RestaurantOrder
@@ -203,5 +239,53 @@ class RestaurantService
 
             return $order->fresh(['items', 'kitchenTicket']);
         }, 3);
+    }
+
+    private function requestedItems(array $data): array
+    {
+        return array_values(array_map(
+            static fn (array $item): array => [
+                'menu_item_id' => (int) $item['menu_item_id'],
+                'quantity' => max(1, (int) ($item['quantity'] ?? 1)),
+                'note' => trim((string) ($item['note'] ?? '')),
+            ],
+            array_filter(
+                $data['items'] ?? [],
+                static fn ($item): bool => is_array($item) && ! empty($item['menu_item_id'])
+            )
+        ));
+    }
+
+    private function assertSameIdempotentRequest(RestaurantOrder $order, array $data): void
+    {
+        $expected = [
+            'order_type' => (string) ($data['order_type'] ?? ''),
+            'folio_id' => (int) ($data['folio_id'] ?? 0),
+            'restaurant_table_id' => (int) ($data['restaurant_table_id'] ?? 0),
+            'guest_name' => trim((string) ($data['guest_name'] ?? '')),
+            'guest_phone' => trim((string) ($data['guest_phone'] ?? '')),
+            'items' => $this->requestedItems($data),
+        ];
+
+        $actual = [
+            'order_type' => $order->order_type,
+            'folio_id' => (int) ($order->folio_id ?? 0),
+            'restaurant_table_id' => (int) ($order->restaurant_table_id ?? 0),
+            'guest_name' => trim((string) ($order->guest_name ?? '')),
+            'guest_phone' => trim((string) ($order->guest_phone ?? '')),
+            'items' => $order->items()
+                ->orderBy('id')
+                ->get()
+                ->map(static fn (RestaurantOrderItem $item): array => [
+                    'menu_item_id' => (int) $item->restaurant_menu_item_id,
+                    'quantity' => (int) $item->quantity,
+                    'note' => trim((string) ($item->note ?? '')),
+                ])
+                ->all(),
+        ];
+
+        if ($expected !== $actual) {
+            throw new RuntimeException('Restaurant order idempotency key was already used for a different request.');
+        }
     }
 }
