@@ -30,14 +30,33 @@ class SetupController extends Controller
         return view('admin.setup', [
             'roomTypes' => RoomType::query()->orderBy('name')->get(),
             'rooms' => Room::query()->with('roomType')->orderBy('number')->get(),
+            'roomList' => Room::query()
+                ->with('roomType')
+                ->orderBy('number')
+                ->paginate(15, ['*'], 'rooms_page')
+                ->withQueryString(),
             'roomBlocks' => RoomBlock::query()->with('room')->where('status', 'active')->orderBy('starts_on')->get(),
             'ratePlans' => RatePlan::query()->orderBy('name')->get(),
-            'promotionCodes' => PromotionCode::query()->orderByDesc('id')->get(),
-            'roomRates' => RoomRate::query()->orderByDesc('starts_on')->limit(50)->get(),
+            'promotionCodes' => PromotionCode::query()
+                ->orderByDesc('id')
+                ->paginate(15, ['*'], 'promos_page')
+                ->withQueryString(),
+            'roomRates' => RoomRate::query()
+                ->with(['roomType', 'ratePlan'])
+                ->orderByDesc('starts_on')
+                ->paginate(15, ['*'], 'rates_page')
+                ->withQueryString(),
             'taxRules' => TaxRule::query()->orderBy('applies_to')->get(),
             'restaurantCategories' => RestaurantCategory::query()->orderBy('sort_order')->get(),
-            'restaurantMenuItems' => RestaurantMenuItem::query()->orderBy('name')->get(),
-            'restaurantTables' => RestaurantTable::query()->orderBy('code')->get(),
+            'restaurantMenuItems' => RestaurantMenuItem::query()
+                ->with('category')
+                ->orderBy('name')
+                ->paginate(15, ['*'], 'menu_page')
+                ->withQueryString(),
+            'restaurantTables' => RestaurantTable::query()
+                ->orderBy('code')
+                ->paginate(15, ['*'], 'tables_page')
+                ->withQueryString(),
         ]);
     }
 
