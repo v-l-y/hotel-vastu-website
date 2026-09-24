@@ -37,7 +37,10 @@ class PaymentController extends Controller
         $folios = $showHotelPayments
             ? Folio::query()
                 ->where('status', 'open')
-                ->where('balance', '>', 0)
+                ->where(function ($query) {
+                    $query->where('balance', '>', 0.009)
+                        ->orWhere('balance', '<', -0.009);
+                })
                 ->when($selectedFolioId > 0, fn ($query) => $query->whereKey($selectedFolioId))
                 ->orderByDesc('id')
                 ->get()
