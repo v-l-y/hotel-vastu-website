@@ -270,9 +270,12 @@
 </div>
 
 <div class="actions">
-@if(abs((float)$stay->folio->balance) > 0.009)
+@if((float)$stay->folio->balance > 0.009)
 <a class="button-link primary" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Settle ₹{{ number_format((float)$stay->folio->balance,2) }}</a>
 <span class="status-badge warn">Settle balance before checkout</span>
+@elseif((float)$stay->folio->balance < -0.009)
+<a class="button-link danger" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Refund ₹{{ number_format(abs((float)$stay->folio->balance),2) }} credit</a>
+<span class="status-badge warn">Refund overpayment before checkout</span>
 @else
 <a class="button-link" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Payments</a>
 <form method="post" action="{{ route('admin.front-desk.check-out',$stay) }}">@csrf<button type="submit">Check out</button></form>
