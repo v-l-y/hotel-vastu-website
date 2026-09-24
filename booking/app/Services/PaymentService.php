@@ -26,6 +26,18 @@ class PaymentService
         return DB::transaction(function () use ($data) {
             $existing = Payment::query()->where('idempotency_key', $data['idempotency_key'])->first();
             if ($existing !== null) {
+                $sameRequest =
+                    (int) ($existing->reservation_id ?? 0) === (int) ($data['reservation_id'] ?? 0)
+                    && (int) ($existing->folio_id ?? 0) === (int) ($data['folio_id'] ?? 0)
+                    && (int) ($existing->restaurant_order_id ?? 0) === (int) ($data['restaurant_order_id'] ?? 0)
+                    && $existing->method === $data['method']
+                    && abs((float) $existing->amount - round((float) $data['amount'], 2)) < 0.009
+                    && (string) ($existing->external_reference ?? '') === (string) ($data['external_reference'] ?? '');
+
+                if (! $sameRequest) {
+                    throw new RuntimeException('Idempotency key was already used for a different payment request.');
+                }
+
                 return $existing;
             }
 
@@ -122,6 +134,15 @@ class PaymentService
     {
         $existing = Refund::query()->where('idempotency_key', $data['idempotency_key'])->first();
         if ($existing !== null) {
+            $sameRequest =
+                (int) $existing->payment_id === (int) $payment->id
+                && abs((float) $existing->amount - round((float) $data['amount'], 2)) < 0.009
+                && (string) ($existing->reason ?? '') === (string) ($data['reason'] ?? '');
+
+            if (! $sameRequest) {
+                throw new RuntimeException('Idempotency key was already used for a different refund request.');
+            }
+
             return $existing;
         }
 
