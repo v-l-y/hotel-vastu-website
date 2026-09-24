@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoomBlock extends Model
 {
@@ -11,5 +12,10 @@ class RoomBlock extends Model
     protected function casts(): array
     {
         return ['starts_on' => 'date', 'ends_on' => 'date'];
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
     }
 }
