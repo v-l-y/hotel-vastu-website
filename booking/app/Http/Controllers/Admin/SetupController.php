@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StayRoom;
 use App\Services\AvailabilityService;
 use Carbon\CarbonImmutable;
+use App\Models\PromotionCode;
 use App\Models\RatePlan;
 use App\Models\RestaurantCategory;
 use App\Models\RestaurantMenuItem;
@@ -31,6 +32,7 @@ class SetupController extends Controller
             'rooms' => Room::query()->with('roomType')->orderBy('number')->get(),
             'roomBlocks' => RoomBlock::query()->with('room')->where('status', 'active')->orderBy('starts_on')->get(),
             'ratePlans' => RatePlan::query()->orderBy('name')->get(),
+            'promotionCodes' => PromotionCode::query()->orderByDesc('id')->get(),
             'roomRates' => RoomRate::query()->orderByDesc('starts_on')->limit(50)->get(),
             'taxRules' => TaxRule::query()->orderBy('applies_to')->get(),
             'restaurantCategories' => RestaurantCategory::query()->orderBy('sort_order')->get(),
@@ -227,6 +229,59 @@ class SetupController extends Controller
         }
 
         return back()->with('status', 'Dated room rate added.');
+    }
+
+    public function storePromotionCode(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'name' => ['required', 'string', 'max:120'],
+            'discount_type' => ['required', 'in:fixed,percent'],
+            'discount_value' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'max_discount' => ['nullable', 'numeric', 'gt:0', 'max:99999999'],
+            'min_subtotal' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'starts_on' => ['nullable', 'date_format:Y-m-d'],
+            'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on'],
+            'usage_limit' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+        ]);
+
+        $code = Str::upper(trim($data['code']));
+        if (PromotionCode::query()->where('code', $code)->exists()) {
+            return back()->withInput()->withErrors(['code' => 'Choose a unique promo code.']);
+        }
+
+        if ($data['discount_type'] === 'percent' && (float) $data['discount_value'] > 100) {
+            return back()->withInput()->withErrors(['discount_value' => 'Percentage promo cannot exceed 100%.']);
+        }
+
+        PromotionCode::query()->create([
+            'code' => $code,
+            'name' => $data['name'],
+            'discount_type' => $data['discount_type'],
+            'discount_value' => $data['discount_value'],
+            'max_discount' => $data['max_discount'] ?? null,
+            'min_subtotal' => $data['min_subtotal'] ?? 0,
+            'starts_on' => $data['starts_on'] ?? null,
+            'ends_on' => $data['ends_on'] ?? null,
+            'usage_limit' => $data['usage_limit'] ?? null,
+            'times_used' => 0,
+            'is_active' => true,
+        ]);
+
+        return back()->with('status', 'Promo code created.');
+    }
+
+    public function updatePromotionCodeStatus(
+        Request $request,
+        PromotionCode $promotionCode
+    ): RedirectResponse {
+        $data = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $promotionCode->update(['is_active' => (bool) $data['is_active']]);
+
+        return back()->with('status', 'Promo code status updated.');
     }
 
     public function storeTaxRule(Request $request): RedirectResponse
