@@ -133,6 +133,8 @@ Never commit live gateway credentials.
 
 ## Tests
 
+`composer.lock` is committed and is a mandatory GitHub/local-CI release gate so production and test installs resolve the same dependency set.
+
 Quick application test:
 
 ```bash
