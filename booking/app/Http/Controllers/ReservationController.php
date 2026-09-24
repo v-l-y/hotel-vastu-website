@@ -13,7 +13,7 @@ class ReservationController extends Controller
     {
         $reservation = Reservation::query()
             ->where('public_token', $token)
-            ->with(['rooms', 'guestLinks.guest', 'feedback'])
+            ->with(['rooms.roomType', 'rooms.ratePlan', 'guestLinks.guest', 'feedback'])
             ->firstOrFail();
 
         $invoice = null;
