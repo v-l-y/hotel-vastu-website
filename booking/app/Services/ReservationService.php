@@ -68,6 +68,10 @@ class ReservationService
                 'last_name' => $guestData['last_name'] ?? null,
                 'phone' => $guestData['phone'],
                 'email' => $guestData['email'] ?? null,
+                'gstin' => isset($guestData['gstin']) ? strtoupper(trim($guestData['gstin'])) : null,
+                'billing_address' => $guestData['billing_address'] ?? null,
+                'billing_state' => $guestData['billing_state'] ?? null,
+                'billing_state_code' => $guestData['billing_state_code'] ?? null,
             ]);
 
             $reservation = Reservation::query()->create([
@@ -177,6 +181,10 @@ class ReservationService
                 'last_name' => $data['last_name'] ?? null,
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
+                'gstin' => isset($data['gstin']) ? strtoupper(trim($data['gstin'])) : null,
+                'billing_address' => $data['billing_address'] ?? null,
+                'billing_state' => $data['billing_state'] ?? null,
+                'billing_state_code' => $data['billing_state_code'] ?? null,
             ]);
 
             $reservation = Reservation::query()->create([
