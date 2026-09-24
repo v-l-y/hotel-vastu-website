@@ -9,6 +9,8 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Refund;
 use App\Models\RestaurantOrder;
+use App\Services\CustomerMessageService;
+use App\Services\InvoiceService;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,7 +134,12 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function store(Request $request, PaymentService $service): RedirectResponse
+    public function store(
+        Request $request,
+        PaymentService $service,
+        InvoiceService $invoices,
+        CustomerMessageService $messages
+    ): RedirectResponse
     {
         $data = $request->validate([
             'idempotency_key' => ['required', 'uuid'],
@@ -171,9 +178,38 @@ class PaymentController extends Controller
         $payload[$data['target_type'].'_id'] = $data['target_id'];
 
         try {
-            $service->record($payload);
+            $payment = $service->record($payload);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['payment' => $exception->getMessage()]);
+        }
+
+        if ($payment->restaurant_order_id !== null) {
+            $order = RestaurantOrder::query()->findOrFail($payment->restaurant_order_id);
+
+            if ($order->payment_status === 'paid') {
+                try {
+                    $existing = Invoice::query()
+                        ->where('restaurant_order_id', $order->id)
+                        ->first();
+                    $invoice = $existing ?? $invoices->createFromRestaurantOrder($order);
+
+                    if ($existing === null) {
+                        $messages->sendRestaurantInvoice($invoice);
+                    }
+
+                    return redirect()
+                        ->route('admin.invoices.show', $invoice)
+                        ->with('status', $existing === null
+                            ? 'Payment recorded. Restaurant invoice issued and delivery processed.'
+                            : 'Payment recorded. Restaurant invoice opened.');
+                } catch (RuntimeException $exception) {
+                    return back()
+                        ->with('status', 'Payment recorded successfully.')
+                        ->withErrors([
+                            'invoice' => 'Invoice was not issued: '.$exception->getMessage(),
+                        ]);
+                }
+            }
         }
 
         return back()->with('status', 'Verified payment recorded.');
