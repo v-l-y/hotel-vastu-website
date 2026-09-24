@@ -59,7 +59,20 @@
 <td>@if($payment->reservation_id)Reservation {{ $payment->reservation?->booking_number }}@elseif($payment->folio_id)Folio #{{ $payment->folio_id }}@else Restaurant {{ $payment->restaurantOrder?->order_number }}@endif</td>
 <td>₹{{ number_format((float)$payment->amount,2) }}<br>Refunded ₹{{ number_format($refunded,2) }}</td>
 <td>₹{{ number_format($refundable,2) }}</td>
-<td>@if(($canRefund ?? false) && $refundable>0)<form class="actions" method="post" action="{{ route('admin.payments.refund',$payment) }}">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" placeholder="Amount" required><input name="reason" placeholder="Reason"><button class="danger">Refund</button></form>@elseif($refundable<=0) Fully refunded @else Restricted @endif</td>
+<td>
+@if(($canRefund ?? false) && $refundable>0)
+<form class="actions" method="post" action="{{ route('admin.payments.refund',$payment) }}">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" placeholder="Amount" required><input name="reason" placeholder="Reason"><button class="danger">Refund</button></form>
+@elseif($refundable<=0)
+Fully refunded
+@else
+Restricted
+@endif
+@if($canRefund ?? false)
+@foreach($payment->refunds->where('status','pending') as $pendingRefund)
+<form class="actions" method="post" action="{{ route('admin.payments.refunds.reconcile',$pendingRefund) }}">@csrf<button type="submit">Reconcile refund #{{ $pendingRefund->id }}</button></form>
+@endforeach
+@endif
+</td>
 </tr>
 @endforeach
 </tbody></table>
