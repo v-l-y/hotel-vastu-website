@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateReservationHoldRequest;
+use App\Models\RoomType;
 use App\Services\ReservationHoldService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,24 @@ class ReservationHoldController extends Controller
                 (int) ($data['children'] ?? 0)
             );
         } catch (RuntimeException $exception) {
+            if ($request->boolean('website_handoff')) {
+                $roomCode = RoomType::query()
+                    ->whereKey((int) $data['room_type_id'])
+                    ->value('code');
+
+                return redirect()
+                    ->route('booking.search', [
+                        'check_in' => $data['check_in'],
+                        'check_out' => $data['check_out'],
+                        'adults' => $data['adults'],
+                        'children' => $data['children'] ?? 0,
+                        'room_code' => $roomCode,
+                    ])
+                    ->withErrors([
+                        'availability' => 'That room is no longer available. Please choose another room.',
+                    ]);
+            }
+
             return back()->withInput()->withErrors(['availability' => $exception->getMessage()]);
         }
 

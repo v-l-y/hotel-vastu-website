@@ -6,19 +6,26 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Guest details | Hotel Vastu Premium</title>
 <style>
-body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}main{max-width:760px;margin:auto;padding:32px 20px 64px}.panel{background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:24px}.summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}.summary div{border:1px solid #e2ddd7;border-radius:10px;padding:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:grid;gap:7px;font-weight:600}input,textarea,button{font:inherit}input,textarea{border:1px solid #b9b0a7;border-radius:8px;padding:10px 12px}button{min-height:44px;border:0;border-radius:8px;padding:0 18px;background:#2b211b;color:#fff;cursor:pointer}.full{grid-column:1/-1}.error{padding:12px 14px;border-radius:8px;background:#fff0f0;color:#791717}@media(max-width:640px){.summary,.grid{grid-template-columns:1fr}}
+body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}main{max-width:760px;margin:auto;padding:32px 20px 64px}.panel{background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:24px}.summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}.summary div{border:1px solid #e2ddd7;border-radius:10px;padding:12px}.price-box{margin:0 0 20px;background:#fff;border:1px solid #ded8d1;border-radius:16px;padding:18px 20px}.price-row{display:flex;justify-content:space-between;gap:16px;padding:6px 0}.price-total{margin-top:8px;padding-top:12px;border-top:1px solid #ded8d1;font-size:1.2rem;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:grid;gap:7px;font-weight:600}input,textarea,button{font:inherit}input,textarea{border:1px solid #b9b0a7;border-radius:8px;padding:10px 12px}button{min-height:44px;border:0;border-radius:8px;padding:0 18px;background:#2b211b;color:#fff;cursor:pointer}.full{grid-column:1/-1}.error{padding:12px 14px;border-radius:8px;background:#fff0f0;color:#791717}.muted{color:#6d635c}@media(max-width:640px){.summary,.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Guest details</h1>
-<p>Your selected inventory is held until {{ $hold->expires_at->format('d M Y, h:i A') }}.</p>
+<p>Your selected room is held until {{ $hold->expires_at->format('d M Y, h:i A') }}.</p>
 
 <div class="summary">
 <div><strong>{{ $hold->roomType->name }}</strong><br>{{ $hold->ratePlan->name }} · {{ $hold->quantity }} room(s)</div>
 <div><strong>{{ $hold->check_in_date->format('d M Y') }} → {{ $hold->check_out_date->format('d M Y') }}</strong><br>{{ $hold->adults }} adult(s), {{ $hold->children }} child(ren)</div>
 </div>
+
+<section class="price-box" aria-label="Stay price">
+<div class="price-row"><span>Room charges</span><strong>₹{{ number_format((float) $quote['subtotal'], 2) }}</strong></div>
+<div class="price-row"><span>Tax</span><strong>₹{{ number_format((float) $quote['tax'], 2) }}</strong></div>
+<div class="price-row price-total"><span>Stay total</span><span>₹{{ number_format((float) $quote['total'], 2) }}</span></div>
+<p class="muted">This is the price for the selected dates, room(s) and rate plan.</p>
+</section>
 
 @if ($errors->any()) <div class="error"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 
