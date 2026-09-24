@@ -1,1 +1,46 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hotel Admin Login</title><style>body{font-family:system-ui,sans-serif;background:#f5f2ee;color:#231e1a;margin:0}main{max-width:440px;margin:8vh auto;padding:20px}.panel{background:#fff;border:1px solid #ddd6cf;border-radius:14px;padding:24px}label{display:grid;gap:6px;margin:14px 0;font-weight:600}input,button{font:inherit;min-height:44px}input{padding:0 10px;border:1px solid #b9afa6;border-radius:8px}button{border:0;border-radius:8px;background:#2b211b;color:#fff;padding:0 16px}.error{background:#fff0f0;color:#771717;padding:10px;border-radius:8px}</style></head><body><main><section class="panel"><p>Hotel Vastu Premium</p><h1>Admin login</h1>@if($errors->any())<div class="error">{{ $errors->first() }}</div>@endif<form method="post" action="{{ route('admin.login.submit') }}">@csrf<label>Email<input type="email" name="email" autocomplete="username" required value="{{ old('email') }}"></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button type="submit">Sign in</button></form></section></main></body></html>
+@extends('admin.auth-layout')
+@section('title','Admin login')
+@section('content')
+<section class="auth-card">
+<div class="auth-eyebrow">Hotel Vastu Premium</div>
+<h2>Sign in to Admin</h2>
+<p class="auth-copy">Use your staff account to continue to the operational dashboard.</p>
+
+@if($errors->any())
+<div class="alert-error" role="alert" aria-live="polite">{{ $errors->first() }}</div>
+@endif
+
+<form method="post" action="{{ route('admin.login.submit') }}" novalidate>
+@csrf
+<label>Email address
+<input type="email" name="email" autocomplete="username" inputmode="email" required autofocus value="{{ old('email') }}" placeholder="name@example.com">
+</label>
+<label>Password
+<div class="password-field">
+<input id="admin-password" type="password" name="password" autocomplete="current-password" required>
+<button type="button" data-password-toggle aria-controls="admin-password" aria-pressed="false">Show</button>
+</div>
+</label>
+<button class="auth-submit" type="submit">Sign in securely</button>
+</form>
+
+<div class="auth-meta">Login attempts are rate-limited and security events are recorded. Accounts with two-factor authentication enabled will be asked for an authenticator code next.</div>
+</section>
+@endsection
+
+@push('scripts')
+<script>
+(() => {
+  const button = document.querySelector('[data-password-toggle]');
+  const input = document.getElementById('admin-password');
+  if (!button || !input) return;
+  button.addEventListener('click', () => {
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    button.textContent = show ? 'Hide' : 'Show';
+    button.setAttribute('aria-pressed', show ? 'true' : 'false');
+    input.focus();
+  });
+})();
+</script>
+@endpush
