@@ -115,4 +115,48 @@ class AvailabilityServiceTest extends TestCase
         $this->assertSame(1, $result['available_rooms']);
     }
 
+    public function test_sequential_reservations_are_not_double_counted_across_multi_night_search(): void
+    {
+        $type = RoomType::query()->create([
+            'code' => 'sequential',
+            'name' => 'Sequential Room',
+            'is_active' => true,
+        ]);
+        foreach (['S101', 'S102', 'S103'] as $number) {
+            Room::query()->create([
+                'room_type_id' => $type->id,
+                'number' => $number,
+                'status' => 'active',
+                'housekeeping_status' => 'clean',
+            ]);
+        }
+
+        foreach ([
+            ['HV-SEQ-1', '2026-10-10', '2026-10-11'],
+            ['HV-SEQ-2', '2026-10-11', '2026-10-12'],
+        ] as [$bookingNumber, $checkIn, $checkOut]) {
+            $reservation = Reservation::query()->create([
+                'booking_number' => $bookingNumber,
+                'check_in_date' => $checkIn,
+                'check_out_date' => $checkOut,
+                'status' => 'confirmed',
+            ]);
+            ReservationRoom::query()->create([
+                'reservation_id' => $reservation->id,
+                'room_type_id' => $type->id,
+                'quantity' => 1,
+            ]);
+        }
+
+        $result = app(AvailabilityService::class)->forRoomType(
+            $type->id,
+            CarbonImmutable::parse('2026-10-10'),
+            CarbonImmutable::parse('2026-10-12')
+        );
+
+        $this->assertSame(1, $result['reserved_rooms']);
+        $this->assertSame(0, $result['held_rooms']);
+        $this->assertSame(2, $result['available_rooms']);
+    }
+
 }
