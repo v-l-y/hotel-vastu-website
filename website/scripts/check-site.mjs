@@ -259,6 +259,12 @@ for(const name of ["check_in","check_out","adults","children","room_code"]){
   if(!homeBookingMarkup.includes(`name="${name}"`)) fail("index.html","homepage booking form missing field "+name);
 }
 if(homeBookingSource.includes("sessionStorage")||homeBookingSource.includes("contact.html#booking")) fail("js/home-booking.js","homepage booking must redirect directly without local draft storage");
+if(!homeBookingMarkup.includes('for="home-adults"')||!homeBookingMarkup.includes('name="adults"')) fail("index.html","homepage booking must collect adults explicitly");
+if(!homeBookingMarkup.includes('for="home-children"')||!homeBookingMarkup.includes('name="children"')) fail("index.html","homepage booking must collect children explicitly");
+if(homeBookingMarkup.includes('for="home-guests"')) fail("index.html","ambiguous combined guest selector must not return");
+for(const [file,code] of [["classic-room.html","classic"],["club-room.html","club"],["premium-room.html","premium"]]){
+  if(!read(file).includes(`href="${bookingUrl}?room_code=${code}"`)) fail(file,"room-specific booking CTA must preserve room_code="+code);
+}
 for(const file of htmlFiles){
   const html=read(file);
   if(html.includes("contact.html#booking")) fail(file,"legacy local booking anchor must not return");
