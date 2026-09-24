@@ -26,11 +26,12 @@ class AvailabilityController extends Controller
         $roomTypes = RoomType::query()->where('is_active', true)->orderBy('name')->get();
         $ratePlans = RatePlan::query()->where('is_active', true)->orderBy('name')->get();
 
-        $hasWebsiteHandoff = $request->filled('check_in')
+        $hasStayHandoff = $request->filled('check_in')
             || $request->filled('check_out')
-            || $request->filled('room_code');
+            || $request->filled('adults')
+            || $request->filled('children');
 
-        if ($hasWebsiteHandoff) {
+        if ($hasStayHandoff) {
             $validator = Validator::make($request->query(), [
                 'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
                 'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in'],
@@ -140,6 +141,11 @@ class AvailabilityController extends Controller
         }
 
         $adults = max(1, min(30, (int) $request->query('adults', 2)));
+        $children = max(0, min(30, (int) $request->query('children', 0)));
+        $roomCode = strtolower(trim((string) $request->query('room_code', '')));
+        $prefilledRoom = $roomCode !== ''
+            ? $roomTypes->firstWhere('code', $roomCode)
+            : null;
 
         return view('booking.search', [
             'roomTypes' => $roomTypes,
@@ -150,11 +156,11 @@ class AvailabilityController extends Controller
             'search' => [
                 'check_in' => null,
                 'check_out' => null,
-                'room_type_id' => null,
+                'room_type_id' => $prefilledRoom?->id,
                 'rate_plan_id' => $ratePlans->count() === 1 ? $ratePlans->first()->id : null,
                 'rooms' => 1,
                 'adults' => $adults,
-                'children' => 0,
+                'children' => $children,
             ],
         ]);
     }
