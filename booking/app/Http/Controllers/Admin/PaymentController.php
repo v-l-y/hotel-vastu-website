@@ -78,8 +78,8 @@ class PaymentController extends Controller
                 fn ($query) => $query->where('folio_id', $selectedFolioId)
             )
             ->latest('id')
-            ->limit(100)
-            ->get();
+            ->paginate(25, ['*'], 'payments_page')
+            ->withQueryString();
 
         $reservationOutstanding = $reservations->mapWithKeys(
             fn (Reservation $reservation) => [
@@ -103,7 +103,7 @@ class PaymentController extends Controller
         );
 
         $invoicedFolioIds = Invoice::query()
-            ->whereIn('folio_id', $payments->pluck('folio_id')->filter()->unique()->values())
+            ->whereIn('folio_id', $payments->getCollection()->pluck('folio_id')->filter()->unique()->values())
             ->pluck('folio_id')
             ->map(fn ($id) => (int) $id)
             ->all();
@@ -116,7 +116,10 @@ class PaymentController extends Controller
             'folios' => $folios,
             'restaurantOrders' => $restaurantOrders,
             'invoices' => $showHotelPayments
-                ? Invoice::query()->latest('id')->limit(50)->get()
+                ? Invoice::query()
+                    ->latest('id')
+                    ->paginate(20, ['*'], 'invoices_page')
+                    ->withQueryString()
                 : collect(),
             'payments' => $payments,
             'selectedReservationId' => $selectedReservationId,
