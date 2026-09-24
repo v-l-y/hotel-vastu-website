@@ -218,6 +218,47 @@ class OnlinePaymentServiceTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_processed_refund_cannot_regress_to_pending_from_late_webhook(): void
+    {
+        $reservation = $this->reservation('5');
+        $payment = app(PaymentService::class)->record([
+            'idempotency_key' => (string) Str::uuid(),
+            'reservation_id' => $reservation->id,
+            'method' => 'online_gateway',
+            'amount' => 1000,
+            'external_reference' => 'pay_refund_monotonic',
+        ]);
+
+        $refundKey = (string) Str::uuid();
+        $refund = Refund::query()->create([
+            'idempotency_key' => $refundKey,
+            'payment_id' => $payment->id,
+            'amount' => 250,
+            'status' => 'pending',
+            'refund_type' => 'other',
+            'reason' => 'Webhook ordering test',
+        ]);
+
+        $processed = [
+            'id' => 'rfnd_monotonic',
+            'payment_id' => 'pay_refund_monotonic',
+            'amount' => 25000,
+            'currency' => 'INR',
+            'receipt' => $refundKey,
+            'status' => 'processed',
+        ];
+        app(PaymentService::class)->reconcileProviderRefund($processed);
+
+        $this->assertSame('succeeded', $refund->fresh()->status);
+
+        app(PaymentService::class)->reconcileProviderRefund([
+            ...$processed,
+            'status' => 'pending',
+        ]);
+
+        $this->assertSame('succeeded', $refund->fresh()->status);
+    }
+
     public function test_webhook_route_accepts_valid_signed_server_to_server_request_without_csrf_token(): void
     {
         $payload = json_encode(['event' => 'test.ping'], JSON_THROW_ON_ERROR);
