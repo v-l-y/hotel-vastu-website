@@ -137,12 +137,16 @@ class FrontDeskBookingTest extends TestCase
             ->assertSee('In-house')
             ->assertSee('Reservations')
             ->assertSee('Housekeeping')
-            ->assertDontSee('Check availability & confirm booking', false)
+            ->assertSee('data-open-booking-modal', false)
+            ->assertSee('id="new-booking-modal"', false)
+            ->assertSee('Check availability & confirm booking', false)
+            ->assertSee('A physical room number is assigned later at check-in.')
             ->assertDontSee('Target ID');
 
         $this->withSession($this->sessionFor($frontDesk))
             ->get('/admin/front-desk?new=1')
             ->assertOk()
+            ->assertSee('id="new-booking-modal"', false)
             ->assertSee('New booking')
             ->assertSee('Check availability & confirm booking', false);
 
