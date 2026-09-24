@@ -25,7 +25,7 @@ Discount −₹{{ number_format((float)$reservation->discount,2) }}
 
 @if($invoice->creditNotes->isNotEmpty())
 <section class="panel">
-<h2>Credit notes / post-invoice refunds</h2>
+<h2>Credit notes / post-invoice adjustments</h2>
 @foreach($invoice->creditNotes as $creditNote)
 <p><strong>{{ $creditNote->credit_note_number }}</strong> · {{ $creditNote->issued_at->format('d M Y, h:i A') }} · ₹{{ number_format((float)$creditNote->amount,2) }} · {{ str_replace('_',' ',$creditNote->refund?->refund_type ?? 'adjustment') }}@if($creditNote->reason) · {{ $creditNote->reason }}@endif</p>
 @endforeach
