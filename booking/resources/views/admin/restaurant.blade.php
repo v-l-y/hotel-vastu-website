@@ -60,7 +60,7 @@
 @php($statusOptions = ($kitchenOnly ?? false) ? ['preparing','ready'] : ['preparing','ready','served','cancelled'])
 <form class="actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">@csrf<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select><button>Update</button></form>
 @endif
-@if(!($kitchenOnly ?? false) && $order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status!=='cancelled')
+@if(!($kitchenOnly ?? false) && $order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status==='served')
 <form class="actions" method="post" action="{{ route('admin.payments.store') }}">@csrf<input type="hidden" name="target_type" value="restaurant_order"><input type="hidden" name="target_id" value="{{ $order->id }}"><input type="hidden" name="amount" value="{{ $order->total }}"><select name="method"><option>cash</option><option>upi</option><option>card</option></select><button>Pay</button></form>
 @endif
 </td>
