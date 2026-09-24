@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoomRate extends Model
 {
@@ -18,5 +19,15 @@ class RoomRate extends Model
             'ends_on' => 'date',
             'nightly_rate' => 'decimal:2',
         ];
+    }
+
+    public function roomType(): BelongsTo
+    {
+        return $this->belongsTo(RoomType::class);
+    }
+
+    public function ratePlan(): BelongsTo
+    {
+        return $this->belongsTo(RatePlan::class);
     }
 }
