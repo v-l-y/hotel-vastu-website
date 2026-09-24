@@ -339,14 +339,14 @@ class FrontDeskService
         return DB::transaction(function () use ($room, $status) {
             $room = Room::query()->whereKey($room->id)->lockForUpdate()->firstOrFail();
 
-            $occupied = StayRoom::query()
+            $activeAssignment = StayRoom::query()
                 ->where('room_id', $room->id)
                 ->whereNull('released_at')
                 ->whereHas('stay', fn ($query) => $query->where('status', 'checked_in'))
                 ->lockForUpdate()
-                ->exists();
+                ->first();
 
-            if ($occupied) {
+            if ($activeAssignment !== null) {
                 throw new RuntimeException('Occupied rooms cannot be changed by housekeeping until checkout or room transfer.');
             }
 
