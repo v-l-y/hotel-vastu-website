@@ -103,10 +103,10 @@ class DemoBookingSeeder extends Seeder
                     [
                         'room_type_id' => $roomType->id,
                         'rate_plan_id' => $ratePlan->id,
-                        'starts_on' => '2026-01-01',
-                        'ends_on' => '2030-12-31',
                     ],
                     [
+                        'starts_on' => '2026-01-01',
+                        'ends_on' => '2030-12-31',
                         'nightly_rate' => $nightlyRate,
                         'min_stay' => 1,
                         'max_stay' => 30,
