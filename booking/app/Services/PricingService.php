@@ -147,7 +147,7 @@ class PricingService
             $tax = round($tax + $quote['tax'], 2);
         }
 
-        $discount = $this->calculateDiscount($reservation, $subtotal);
+        $discount = $this->discountForSubtotal($reservation, $subtotal);
         $taxFactor = $subtotal > 0 ? max(0, ($subtotal - $discount) / $subtotal) : 1;
         $discountedTax = round($tax * $taxFactor, 2);
 
@@ -210,7 +210,7 @@ class PricingService
         }, 3);
     }
 
-    private function calculateDiscount(Reservation $reservation, float $subtotal): float
+    public function discountForSubtotal(Reservation $reservation, float $subtotal): float
     {
         $type = (string) ($reservation->discount_type ?? '');
         $value = (float) ($reservation->discount_value ?? 0);
