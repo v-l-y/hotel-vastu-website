@@ -11,8 +11,9 @@ class RestaurantOrder extends Model
 {
     protected $fillable = [
         'order_number', 'idempotency_key', 'order_type', 'folio_id', 'restaurant_table_id',
-        'guest_name', 'guest_phone', 'status', 'payment_status',
-        'subtotal', 'tax', 'total',
+        'guest_name', 'guest_phone', 'guest_email', 'guest_gstin',
+        'guest_billing_address', 'guest_billing_state', 'guest_billing_state_code',
+        'status', 'payment_status', 'subtotal', 'tax', 'total',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class RestaurantOrder extends Model
     public function items(): HasMany { return $this->hasMany(RestaurantOrderItem::class); }
     public function payments(): HasMany { return $this->hasMany(Payment::class); }
     public function kitchenTicket(): HasOne { return $this->hasOne(KitchenTicket::class); }
+    public function invoice(): HasOne { return $this->hasOne(Invoice::class); }
     public function restaurantTable(): BelongsTo { return $this->belongsTo(RestaurantTable::class); }
     public function folio(): BelongsTo { return $this->belongsTo(Folio::class); }
 }
