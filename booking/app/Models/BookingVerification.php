@@ -9,6 +9,7 @@ class BookingVerification extends Model
 {
     protected $fillable = [
         'reservation_hold_id', 'first_name', 'last_name', 'phone', 'email',
+        'gstin', 'billing_address', 'billing_state', 'billing_state_code',
         'special_request', 'promo_code', 'code_hash', 'attempts', 'expires_at', 'verified_at',
     ];
 
