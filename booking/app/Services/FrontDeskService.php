@@ -336,9 +336,24 @@ class FrontDeskService
             throw new RuntimeException('Unsupported housekeeping status.');
         }
 
-        $room->update(['housekeeping_status' => $status]);
+        return DB::transaction(function () use ($room, $status) {
+            $room = Room::query()->whereKey($room->id)->lockForUpdate()->firstOrFail();
 
-        return $room->fresh();
+            $occupied = StayRoom::query()
+                ->where('room_id', $room->id)
+                ->whereNull('released_at')
+                ->whereHas('stay', fn ($query) => $query->where('status', 'checked_in'))
+                ->lockForUpdate()
+                ->exists();
+
+            if ($occupied) {
+                throw new RuntimeException('Occupied rooms cannot be changed by housekeeping until checkout or room transfer.');
+            }
+
+            $room->update(['housekeeping_status' => $status]);
+
+            return $room->fresh();
+        }, 3);
     }
 
     public function checkOut(Stay $stay): array
