@@ -20,6 +20,29 @@ class OperationalUiStateTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_restaurant_new_order_uses_modal_entry_ui(): void
+    {
+        $restaurant = $this->admin('restaurant', 'restaurant-modal@example.com');
+
+        $this->withSession($this->sessionFor($restaurant))
+            ->get('/admin/restaurant')
+            ->assertOk()
+            ->assertSee('data-open-order-modal', false)
+            ->assertSee('id="restaurant-order-modal"', false)
+            ->assertSee('id="restaurant-order-form"', false)
+            ->assertSee('order-modal-footer', false)
+            ->assertSee('Customer &amp; billing details', false)
+            ->assertSee('Create order &amp; KOT', false);
+
+        $kitchen = $this->admin('kitchen', 'kitchen-no-order-modal@example.com');
+
+        $this->withSession($this->sessionFor($kitchen))
+            ->get('/admin/restaurant')
+            ->assertOk()
+            ->assertDontSee('data-open-order-modal', false)
+            ->assertDontSee('id="restaurant-order-modal"', false);
+    }
+
     public function test_restaurant_status_ui_only_offers_valid_next_transitions(): void
     {
         $restaurant = $this->admin('restaurant', 'restaurant-state@example.com');

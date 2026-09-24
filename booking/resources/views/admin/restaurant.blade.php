@@ -4,11 +4,35 @@
 @push('styles')
 <style>
 .restaurant-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
-.restaurant-heading h1{margin:0 0 6px}.restaurant-heading p{margin:0}
+.restaurant-heading h1{margin:0 0 6px}.restaurant-heading p{margin:0}.restaurant-heading-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .order-context[hidden]{display:none}.order-summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.menu-toolbar{display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap;margin:10px 0}.menu-toolbar label{min-width:min(100%,360px)}
+.restaurant-order-modal{width:min(980px,calc(100vw - 28px));max-height:calc(100vh - 28px);padding:0;border:0;border-radius:22px;background:#fff;color:#241f1b;box-shadow:0 28px 80px rgba(28,20,15,.30);overflow:hidden}
+.restaurant-order-modal::backdrop{background:rgba(29,22,18,.66);backdrop-filter:blur(3px)}
+.order-modal-shell{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:calc(100vh - 28px)}
+.order-modal-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e8e0d9;background:#fcfaf8}
+.order-modal-head h2{margin:0 0 5px;font-size:1.45rem}.order-modal-head p{margin:0;max-width:640px}
+.order-modal-close{width:42px;height:42px;min-height:42px;padding:0;border-radius:999px;background:#eee8e2;color:#2b211b;font-size:1.35rem;line-height:1;flex:0 0 auto}
+.order-modal-body{overflow:auto;padding:20px 22px}
+.order-form-stack{display:grid;gap:16px}
+.order-section{border:1px solid #e5ddd6;border-radius:16px;padding:16px;background:#fff}
+.order-section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:13px}.order-section-head h3{margin:0 0 3px}.order-section-head p{margin:0}
+.order-service-grid{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(280px,1.25fr);gap:14px;align-items:start}
+.order-service-grid .order-context{min-width:0}
+.order-field-help{display:block;margin-top:5px;color:#786f67;font-size:.82rem;font-weight:500}
+.order-billing-details{border:1px solid #ebe4de;border-radius:14px;background:#fcfaf8;padding:0 14px}.order-billing-details summary{cursor:pointer;font-weight:800;padding:13px 0}.order-billing-details[open] summary{border-bottom:1px solid #ebe4de;margin-bottom:14px}
+.order-billing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-bottom:14px}.order-billing-grid .full{grid-column:1/-1}
+.menu-toolbar{display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px}.menu-toolbar label{min-width:min(100%,360px)}
+.order-items-list{display:grid;gap:10px}
+.order-items-list .item-row{display:grid;grid-template-columns:minmax(260px,1.4fr) 90px minmax(180px,1fr) 42px;gap:10px;align-items:end;border:1px solid #e9e1da;border-radius:14px;padding:12px;background:#fcfaf8}
+.order-items-list .item-row label{min-width:0}.order-items-list .item-row select,.order-items-list .item-row input{width:100%;box-sizing:border-box}
+.item-remove{width:42px;height:42px;min-height:42px;padding:0;border-radius:10px;background:#fff2f2;color:#7a1f1f;border:1px solid #efd2d2;font-weight:800}.item-remove:disabled{opacity:.45;cursor:not-allowed}
+.order-item-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}.order-add-item{background:#f3eee9;color:#2c241f;border:1px solid #ddd3ca}
+.order-modal-footer{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 22px;border-top:1px solid #e6ded7;background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}
+.order-estimate-block{display:grid;gap:3px}.order-estimate-block strong{font-size:1.05rem}.order-footer-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.order-footer-actions .secondary{background:#f0ebe6;color:#2b211b}
 .kot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.kot-card{border:1px solid #ddd6cf;border-radius:14px;padding:16px;background:#fff}.kot-card-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.kot-card h3{margin:0}.kot-meta{display:flex;gap:8px 14px;flex-wrap:wrap;margin:8px 0 14px;color:#5f5750}.kot-items{display:grid;gap:8px;margin:12px 0}.kot-item{padding:9px 10px;border-radius:9px;background:#f8f5f1}.kot-note{display:block;margin-top:4px;font-weight:700;color:#7a4a08}.kot-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.status-badge.accepted,.status-badge.preparing{background:#fff2df;color:#7a4a08}.status-badge.ready,.status-badge.served{background:#e8f5ea;color:#245d2d}.status-badge.cancelled{background:#fff0f0;color:#771717}.restaurant-history td{min-width:110px}.restaurant-history td:nth-child(2){min-width:180px}.empty-state{padding:22px;text-align:center;border:1px dashed #cfc5bc;border-radius:12px;color:#6f675f}
-@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.menu-toolbar label{min-width:100%}}
+@media(max-width:820px){.order-service-grid{grid-template-columns:1fr}.order-items-list .item-row{grid-template-columns:minmax(0,1fr) 82px}.order-items-list .item-row label:nth-child(3){grid-column:1/-1}.order-items-list .item-row .item-remove{grid-column:2;grid-row:2;justify-self:end}.order-billing-grid{grid-template-columns:1fr}.order-billing-grid .full{grid-column:auto}}
+@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);max-height:calc(100vh - 16px);border-radius:16px}.order-modal-shell{max-height:calc(100vh - 16px)}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-items-list .item-row{grid-template-columns:minmax(0,1fr) 76px}}
 </style>
 @endpush
 
@@ -18,7 +42,12 @@
 <h1>{{ ($kitchenOnly ?? false) ? 'Kitchen KOT' : 'Restaurant & KOT' }}</h1>
 <p class="muted">{{ ($kitchenOnly ?? false) ? 'Oldest active tickets appear first. Update only the kitchen stages shown on each ticket.' : 'Create restaurant orders, follow KOT progress, settle bills, and keep table status in sync.' }}</p>
 </div>
+<div class="restaurant-heading-actions">
+<?php if (!($kitchenOnly ?? false)): ?>
+<button type="button" class="button-link primary" data-open-order-modal>+ New order</button>
+<?php endif; ?>
 <span class="status-badge {{ $activeOrders->isEmpty() ? 'good' : 'warn' }}">{{ $activeOrders->count() }} active</span>
+</div>
 </div>
 
 <?php if (!($kitchenOnly ?? false)): ?>
@@ -27,22 +56,34 @@ $selectedType = old('order_type', 'dine_in');
 $menuGroups = $menuItems->groupBy(fn ($item) => $item->category?->name ?? 'Menu');
 $oldItems = old('items', [['menu_item_id' => '', 'quantity' => 1, 'note' => '']]);
 ?>
-<section class="panel">
-<div class="toolbar">
-<div><h2 style="margin:0">New order</h2><span class="muted">Only fields relevant to the selected order type are submitted.</span></div>
-<strong id="order-estimate">Estimated subtotal ₹0.00</strong>
+<dialog id="restaurant-order-modal" class="restaurant-order-modal" data-order-modal-auto-open="{{ old('idempotency_key') !== null ? '1' : '0' }}" aria-labelledby="restaurant-order-title">
+<div class="order-modal-shell">
+<div class="order-modal-head">
+<div>
+<h2 id="restaurant-order-title">New restaurant order</h2>
+<p class="muted">Choose the service type, add items, and create the KOT. Only relevant fields are submitted.</p>
+</div>
+<button type="button" class="order-modal-close" data-close-order-modal aria-label="Close new order">×</button>
 </div>
 
-<form class="grid" id="restaurant-order-form" method="post" action="{{ route('admin.restaurant.orders.store') }}">
+<form id="restaurant-order-form" method="post" action="{{ route('admin.restaurant.orders.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
+<div class="order-modal-body">
+<div class="order-form-stack">
+<section class="order-section">
+<div class="order-section-head">
+<div><h3>Service details</h3><p class="muted">Start with where this order is going.</p></div>
+</div>
+<div class="order-service-grid">
 <label>Order type
 <select name="order_type" id="restaurant-order-type">
 <option value="dine_in" <?= $selectedType === 'dine_in' ? 'selected' : '' ?>>Dine-in</option>
 <option value="room_service" <?= $selectedType === 'room_service' ? 'selected' : '' ?>>Room service</option>
 <option value="takeaway" <?= $selectedType === 'takeaway' ? 'selected' : '' ?>>Takeaway</option>
 </select>
+<span class="order-field-help">Changing this updates the destination and billing fields below.</span>
 </label>
 
 <div class="order-context" data-order-context="dine_in">
@@ -55,6 +96,7 @@ $oldItems = old('items', [['menu_item_id' => '', 'quantity' => 1, 'note' => '']]
 </option>
 <?php endforeach; ?>
 </select>
+<span class="order-field-help">Only currently available tables can be selected.</span>
 </label>
 </div>
 
@@ -75,29 +117,34 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </option>
 <?php endforeach; ?>
 </select>
+<span class="order-field-help">Room-service charges are posted to the selected in-house folio after service.</span>
 </label>
 </div>
-
-<div class="order-context full" data-order-context="direct">
-<div class="grid">
-<label>Customer name <span class="muted">Optional</span><input name="guest_name" value="{{ old('guest_name') }}" maxlength="160" data-context-control autocomplete="name"></label>
-<label>Registered mobile <span class="muted">Optional</span><input name="guest_phone" value="{{ old('guest_phone') }}" maxlength="30" data-context-control autocomplete="tel" placeholder="+91 98765 43210"></label>
-<label>Email / Gmail <span class="muted">Optional</span><input type="email" name="guest_email" value="{{ old('guest_email') }}" maxlength="190" data-context-control autocomplete="email" placeholder="guest@gmail.com"></label>
-<label>Customer GSTIN <span class="muted">Optional</span><input name="guest_gstin" value="{{ old('guest_gstin') }}" maxlength="20" data-context-control autocomplete="off" placeholder="For business GST invoice"></label>
-<label class="full">Billing address <span class="muted">Optional unless required for GST invoice</span><textarea name="guest_billing_address" rows="2" maxlength="500" data-context-control>{{ old('guest_billing_address') }}</textarea></label>
-<label>Billing State <span class="muted">Optional</span><input name="guest_billing_state" value="{{ old('guest_billing_state') }}" maxlength="100" data-context-control placeholder="e.g. Bihar"></label>
-<label>State code <span class="muted">Optional</span><input name="guest_billing_state_code" value="{{ old('guest_billing_state_code') }}" maxlength="2" inputmode="numeric" data-context-control placeholder="2 digits"></label>
 </div>
-<p class="muted">These details are snapshotted only when the final bill is issued. Room-service billing uses the in-house guest folio instead.</p>
-</div>
+</section>
 
-<div class="full">
-<div class="menu-toolbar">
-<div><strong>Items</strong><div class="muted">Special instructions are visible on the KOT.</div></div>
-<label>Find menu item<input type="search" id="menu-search" placeholder="Search by item or category" autocomplete="off"></label>
+<div class="order-context" data-order-context="direct">
+<details class="order-billing-details">
+<summary>Customer & billing details <span class="muted">Optional</span></summary>
+<div class="order-billing-grid">
+<label>Customer name<input name="guest_name" value="{{ old('guest_name') }}" maxlength="160" data-context-control autocomplete="name" placeholder="Customer name"></label>
+<label>Registered mobile<input name="guest_phone" value="{{ old('guest_phone') }}" maxlength="30" data-context-control autocomplete="tel" placeholder="+91 98765 43210"></label>
+<label>Email / Gmail<input type="email" name="guest_email" value="{{ old('guest_email') }}" maxlength="190" data-context-control autocomplete="email" placeholder="guest@gmail.com"></label>
+<label>Customer GSTIN<input name="guest_gstin" value="{{ old('guest_gstin') }}" maxlength="20" data-context-control autocomplete="off" placeholder="For business GST invoice"></label>
+<label class="full">Billing address<textarea name="guest_billing_address" rows="2" maxlength="500" data-context-control placeholder="Optional unless required for GST invoice">{{ old('guest_billing_address') }}</textarea></label>
+<label>Billing State<input name="guest_billing_state" value="{{ old('guest_billing_state') }}" maxlength="100" data-context-control placeholder="e.g. Bihar"></label>
+<label>State code<input name="guest_billing_state_code" value="{{ old('guest_billing_state_code') }}" maxlength="2" inputmode="numeric" data-context-control placeholder="2 digits"></label>
+</div>
+</details>
 </div>
 
-<div id="order-items">
+<section class="order-section">
+<div class="order-section-head">
+<div><h3>Order items</h3><p class="muted">Kitchen notes are printed on the KOT for the relevant item.</p></div>
+<label>Find menu item<input type="search" id="menu-search" placeholder="Search item or category" autocomplete="off"></label>
+</div>
+
+<div id="order-items" class="order-items-list">
 <?php foreach ($oldItems as $index => $oldItem): ?>
 <div class="item-row" data-item-row>
 <label>Menu item
@@ -114,15 +161,29 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </label>
 <label>Qty<input type="number" min="1" max="50" name="items[{{ $index }}][quantity]" value="{{ $oldItem['quantity'] ?? 1 }}" data-quantity required></label>
 <label>Kitchen note<input name="items[{{ $index }}][note]" value="{{ $oldItem['note'] ?? '' }}" maxlength="500" placeholder="e.g. no onion"></label>
-<button type="button" data-remove-item <?= count($oldItems) === 1 ? 'disabled' : '' ?>>Remove</button>
+<button type="button" class="item-remove" data-remove-item aria-label="Remove item" <?= count($oldItems) === 1 ? 'disabled' : '' ?>>×</button>
 </div>
 <?php endforeach; ?>
 </div>
 
-<button type="button" id="add-order-item">Add another item</button>
-<div class="order-summary"><span class="muted">Maximum 30 lines per order.</span></div>
+<div class="order-item-actions">
+<button type="button" class="order-add-item" id="add-order-item">+ Add another item</button>
+<span class="muted">Maximum 30 lines per order.</span>
 </div>
-<div><button type="submit" id="create-kot-button">Create order & KOT</button></div>
+</section>
+</div>
+</div>
+
+<div class="order-modal-footer">
+<div class="order-estimate-block">
+<span class="muted">Estimated subtotal</span>
+<strong id="order-estimate">₹0.00 before tax</strong>
+</div>
+<div class="order-footer-actions">
+<button type="button" class="secondary" data-close-order-modal>Cancel</button>
+<button type="submit" id="create-kot-button">Create order & KOT</button>
+</div>
+</div>
 </form>
 
 <template id="order-item-template">
@@ -141,10 +202,11 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </label>
 <label>Qty<input type="number" min="1" max="50" value="1" data-field="quantity" data-quantity required></label>
 <label>Kitchen note<input data-field="note" maxlength="500" placeholder="e.g. no onion"></label>
-<button type="button" data-remove-item>Remove</button>
+<button type="button" class="item-remove" data-remove-item aria-label="Remove item">×</button>
 </div>
 </template>
-</section>
+</div>
+</dialog>
 
 <section class="panel">
 <div class="toolbar"><h2 style="margin:0">Restaurant tables</h2><span class="muted">Occupied tables release on cancellation or after a served bill is fully paid.</span></div>
@@ -358,6 +420,17 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
     syncReference();
   });
 
+  const modal = document.getElementById('restaurant-order-modal');
+  document.querySelectorAll('[data-open-order-modal]').forEach((button) => {
+    button.addEventListener('click', () => modal?.showModal());
+  });
+  document.querySelectorAll('[data-close-order-modal]').forEach((button) => {
+    button.addEventListener('click', () => modal?.close());
+  });
+  modal?.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+
   const form = document.getElementById('restaurant-order-form');
   if (!form) return;
 
@@ -444,6 +517,10 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
   refreshContext();
   refreshRemoveButtons();
   refreshEstimate();
+
+  if (modal?.dataset.orderModalAutoOpen === '1') {
+    modal.showModal();
+  }
 })();
 </script>
 @endsection
