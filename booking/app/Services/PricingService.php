@@ -18,7 +18,8 @@ class PricingService
         int $ratePlanId,
         CarbonImmutable $checkIn,
         CarbonImmutable $checkOut,
-        int $quantity
+        int $quantity,
+        ?int $stayLengthNights = null
     ): array {
         if ($checkOut->lessThanOrEqualTo($checkIn)) {
             throw new RuntimeException('Check-out must be after check-in.');
@@ -28,6 +29,11 @@ class PricingService
         RatePlan::query()->whereKey($ratePlanId)->where('is_active', true)->firstOrFail();
 
         $nights = $checkIn->diffInDays($checkOut);
+        $validatedStayLength = $stayLengthNights ?? $nights;
+        if ($validatedStayLength < $nights) {
+            throw new RuntimeException('Stay-length context cannot be shorter than the quoted date range.');
+        }
+
         $breakdown = [];
         $subtotal = 0.0;
         $taxTotal = 0.0;
@@ -44,7 +50,10 @@ class PricingService
                 ->first();
 
             if ($rate !== null) {
-                if ($nights < $rate->min_stay || ($rate->max_stay !== null && $nights > $rate->max_stay)) {
+                if (
+                    $validatedStayLength < $rate->min_stay
+                    || ($rate->max_stay !== null && $validatedStayLength > $rate->max_stay)
+                ) {
                     throw new RuntimeException('The selected rate plan is not valid for this stay length.');
                 }
                 $unitRate = (float) $rate->nightly_rate;
