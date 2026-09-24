@@ -34,7 +34,8 @@ class ReportController extends Controller
         $nightQuery = ReservationNightRate::query()
             ->join('reservations', 'reservations.id', '=', 'reservation_night_rates.reservation_id')
             ->whereIn('reservations.status', ['confirmed', 'checked_in', 'checked_out'])
-            ->whereBetween('reservation_night_rates.stay_date', [$fromDate, $toDate]);
+            ->whereDate('reservation_night_rates.stay_date', '>=', $fromDate)
+            ->whereDate('reservation_night_rates.stay_date', '<=', $toDate);
 
         $bookedRoomNights = (int) (clone $nightQuery)->sum('reservation_night_rates.quantity');
         $roomRevenue = (float) (clone $nightQuery)->sum('reservation_night_rates.line_total');
