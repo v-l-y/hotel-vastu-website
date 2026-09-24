@@ -22,6 +22,7 @@ class PaymentController extends Controller
         $restaurantOnly = $role === 'restaurant';
 
         return view('admin.payments', [
+            'canRefund' => in_array($role, ['administrator', 'front_desk', 'accounts'], true),
             'reservations' => $restaurantOnly
                 ? collect()
                 : Reservation::query()
