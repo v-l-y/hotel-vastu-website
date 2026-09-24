@@ -338,14 +338,17 @@
 <label>Refund amount<input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" inputmode="decimal" placeholder="Amount" required></label>
 <label>Refund type
 <select name="refund_type" required>
+<option value="">Choose refund type</option>
 <option value="overpayment">Overpayment return</option>
 <option value="duplicate_payment">Duplicate payment</option>
 <option value="cancellation">Cancellation</option>
+@if($payment->folio_id !== null && in_array((int)$payment->folio_id,$invoicedFolioIds ?? [],true))
 <option value="rate_adjustment">Rate adjustment</option>
 <option value="service_recovery">Service recovery</option>
+@endif
 <option value="other">Other</option>
 </select>
-<span class="payment-help">Only revenue adjustments create a credit note after invoice.</span>
+<span class="payment-help">Rate/service adjustments are available only after invoice and create a credit note.</span>
 </label>
 <label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Why this refund is being issued" required></label>
 <button class="danger">Refund</button>
