@@ -6,10 +6,6 @@
 <h2>Authenticator code</h2>
 <p class="auth-copy">Enter the six-digit code from your authenticator app for <strong>{{ $admin->email }}</strong>.</p>
 
-@if($errors->any())
-<div class="alert-error" role="alert" aria-live="polite">{{ $errors->first() }}</div>
-@endif
-
 <form method="post" action="{{ route('admin.two-factor.verify') }}">
 @csrf
 <label>6-digit code
