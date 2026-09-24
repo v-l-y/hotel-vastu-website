@@ -2,10 +2,47 @@
 
 use App\Models\AdminUser;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 Artisan::command('hotel:status', function () {
     $this->info('Hotel Vastu booking application is ready.');
+});
+
+Artisan::command('hotel:infra-check', function () {
+    if (config('session.driver') !== 'redis') {
+        $this->error('SESSION_DRIVER must be redis.');
+        return 1;
+    }
+
+    if (config('cache.default') !== 'redis') {
+        $this->error('CACHE_STORE must be redis.');
+        return 1;
+    }
+
+    if (config('cache.limiter') !== 'redis') {
+        $this->error('CACHE_LIMITER must be redis.');
+        return 1;
+    }
+
+    try {
+        DB::select('SELECT 1');
+
+        $key = 'hotel-vastu-infra-check-'.bin2hex(random_bytes(8));
+        cache()->put($key, 'ok', 30);
+        $value = cache()->pull($key);
+
+        if ($value !== 'ok') {
+            $this->error('Redis cache round-trip failed.');
+            return 1;
+        }
+    } catch (\Throwable $exception) {
+        $this->error('Infrastructure check failed: '.$exception->getMessage());
+        return 1;
+    }
+
+    $this->info('MySQL + Redis + session/cache configuration are healthy.');
+    return 0;
 });
 
 Artisan::command('admin:create {email} {--name=} {--role=administrator}', function () {

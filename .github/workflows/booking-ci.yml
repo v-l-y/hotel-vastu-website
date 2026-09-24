@@ -68,3 +68,17 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: root
         run: php artisan test --fail-on-warning
+      - name: Docker + Redis production stack smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          export APP_KEY="$(php artisan key:generate --show)"
+          project="hotel-vastu-booking-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            docker compose -p "$project" down -v --remove-orphans || true
+          }
+          trap cleanup EXIT
+          docker compose -p "$project" build app
+          docker compose -p "$project" up -d mysql redis
+          docker compose -p "$project" run --rm app php artisan migrate --force
+          docker compose -p "$project" run --rm app php artisan hotel:infra-check

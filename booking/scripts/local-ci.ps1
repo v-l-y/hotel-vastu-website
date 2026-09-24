@@ -143,6 +143,40 @@ try {
         composer install --no-interaction --prefer-dist --no-progress
     }
 
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw "Docker is required for the Docker + Redis production stack smoke gate."
+    }
+
+    Invoke-ExternalStep "Docker engine availability" {
+        docker version --format "{{.Server.Version}}"
+    }
+
+    $dockerProject = "hotel-vastu-booking-ci-$PID"
+    $originalAppKey = [Environment]::GetEnvironmentVariable("APP_KEY", "Process")
+    $env:APP_KEY = (& php artisan key:generate --show).Trim()
+
+    try {
+        Invoke-ExternalStep "Docker booking image build" {
+            docker compose -p $dockerProject build app
+        }
+
+        Invoke-ExternalStep "Docker MySQL + Redis services" {
+            docker compose -p $dockerProject up -d mysql redis
+        }
+
+        Invoke-ExternalStep "Docker production migrations" {
+            docker compose -p $dockerProject run --rm app php artisan migrate --force
+        }
+
+        Invoke-ExternalStep "Docker MySQL + Redis runtime smoke" {
+            docker compose -p $dockerProject run --rm app php artisan hotel:infra-check
+        }
+    }
+    finally {
+        & docker compose -p $dockerProject down -v --remove-orphans
+        Set-OrRemoveEnvironmentVariable -Name "APP_KEY" -Value $originalAppKey
+    }
+
     Invoke-ExternalStep "SQLite feature suite" {
         php artisan test --fail-on-warning --exclude-group=mysql
     }
