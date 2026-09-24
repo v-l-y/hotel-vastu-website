@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReservationHold extends Model
 {
     protected $fillable = [
-        'token', 'room_type_id', 'check_in_date', 'check_out_date',
+        'token', 'room_type_id', 'rate_plan_id', 'check_in_date', 'check_out_date',
         'quantity', 'adults', 'children', 'expires_at', 'converted_reservation_id',
     ];
 
@@ -27,11 +27,8 @@ class ReservationHold extends Model
         return $query->whereNull('converted_reservation_id')->where('expires_at', '>', now());
     }
 
-    public function roomType(): BelongsTo
-    {
-        return $this->belongsTo(RoomType::class);
-    }
-
+    public function roomType(): BelongsTo { return $this->belongsTo(RoomType::class); }
+    public function ratePlan(): BelongsTo { return $this->belongsTo(RatePlan::class); }
     public function convertedReservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class, 'converted_reservation_id');
