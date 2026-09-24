@@ -167,7 +167,8 @@ class PricingService
         string $type,
         float $value,
         string $reason,
-        ?int $adminUserId
+        ?int $adminUserId,
+        ?string $adminRole = null
     ): Reservation {
         if (! in_array($type, ['fixed', 'percent'], true)) {
             throw new RuntimeException('Discount type must be fixed or percent.');
@@ -183,11 +184,19 @@ class PricingService
             throw new RuntimeException('Discount reason is required.');
         }
 
-        return DB::transaction(function () use ($reservation, $type, $value, $reason, $adminUserId) {
+        return DB::transaction(function () use ($reservation, $type, $value, $reason, $adminUserId, $adminRole) {
             $reservation = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
 
             if ($reservation->status !== 'confirmed') {
                 throw new RuntimeException('Manual discount can only be changed before guest check-in.');
+            }
+
+            $fullDiscount = $type === 'percent'
+                ? $value >= 100
+                : ((float) $reservation->subtotal > 0 && $value >= (float) $reservation->subtotal);
+
+            if ($fullDiscount && $adminRole !== 'administrator') {
+                throw new RuntimeException('A full-value manual discount requires Administrator approval.');
             }
 
             if ($reservation->discount_source === 'promo') {
