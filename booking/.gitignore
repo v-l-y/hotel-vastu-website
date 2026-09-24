@@ -1,0 +1,9 @@
+/.env
+/vendor
+/.phpunit.cache
+/public/hot
+/public/storage
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
