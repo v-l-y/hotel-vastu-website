@@ -10,6 +10,7 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 </style>
 </head>
 <body>
+@include('partials.toast')
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Invoice {{ $invoice->invoice_number }}</h1>
