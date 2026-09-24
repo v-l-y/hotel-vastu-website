@@ -15,6 +15,7 @@ use App\Models\Stay;
 use App\Services\FrontDeskService;
 use App\Services\PaymentService;
 use App\Services\PricingService;
+use App\Services\ReservationLifecycleService;
 use App\Services\ReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -255,9 +256,19 @@ class PaymentDiscountClosureTest extends TestCase
             'amount' => 900,
         ]);
 
+        $gatewayOrder = PaymentGatewayOrder::query()->create([
+            'provider' => 'razorpay',
+            'reservation_id' => $reservation->id,
+            'provider_order_id' => 'order_checkin_stale',
+            'amount_subunits' => 90000,
+            'currency' => 'INR',
+            'status' => 'created',
+        ]);
+
         $room = Room::query()->where('room_type_id', $type->id)->firstOrFail();
         $stay = app(FrontDeskService::class)->checkIn($reservation->fresh(), [$room->id]);
 
+        $this->assertSame('stale', $gatewayOrder->fresh()->status);
         $this->assertDatabaseHas('folio_charges', [
             'folio_id' => $stay->folio->id,
             'category' => 'room',
@@ -280,6 +291,24 @@ class PaymentDiscountClosureTest extends TestCase
             'amount' => 900,
             'source_key' => 'stay-extension:'.$stay->id.':'.today()->addDays(2)->toDateString(),
         ]);
+    }
+
+    public function test_cancellation_stales_created_gateway_orders(): void
+    {
+        $reservation = $this->reservation('HV-PAY-CLOSE-5', 1000);
+        $order = PaymentGatewayOrder::query()->create([
+            'provider' => 'razorpay',
+            'reservation_id' => $reservation->id,
+            'provider_order_id' => 'order_cancel_stale',
+            'amount_subunits' => 100000,
+            'currency' => 'INR',
+            'status' => 'created',
+        ]);
+
+        app(ReservationLifecycleService::class)->cancel($reservation);
+
+        $this->assertSame('cancelled', $reservation->fresh()->status);
+        $this->assertSame('stale', $order->fresh()->status);
     }
 
     public function test_late_provider_capture_posts_to_open_in_house_folio(): void
