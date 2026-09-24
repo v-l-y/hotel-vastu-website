@@ -32,7 +32,7 @@ class RestaurantController extends Controller
                 ? collect()
                 : Folio::query()->where('status', 'open')->orderByDesc('id')->get(),
             'orders' => RestaurantOrder::query()
-                ->with(['items', 'kitchenTicket'])
+                ->with(['items', 'kitchenTicket', 'payments.refunds'])
                 ->orderByDesc('id')
                 ->limit(75)
                 ->get(),
