@@ -35,6 +35,18 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <label>Last name<input name="last_name" autocomplete="family-name" value="{{ old('last_name') }}"></label>
 <label>Phone<input name="phone" inputmode="tel" autocomplete="tel" required value="{{ old('phone') }}"></label>
 <label>Email<input name="email" type="email" autocomplete="email" value="{{ old('email') }}"></label>
+<div class="full">
+<details>
+<summary><strong>Billing / GST details</strong> <span class="muted">Optional</span></summary>
+<div class="grid" style="margin-top:14px">
+<label>GSTIN<input name="gstin" value="{{ old('gstin') }}" maxlength="20" autocomplete="off" placeholder="For business GST invoice"></label>
+<label>Billing State<input name="billing_state" value="{{ old('billing_state') }}" maxlength="100" placeholder="e.g. Bihar"></label>
+<label>State code<input name="billing_state_code" value="{{ old('billing_state_code') }}" maxlength="2" inputmode="numeric" placeholder="2 digits"></label>
+<label class="full">Billing address<textarea name="billing_address" rows="3" maxlength="500">{{ old('billing_address') }}</textarea></label>
+</div>
+<p class="muted">Use these only when you need billing identity on the final checkout invoice. The issued invoice keeps a permanent snapshot.</p>
+</details>
+</div>
 <label>Promo code <span class="muted">Optional</span>
 <span class="promo-entry">
 <input name="promo_code" maxlength="40" autocomplete="off" value="{{ old('promo_code') }}" placeholder="Enter promo code" data-promo-code>
