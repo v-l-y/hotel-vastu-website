@@ -172,6 +172,9 @@
 </div>
 <div class="payment-amount">₹{{ number_format((float)$reservation->total,2) }} total</div>
 </div>
+@if(in_array($reservation->payment_status,['paid','overpaid'],true))
+<div class="payment-context-note"><strong>Payment complete.</strong> No additional manual payment is required for this reservation.</div>
+@else
 <form class="payment-entry-form" method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
@@ -193,6 +196,7 @@
 </label>
 <button type="submit">Record payment</button>
 </form>
+@endif
 </article>
 @empty
 <div class="payments-empty">No confirmed reservations.</div>
