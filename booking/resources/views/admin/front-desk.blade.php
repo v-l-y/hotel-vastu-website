@@ -456,13 +456,16 @@
         if (!dialog.open) dialog.showModal();
     };
 
-    const close = () => {
-        if (dialog.open) dialog.close();
+    const cleanNewBookingUrl = () => {
         const url = new URL(window.location.href);
         if (url.searchParams.has('new')) {
             url.searchParams.delete('new');
             history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
         }
+    };
+
+    const close = () => {
+        if (dialog.open) dialog.close();
     };
 
     document.querySelectorAll('[data-open-booking-modal]').forEach((button) => {
@@ -476,6 +479,8 @@
     dialog.addEventListener('click', (event) => {
         if (event.target === dialog) close();
     });
+
+    dialog.addEventListener('close', cleanNewBookingUrl);
 
     const shouldOpen = @json($showNewBooking || (string) old('_booking_modal') === '1');
     if (shouldOpen) open();
