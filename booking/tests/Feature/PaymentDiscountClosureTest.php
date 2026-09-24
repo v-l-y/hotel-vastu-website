@@ -350,6 +350,39 @@ class PaymentDiscountClosureTest extends TestCase
         $this->assertSame('800.00', $folio->fresh()->balance);
     }
 
+    public function test_post_checkout_provider_capture_stays_on_folio_for_credit_note_traceability(): void
+    {
+        $reservation = $this->reservation('HV-PAY-CLOSE-6', 1000);
+        $reservation->update(['status' => 'checked_out']);
+
+        $stay = Stay::query()->create([
+            'reservation_id' => $reservation->id,
+            'status' => 'checked_out',
+            'checked_in_at' => now()->subDay(),
+            'checked_out_at' => now(),
+        ]);
+        $folio = Folio::query()->create([
+            'stay_id' => $stay->id,
+            'reservation_id' => $reservation->id,
+            'status' => 'closed',
+            'charges_total' => 1000,
+            'payments_total' => 1000,
+            'refunds_total' => 0,
+            'balance' => 0,
+        ]);
+
+        $payment = app(PaymentService::class)->recordProviderCaptured(
+            $reservation->id,
+            150,
+            'pay_post_checkout_1',
+            '11111111-2222-4333-8444-555555555559'
+        );
+
+        $this->assertNull($payment->reservation_id);
+        $this->assertSame($folio->id, $payment->folio_id);
+        $this->assertSame('-150.00', $folio->fresh()->balance);
+    }
+
     private function reservation(string $number, float $total): Reservation
     {
         return Reservation::query()->create([
