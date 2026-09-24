@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReservationHold extends Model
 {
     protected $fillable = [
         'token', 'room_type_id', 'check_in_date', 'check_out_date',
-        'quantity', 'expires_at', 'converted_reservation_id',
+        'quantity', 'adults', 'children', 'expires_at', 'converted_reservation_id',
     ];
 
     protected function casts(): array
@@ -24,5 +25,15 @@ class ReservationHold extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereNull('converted_reservation_id')->where('expires_at', '>', now());
+    }
+
+    public function roomType(): BelongsTo
+    {
+        return $this->belongsTo(RoomType::class);
+    }
+
+    public function convertedReservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class, 'converted_reservation_id');
     }
 }

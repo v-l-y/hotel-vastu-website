@@ -19,14 +19,31 @@ class ReservationHoldService
         int $roomTypeId,
         CarbonImmutable $checkIn,
         CarbonImmutable $checkOut,
-        int $quantity
+        int $quantity,
+        int $adults,
+        int $children
     ): ReservationHold {
-        return DB::transaction(function () use ($roomTypeId, $checkIn, $checkOut, $quantity) {
-            RoomType::query()
+        return DB::transaction(function () use (
+            $roomTypeId,
+            $checkIn,
+            $checkOut,
+            $quantity,
+            $adults,
+            $children
+        ) {
+            $roomType = RoomType::query()
                 ->whereKey($roomTypeId)
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($roomType->max_adults !== null && $adults > ($roomType->max_adults * $quantity)) {
+                throw new RuntimeException('The selected room quantity cannot accommodate this many adults.');
+            }
+
+            if ($roomType->max_children !== null && $children > ($roomType->max_children * $quantity)) {
+                throw new RuntimeException('The selected room quantity cannot accommodate this many children.');
+            }
 
             $availability = $this->availability->forRoomType($roomTypeId, $checkIn, $checkOut);
 
@@ -40,6 +57,8 @@ class ReservationHoldService
                 'check_in_date' => $checkIn->toDateString(),
                 'check_out_date' => $checkOut->toDateString(),
                 'quantity' => $quantity,
+                'adults' => $adults,
+                'children' => $children,
                 'expires_at' => now()->addMinutes(10),
             ]);
         }, 3);

@@ -21,14 +21,14 @@ class ReservationHoldController extends Controller
                 (int) $data['room_type_id'],
                 CarbonImmutable::parse($data['check_in']),
                 CarbonImmutable::parse($data['check_out']),
-                (int) $data['rooms']
+                (int) $data['rooms'],
+                (int) $data['adults'],
+                (int) ($data['children'] ?? 0)
             );
         } catch (RuntimeException $exception) {
             return back()->withInput()->withErrors(['availability' => $exception->getMessage()]);
         }
 
-        return redirect()
-            ->route('booking.search')
-            ->with('status', 'Room inventory held for 10 minutes. Hold reference: '.$hold->token);
+        return redirect()->route('booking.guest', ['token' => $hold->token]);
     }
 }

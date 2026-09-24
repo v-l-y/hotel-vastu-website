@@ -18,6 +18,8 @@ class SearchAvailabilityRequest extends FormRequest
             'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in'],
             'room_type_id' => ['required', 'integer', 'exists:room_types,id'],
             'rooms' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'adults' => ['required', 'integer', 'min:1', 'max:30'],
+            'children' => ['nullable', 'integer', 'min:0', 'max:30'],
         ];
     }
 }

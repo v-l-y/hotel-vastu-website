@@ -15,17 +15,16 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <p>The public hotel website remains separate from this booking application.</p>
 
 @if (session('status')) <p class="notice">{{ session('status') }}</p> @endif
-
-@if ($errors->any())
-<div class="error"><strong>Please fix the following:</strong><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
-@endif
+@if ($errors->any()) <div class="error"><strong>Please fix the following:</strong><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 
 <section class="panel">
 <form class="grid" method="get" action="{{ route('booking.availability') }}">
 <label>Check-in<input type="date" name="check_in" required value="{{ old('check_in', $search['check_in'] ?? request('check_in')) }}"></label>
 <label>Check-out<input type="date" name="check_out" required value="{{ old('check_out', $search['check_out'] ?? request('check_out')) }}"></label>
 <label>Room type<select name="room_type_id" required><option value="">Choose a room</option>@foreach ($roomTypes as $roomType)<option value="{{ $roomType->id }}" @selected((string) old('room_type_id', $search['room_type_id'] ?? request('room_type_id')) === (string) $roomType->id)>{{ $roomType->name }}</option>@endforeach</select></label>
-<label>Rooms<input type="number" name="rooms" min="1" max="10" value="{{ old('rooms', $search['rooms'] ?? request('rooms', 1)) }}"></label>
+<label>Rooms<input type="number" name="rooms" min="1" max="10" required value="{{ old('rooms', $search['rooms'] ?? request('rooms', 1)) }}"></label>
+<label>Adults<input type="number" name="adults" min="1" max="30" required value="{{ old('adults', $search['adults'] ?? request('adults', 2)) }}"></label>
+<label>Children<input type="number" name="children" min="0" max="30" value="{{ old('children', $search['children'] ?? request('children', 0)) }}"></label>
 <div class="full"><button type="submit">Check availability</button></div>
 </form>
 </section>
@@ -45,7 +44,9 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <input type="hidden" name="check_out" value="{{ $search['check_out'] }}">
 <input type="hidden" name="room_type_id" value="{{ $selectedRoomType->id }}">
 <input type="hidden" name="rooms" value="{{ $search['rooms'] ?? 1 }}">
-<button type="submit">Hold selected room for 10 minutes</button>
+<input type="hidden" name="adults" value="{{ $search['adults'] }}">
+<input type="hidden" name="children" value="{{ $search['children'] ?? 0 }}">
+<button type="submit">Continue to guest details</button>
 </form>
 @else
 <p class="error">The requested number of rooms is not currently available.</p>

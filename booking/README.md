@@ -9,8 +9,9 @@ Laravel 13 application for the separate Hotel Vastu booking/PMS system.
 
 The static site's booking links should be switched only after this app is deployed and real room inventory has been configured.
 
-## Phase 1 implemented
+## Implemented
 
+### Phase 1 — availability foundation
 - Laravel 13 / PHP 8.3+
 - MySQL configuration
 - room types and physical rooms
@@ -20,12 +21,19 @@ The static site's booking links should be switched only after this app is deploy
 - expiring reservation holds
 - overlap-based availability calculation
 - transaction + row lock for hold creation
-- public availability screen
-- 10-minute inventory hold
-- feature test
-- only confirmed room category names seeded: Classic, Club, Premium
 
-No room count, room number, rate, occupancy limit, tax, payment setting or hotel policy is invented.
+### Phase 2 — guest booking conversion
+- adult/child counts carried into the inventory hold
+- configured room-capacity enforcement when capacity values exist
+- guest details form
+- active hold validation
+- one-time hold-to-reservation conversion under a database transaction
+- unique public booking number
+- primary guest linkage
+- booking confirmation page
+- pricing status kept explicitly pending until real hotel pricing/tax rules are configured
+
+Only confirmed room category names are seeded: Classic, Club and Premium. No room count, room number, rate, occupancy limit, tax, payment setting or hotel policy is invented.
 
 ## Local setup
 
@@ -36,7 +44,7 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Create the MySQL database from `.env`, then run:
+Create the MySQL database from `.env`, then:
 
 ```bash
 php artisan migrate
@@ -54,4 +62,4 @@ composer test
 
 ## Next
 
-Guest/reservation confirmation, pricing, payments, front desk/stays, folios/invoices, restaurant POS/KOT, admin auth and reports.
+Pricing/tax configuration, payment workflow, front desk/stays, folios/invoices, restaurant POS/KOT, admin authentication and reports.

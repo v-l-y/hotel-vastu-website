@@ -10,7 +10,7 @@ class Reservation extends Model
     protected $fillable = [
         'booking_number', 'check_in_date', 'check_out_date', 'adults', 'children',
         'status', 'source', 'special_request', 'subtotal', 'tax', 'discount',
-        'total', 'payment_status', 'expires_at',
+        'total', 'payment_status', 'pricing_status', 'expires_at',
     ];
 
     protected function casts(): array
@@ -29,5 +29,10 @@ class Reservation extends Model
     public function rooms(): HasMany
     {
         return $this->hasMany(ReservationRoom::class);
+    }
+
+    public function guestLinks(): HasMany
+    {
+        return $this->hasMany(ReservationGuest::class);
     }
 }
