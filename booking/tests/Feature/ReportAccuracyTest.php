@@ -8,6 +8,8 @@ use App\Models\RatePlan;
 use App\Models\Reservation;
 use App\Models\ReservationNightRate;
 use App\Models\ReservationRoom;
+use App\Models\RestaurantCategory;
+use App\Models\RestaurantMenuItem;
 use App\Models\RestaurantOrder;
 use App\Models\RestaurantOrderItem;
 use App\Models\Room;
@@ -93,6 +95,17 @@ class ReportAccuracyTest extends TestCase
             'gross_total'=>1000,
         ]);
 
+        $category = RestaurantCategory::query()->create([
+            'name'=>'Report Food',
+            'is_active'=>true,
+        ]);
+        $menuItem = RestaurantMenuItem::query()->create([
+            'restaurant_category_id'=>$category->id,
+            'name'=>'Report Meal',
+            'price'=>500,
+            'is_active'=>true,
+        ]);
+
         $order = RestaurantOrder::query()->create([
             'order_number'=>'RO-REPORT-1',
             'order_type'=>'takeaway',
@@ -104,8 +117,8 @@ class ReportAccuracyTest extends TestCase
         ]);
         RestaurantOrderItem::query()->create([
             'restaurant_order_id'=>$order->id,
-            'restaurant_menu_item_id'=>1,
-            'item_name'=>'Report Meal',
+            'restaurant_menu_item_id'=>$menuItem->id,
+            'item_name'=>$menuItem->name,
             'quantity'=>1,
             'unit_price'=>500,
             'line_total'=>500,
