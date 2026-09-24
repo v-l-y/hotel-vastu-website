@@ -72,6 +72,7 @@
 <section class="panel">
 <h2>Record verified payment</h2>
 <form class="grid" method="post" action="{{ route('admin.payments.store') }}">@csrf
+<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <label>Target<select name="target_type"><option value="reservation">Reservation</option><option value="folio">Folio</option></select></label>
 <label>Target ID<input type="number" min="1" name="target_id" required></label>
 <label>Method<select name="method"><option>cash</option><option>upi</option><option>card</option><option>bank_transfer</option></select></label>
