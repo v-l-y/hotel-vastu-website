@@ -312,7 +312,8 @@ class FrontDeskController extends Controller
                 $data['discount_type'],
                 (float) $data['discount_value'],
                 $data['discount_reason'],
-                $admin?->id
+                $admin?->id,
+                $admin?->role
             );
             $reservation = $payments->syncReservationPaymentState($reservation, true);
         } catch (RuntimeException $exception) {
