@@ -49,6 +49,7 @@ for(const file of htmlFiles){
   if(logoRefs<2) fail(file,"header and footer must both use semantic original logo images");
   if(!html.includes('class="brand brand-logo"')) fail(file,"header semantic logo wrapper missing");
   if(!html.includes('class="footer-brand-logo"')) fail(file,"footer semantic logo wrapper missing");
+  if(!html.includes('class="header-call" href="tel:+918002007466"')) fail(file,"static header call action missing");
   if(!html.includes("Comfortable stays near RPS More, Patna.")) fail(file,"canonical footer tagline missing");
   if(html.includes("Comfortable stays at RPS More")) fail(file,"stale footer tagline remains");
   const footer=html.match(/<footer class="footer">[\s\S]*?<\/footer>/i)?.[0]||"";
@@ -297,6 +298,7 @@ for(const file of htmlFiles){
   if(!html.includes('href="facilities.html">Facilities</a>')) fail(file,"missing Facilities navigation");
 }
 const combinedCss=read("css/base.css")+"\n"+read("css/layout.css")+"\n"+read("css/components.css");
+if(combinedCss.includes(".site-header.is-scrolled .brand-logo img{width:")) fail("design-system","scrolled header must not resize logo");
 for(const token of [".visual-page-hero{",".availability-bar{",".lux-reveal{","scroll-padding-top","scroll-margin-top",".site-header.is-scrolled"]){
   if(!combinedCss.includes(token)) fail("design-system","missing luxury/smooth-scroll CSS token "+token);
 }
@@ -321,6 +323,7 @@ const responsiveCss=read("css/responsive.css");
 if(!responsiveCss.includes('url("../images/hotel/home-banner-1.webp") center/cover')) fail("css/responsive.css","mobile homepage hero must retain real hotel photography");
 if(!responsiveCss.includes(".hero-actions{display:none}")) fail("css/responsive.css","mobile hero utility actions must not duplicate the fixed quick-action bar");
 const uxMainJs=read("js/main.js");
+if(uxMainJs.includes("insertBefore(call,booking)")||uxMainJs.includes('document.createElement("a");call.className="header-call"')) fail("js/main.js","runtime header mutation must not return");
 if(!uxMainJs.includes('"Close navigation"')||!uxMainJs.includes('hotelIcon(open?"close":"menu","ui-icon menu-icon")')||!uxMainJs.includes('event.composedPath')) fail("js/main.js","mobile navigation button must expose synchronized accessible SVG open/close state and safe outside-click handling");
 
 // Booking timezone guard: date-only hotel stays must never use UTC ISO conversion.
