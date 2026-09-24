@@ -8,19 +8,36 @@ use App\Models\RoomType;
 use App\Services\AvailabilityService;
 use App\Services\PricingService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use RuntimeException;
 
 class AvailabilityController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $roomTypes = RoomType::query()->where('is_active', true)->orderBy('name')->get();
+        $ratePlans = RatePlan::query()->where('is_active', true)->orderBy('name')->get();
+
+        $roomCode = strtolower(trim((string) $request->query('room_code', '')));
+        $prefillRoom = $roomCode !== '' ? $roomTypes->firstWhere('code', $roomCode) : null;
+        $adults = max(1, min(30, (int) $request->query('adults', 2)));
+
         return view('booking.search', [
-            'roomTypes' => RoomType::query()->where('is_active', true)->orderBy('name')->get(),
-            'ratePlans' => RatePlan::query()->where('is_active', true)->orderBy('name')->get(),
+            'roomTypes' => $roomTypes,
+            'ratePlans' => $ratePlans,
             'availability' => null,
             'quote' => null,
             'quoteError' => null,
+            'search' => [
+                'check_in' => $request->query('check_in'),
+                'check_out' => $request->query('check_out'),
+                'room_type_id' => $prefillRoom?->id,
+                'rate_plan_id' => $ratePlans->count() === 1 ? $ratePlans->first()->id : null,
+                'rooms' => 1,
+                'adults' => $adults,
+                'children' => 0,
+            ],
         ]);
     }
 
@@ -54,11 +71,7 @@ class AvailabilityController extends Controller
         return view('booking.search', [
             'roomTypes' => RoomType::query()->where('is_active', true)->orderBy('name')->get(),
             'ratePlans' => RatePlan::query()->where('is_active', true)->orderBy('name')->get(),
-            'availability' => $availabilityService->forRoomType(
-                $roomType->id,
-                $checkIn,
-                $checkOut
-            ),
+            'availability' => $availabilityService->forRoomType($roomType->id, $checkIn, $checkOut),
             'selectedRoomType' => $roomType,
             'selectedRatePlan' => $ratePlan,
             'search' => $data,
