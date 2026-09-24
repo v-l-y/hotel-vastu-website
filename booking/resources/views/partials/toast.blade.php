@@ -138,10 +138,13 @@
         }
 
         while (region.children.length >= maxVisible) {
-            dismiss(region.firstElementChild);
-            if (region.children.length >= maxVisible && region.firstElementChild?.classList.contains('is-leaving')) {
-                region.firstElementChild.remove();
-            }
+            const removable = [...region.children].find(
+                (candidate) => !candidate.matches(':hover') && !candidate.contains(document.activeElement)
+            );
+            if (!removable) break;
+
+            dismiss(removable);
+            removable.remove();
         }
 
         const toast = document.createElement('div');
@@ -179,10 +182,15 @@
         region.appendChild(toast);
         activeToasts.set(toastKey, toast);
 
+        const resumeDismiss = () => {
+            if (toast.matches(':hover') || toast.contains(document.activeElement)) return;
+            scheduleDismiss(toast, Math.min(duration, 2500));
+        };
+
         toast.addEventListener('mouseenter', () => clearTimer(toast));
-        toast.addEventListener('mouseleave', () => scheduleDismiss(toast, Math.min(duration, 2500)));
+        toast.addEventListener('mouseleave', resumeDismiss);
         toast.addEventListener('focusin', () => clearTimer(toast));
-        toast.addEventListener('focusout', () => scheduleDismiss(toast, Math.min(duration, 2500)));
+        toast.addEventListener('focusout', resumeDismiss);
         scheduleDismiss(toast, duration);
 
         return toast;
