@@ -9,5 +9,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(HotelSetupSeeder::class);
+
+        if (! app()->environment('production')) {
+            $this->call(DemoRestaurantSeeder::class);
+        }
     }
 }
