@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\RestaurantOrder;
+use App\Models\RestaurantTable;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
@@ -182,6 +183,10 @@ class PaymentService
                 'Online refund status is pending provider reconciliation.',
                 previous: $exception
             );
+        }
+
+        if (empty($providerRefund['receipt'])) {
+            $providerRefund['receipt'] = $refund->idempotency_key;
         }
 
         return $this->reconcileProviderRefund($providerRefund) ?? $refund->fresh();
@@ -382,11 +387,22 @@ class PaymentService
                 ->sum('amount');
             $net = $paid - $refunds;
 
-            $order->update([
-                'payment_status' => $net <= 0
-                    ? 'unpaid'
-                    : ($net + 0.009 >= (float) $order->total ? 'paid' : 'partially_paid'),
-            ]);
+            $paymentStatus = $net <= 0
+                ? 'unpaid'
+                : ($net + 0.009 >= (float) $order->total ? 'paid' : 'partially_paid');
+
+            $order->update(['payment_status' => $paymentStatus]);
+
+            if (
+                $order->order_type === 'dine_in'
+                && $order->status === 'served'
+                && $paymentStatus === 'paid'
+                && $order->restaurant_table_id !== null
+            ) {
+                RestaurantTable::query()
+                    ->whereKey($order->restaurant_table_id)
+                    ->update(['status' => 'available']);
+            }
         }
     }
 }

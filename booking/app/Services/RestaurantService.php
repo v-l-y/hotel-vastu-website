@@ -186,7 +186,10 @@ class RestaurantService
             if (
                 $order->order_type === 'dine_in'
                 && $order->restaurant_table_id !== null
-                && in_array($nextStatus, ['served', 'cancelled'], true)
+                && (
+                    $nextStatus === 'cancelled'
+                    || ($nextStatus === 'served' && $order->payment_status === 'paid')
+                )
             ) {
                 RestaurantTable::query()
                     ->whereKey($order->restaurant_table_id)

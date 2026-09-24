@@ -21,12 +21,12 @@ Route::get('/health', HealthController::class)->name('health');
 
 Route::get('/', [AvailabilityController::class, 'index'])->name('booking.search');
 Route::get('/availability', [AvailabilityController::class, 'search'])->name('booking.availability');
-Route::post('/holds', [ReservationHoldController::class, 'store'])->name('booking.holds.store');
+Route::post('/holds', [ReservationHoldController::class, 'store'])->middleware('throttle:5,1')->name('booking.holds.store');
 Route::get('/holds/{token}/guest', [GuestDetailsController::class, 'show'])->name('booking.guest');
-Route::post('/holds/{token}/confirm', [ReservationController::class, 'store'])->name('booking.confirm');
+Route::post('/holds/{token}/confirm', [ReservationController::class, 'store'])->middleware('throttle:10,1')->name('booking.confirm');
 Route::get('/confirmation/{token}', [ReservationController::class, 'show'])->name('booking.confirmation');
-Route::get('/payment/{token}/razorpay', [RazorpayPaymentController::class, 'start'])->name('booking.payment.razorpay');
-Route::post('/payment/{token}/razorpay/verify', [RazorpayPaymentController::class, 'verify'])->name('booking.payment.razorpay.verify');
+Route::get('/payment/{token}/razorpay', [RazorpayPaymentController::class, 'start'])->middleware('throttle:10,1')->name('booking.payment.razorpay');
+Route::post('/payment/{token}/razorpay/verify', [RazorpayPaymentController::class, 'verify'])->middleware('throttle:10,1')->name('booking.payment.razorpay.verify');
 Route::post('/payments/razorpay/webhook', [RazorpayPaymentController::class, 'webhook'])->name('booking.payment.razorpay.webhook');
 
 Route::prefix('admin')->name('admin.')->group(function () {

@@ -84,4 +84,35 @@ class AvailabilityServiceTest extends TestCase
         $this->assertSame(1, $result['available_rooms']);
         $this->assertSame(0, $result['reserved_rooms']);
     }
+    public function test_out_of_order_rooms_are_removed_from_sellable_inventory(): void
+    {
+        $type = \App\Models\RoomType::query()->create([
+            'code' => 'maintenance-room',
+            'name' => 'Maintenance Room Type',
+            'is_active' => true,
+        ]);
+
+        \App\Models\Room::query()->create([
+            'room_type_id' => $type->id,
+            'number' => 'M101',
+            'status' => 'active',
+            'housekeeping_status' => 'clean',
+        ]);
+        \App\Models\Room::query()->create([
+            'room_type_id' => $type->id,
+            'number' => 'M102',
+            'status' => 'active',
+            'housekeeping_status' => 'out_of_order',
+        ]);
+
+        $result = app(\App\Services\AvailabilityService::class)->forRoomType(
+            $type->id,
+            \Carbon\CarbonImmutable::parse('2026-10-20'),
+            \Carbon\CarbonImmutable::parse('2026-10-21')
+        );
+
+        $this->assertSame(1, $result['total_rooms']);
+        $this->assertSame(1, $result['available_rooms']);
+    }
+
 }
