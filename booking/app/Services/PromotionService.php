@@ -23,6 +23,34 @@ class PromotionService
         return $this->snapshot($promotion, $subtotal);
     }
 
+    public function previewQuote(?string $code, float $subtotal, float $tax): array
+    {
+        $snapshot = $this->preview($code, $subtotal);
+        if ($snapshot === null) {
+            throw new RuntimeException('Enter a promo code.');
+        }
+
+        $value = (float) $snapshot['discount_value'];
+        $discount = $snapshot['discount_type'] === 'percent'
+            ? round($subtotal * ($value / 100), 2)
+            : $value;
+
+        if ($snapshot['discount_max'] !== null) {
+            $discount = min($discount, (float) $snapshot['discount_max']);
+        }
+
+        $discount = round(min($discount, $subtotal), 2);
+        $taxFactor = $subtotal > 0 ? max(0, ($subtotal - $discount) / $subtotal) : 1;
+        $discountedTax = round($tax * $taxFactor, 2);
+
+        return [
+            'code' => $snapshot['promotion_code_snapshot'],
+            'discount' => $discount,
+            'tax' => $discountedTax,
+            'total' => round($subtotal - $discount + $discountedTax, 2),
+        ];
+    }
+
     public function consume(?string $code, float $subtotal): ?array
     {
         $normalized = $this->normalize($code);
