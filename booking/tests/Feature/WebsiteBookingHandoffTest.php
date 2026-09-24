@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\RatePlan;
+use App\Models\Reservation;
 use App\Models\ReservationHold;
+use App\Models\ReservationRoom;
 use App\Models\Room;
 use App\Models\RoomType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -79,6 +81,52 @@ class WebsiteBookingHandoffTest extends TestCase
             ->assertDontSee('The check out field is required');
 
         $this->assertSame(0, ReservationHold::query()->count());
+    }
+
+    public function test_confirmation_shows_selected_room_and_rate_plan_without_claiming_delivery(): void
+    {
+        $club = RoomType::query()->create([
+            'code' => 'club-confirmation',
+            'name' => 'Club Room',
+            'base_rate' => 3000,
+            'is_active' => true,
+        ]);
+        $plan = RatePlan::query()->create([
+            'code' => 'room-only-confirmation',
+            'name' => 'Room Only',
+            'is_active' => true,
+        ]);
+        $reservation = Reservation::query()->create([
+            'booking_number' => 'HV-CONFIRM-FLOW',
+            'public_token' => '99999999-9999-4999-8999-999999999999',
+            'check_in_date' => today()->addDay(),
+            'check_out_date' => today()->addDays(2),
+            'adults' => 2,
+            'children' => 1,
+            'status' => 'confirmed',
+            'source' => 'website',
+            'payment_status' => 'unpaid',
+            'pricing_status' => 'priced',
+            'subtotal' => 3000,
+            'tax' => 0,
+            'total' => 3000,
+        ]);
+
+        ReservationRoom::query()->create([
+            'reservation_id' => $reservation->id,
+            'room_type_id' => $club->id,
+            'rate_plan_id' => $plan->id,
+            'quantity' => 1,
+            'nightly_rate' => 3000,
+        ]);
+
+        $this->get('/confirmation/'.$reservation->public_token)
+            ->assertOk()
+            ->assertSee('Club Room')
+            ->assertSee('Room Only')
+            ->assertSee('2 adult(s), 1 child(ren)')
+            ->assertSee('Please keep your booking number for check-in.')
+            ->assertDontSee('A confirmation has been sent');
     }
 
     public function test_guest_details_show_price_before_otp(): void
