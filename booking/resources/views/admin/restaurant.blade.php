@@ -56,8 +56,12 @@
 <td>{{ $order->status }}@unless($kitchenOnly ?? false) / {{ $order->payment_status }}@endunless</td>
 <td>@unless($kitchenOnly ?? false)₹{{ number_format((float)$order->total,2) }}@else—@endunless</td>
 <td>
-@if(!in_array($order->status,['served','cancelled'],true))
-@php($statusOptions = ($kitchenOnly ?? false) ? ['preparing','ready'] : ['preparing','ready','served','cancelled'])
+@php($allTransitions = ['accepted'=>['preparing','cancelled'],'preparing'=>['ready','cancelled'],'ready'=>['served'],'served'=>[],'cancelled'=>[]])
+@php($statusOptions = $allTransitions[$order->status] ?? [])
+@if($kitchenOnly ?? false)
+@php($statusOptions = array_values(array_intersect($statusOptions,['preparing','ready'])))
+@endif
+@if($statusOptions !== [])
 <form class="actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">@csrf<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select><button>Update</button></form>
 @endif
 @if(!($kitchenOnly ?? false) && $order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status==='served')

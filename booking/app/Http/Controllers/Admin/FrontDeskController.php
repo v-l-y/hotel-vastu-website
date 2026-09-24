@@ -7,13 +7,16 @@ use App\Models\Folio;
 use App\Models\RatePlan;
 use App\Models\Reservation;
 use App\Models\Room;
+use App\Models\RoomBlock;
 use App\Models\RoomType;
 use App\Models\Stay;
+use App\Models\StayRoom;
 use App\Services\FrontDeskService;
 use App\Services\ReservationLifecycleService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -21,22 +24,108 @@ class FrontDeskController extends Controller
 {
     public function index(): View
     {
+        $reservations = Reservation::query()
+            ->where('status', 'confirmed')
+            ->with('rooms')
+            ->orderBy('check_in_date')
+            ->limit(50)
+            ->get();
+
+        $rooms = Room::query()
+            ->where('status', 'active')
+            ->with('roomType')
+            ->orderBy('number')
+            ->get();
+
+        $stays = Stay::query()
+            ->where('status', 'checked_in')
+            ->with(['reservation', 'rooms.room.roomType', 'folio'])
+            ->orderByDesc('checked_in_at')
+            ->get();
+
+        $occupiedRoomIds = StayRoom::query()
+            ->whereNull('released_at')
+            ->whereHas('stay', fn ($query) => $query->where('status', 'checked_in'))
+            ->pluck('room_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $activeBlocks = RoomBlock::query()
+            ->where('status', 'active')
+            ->get();
+
+        $readyUnoccupiedRooms = $rooms
+            ->filter(fn (Room $room) => in_array($room->housekeeping_status, ['clean', 'inspected'], true))
+            ->reject(fn (Room $room) => in_array((int) $room->id, $occupiedRoomIds, true))
+            ->values();
+
+        $checkInRoomsByReservation = [];
+        $checkInWindowOpenByReservation = [];
+        $checkInReadyByReservation = [];
+
+        foreach ($reservations as $reservation) {
+            $windowOpen = ! today()->lt($reservation->check_in_date)
+                && today()->lt($reservation->check_out_date)
+                && $reservation->pricing_status === 'priced';
+
+            $checkInWindowOpenByReservation[$reservation->id] = $windowOpen;
+
+            if (! $windowOpen) {
+                $checkInRoomsByReservation[$reservation->id] = collect();
+                $checkInReadyByReservation[$reservation->id] = false;
+                continue;
+            }
+
+            $requiredByType = $reservation->rooms
+                ->groupBy('room_type_id')
+                ->map(fn ($rows) => (int) $rows->sum('quantity'));
+
+            $eligible = $readyUnoccupiedRooms
+                ->filter(fn (Room $room) => $requiredByType->has($room->room_type_id))
+                ->reject(fn (Room $room) => $this->roomBlockedForRange(
+                    $activeBlocks,
+                    $room->id,
+                    $reservation->check_in_date,
+                    $reservation->check_out_date
+                ))
+                ->values();
+
+            $checkInRoomsByReservation[$reservation->id] = $eligible;
+            $checkInReadyByReservation[$reservation->id] = $requiredByType->every(
+                fn (int $required, $roomTypeId) => $eligible
+                    ->where('room_type_id', (int) $roomTypeId)
+                    ->count() >= $required
+            );
+        }
+
+        $transferRoomsByAssignment = [];
+
+        foreach ($stays as $stay) {
+            foreach ($stay->rooms->whereNull('released_at') as $assignment) {
+                $transferRoomsByAssignment[$assignment->id] = $readyUnoccupiedRooms
+                    ->filter(fn (Room $room) => $room->room_type_id === $assignment->room->room_type_id)
+                    ->reject(fn (Room $room) => $room->id === $assignment->room_id)
+                    ->reject(fn (Room $room) => $this->roomBlockedForRange(
+                        $activeBlocks,
+                        $room->id,
+                        today(),
+                        $stay->reservation->check_out_date
+                    ))
+                    ->values();
+            }
+        }
+
         return view('admin.front-desk', [
-            'reservations' => Reservation::query()
-                ->where('status', 'confirmed')
-                ->with('rooms')
-                ->orderBy('check_in_date')
-                ->limit(50)
-                ->get(),
+            'reservations' => $reservations,
             'roomTypes' => RoomType::query()->where('is_active', true)->orderBy('name')->get(),
             'ratePlans' => RatePlan::query()->where('is_active', true)->orderBy('name')->get(),
-            'rooms' => Room::query()->where('status', 'active')->with('roomType')->orderBy('number')->get(),
-            'stays' => Stay::query()
-                ->where('status', 'checked_in')
-                ->with(['reservation', 'rooms.room', 'folio'])
-                ->orderByDesc('checked_in_at')
-                ->get(),
+            'rooms' => $rooms,
+            'stays' => $stays,
             'folios' => Folio::query()->where('status', 'open')->orderByDesc('id')->get(),
+            'checkInRoomsByReservation' => $checkInRoomsByReservation,
+            'checkInWindowOpenByReservation' => $checkInWindowOpenByReservation,
+            'checkInReadyByReservation' => $checkInReadyByReservation,
+            'transferRoomsByAssignment' => $transferRoomsByAssignment,
         ]);
     }
 
@@ -168,5 +257,21 @@ class FrontDeskController extends Controller
         }
 
         return back()->with('status', 'Reservation marked no-show.');
+    }
+
+    private function roomBlockedForRange(
+        Collection $blocks,
+        int $roomId,
+        mixed $startsOn,
+        mixed $endsOn
+    ): bool {
+        $start = CarbonImmutable::parse($startsOn);
+        $end = CarbonImmutable::parse($endsOn);
+
+        return $blocks->contains(
+            fn (RoomBlock $block) => (int) $block->room_id === $roomId
+                && CarbonImmutable::parse($block->starts_on)->lt($end)
+                && CarbonImmutable::parse($block->ends_on)->gt($start)
+        );
     }
 }

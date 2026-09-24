@@ -6,6 +6,9 @@
 <section class="panel">
 <h2>Confirmed reservations</h2>
 @forelse($reservations as $reservation)
+@php($checkInRooms=$checkInRoomsByReservation[$reservation->id] ?? collect())
+@php($checkInWindowOpen=$checkInWindowOpenByReservation[$reservation->id] ?? false)
+@php($checkInReady=$checkInReadyByReservation[$reservation->id] ?? false)
 <article>
 <strong>{{ $reservation->booking_number }}</strong> · {{ $reservation->check_in_date->format('d M Y') }} → {{ $reservation->check_out_date->format('d M Y') }} · ₹{{ number_format((float)$reservation->total,2) }}
 <details><summary>Edit reservation</summary><form class="grid" method="post" action="{{ route('admin.front-desk.modify',$reservation) }}">@csrf
@@ -18,17 +21,32 @@
 <label>Adults<input type="number" min="1" max="30" name="adults" value="{{ $reservation->adults }}" required></label>
 <label>Children<input type="number" min="0" max="30" name="children" value="{{ $reservation->children }}" required></label>
 <div><button>Check availability & save</button></div>
-</form></details><form method="post" action="{{ route('admin.front-desk.check-in',$reservation) }}">@csrf
+</form></details>
+
+@if($checkInWindowOpen)
+@if($checkInReady)
+<form method="post" action="{{ route('admin.front-desk.check-in',$reservation) }}">@csrf
 <p>Select {{ $reservation->rooms->sum('quantity') }} matching physical room(s):</p>
 <div class="actions">
-@foreach($rooms as $room)
-@php($ready=in_array($room->housekeeping_status,['clean','inspected'],true))
-<label style="display:inline-flex;gap:5px"><input type="checkbox" name="room_ids[]" value="{{ $room->id }}" @disabled(!$ready)> {{ $room->number }} ({{ $room->roomType->name }}) · {{ $room->housekeeping_status }}</label>
+@foreach($checkInRooms as $room)
+<label style="display:inline-flex;gap:5px"><input type="checkbox" name="room_ids[]" value="{{ $room->id }}"> {{ $room->number }} ({{ $room->roomType->name }}) · {{ $room->housekeeping_status }}</label>
 @endforeach
 </div>
 <button type="submit">Check in</button>
 </form>
-<div class="actions"><form method="post" action="{{ route('admin.front-desk.cancel',$reservation) }}">@csrf<button class="danger">Cancel reservation</button></form><form method="post" action="{{ route('admin.front-desk.no-show',$reservation) }}">@csrf<button class="danger">Mark no-show</button></form></div>
+@else
+<p class="muted">No eligible ready physical-room combination is currently available for check-in.</p>
+@endif
+@else
+<p class="muted">Check-in becomes available during the reserved stay window after pricing is finalized.</p>
+@endif
+
+<div class="actions">
+<form method="post" action="{{ route('admin.front-desk.cancel',$reservation) }}">@csrf<button class="danger">Cancel reservation</button></form>
+@if(!today()->lt($reservation->check_in_date))
+<form method="post" action="{{ route('admin.front-desk.no-show',$reservation) }}">@csrf<button class="danger">Mark no-show</button></form>
+@endif
+</div>
 </article><hr>
 @empty<p>No confirmed reservations.</p>@endforelse
 </section>
@@ -41,12 +59,24 @@
 <strong>{{ $stay->reservation->booking_number }}</strong> · Rooms {{ $activeAssignments->pluck('room.number')->join(', ') }} · Checkout {{ $stay->reservation->check_out_date->format('d M Y') }} · Balance ₹{{ number_format((float)$stay->folio->balance,2) }}
 
 <div class="grid">
-<form method="post" action="{{ route('admin.front-desk.transfer',$stay) }}">@csrf
+<div>
 <h3>Room transfer</h3>
-<label>Current room<select name="from_room_id">@foreach($activeAssignments as $assignment)<option value="{{ $assignment->room_id }}">{{ $assignment->room->number }} · {{ $assignment->room->roomType->name }}</option>@endforeach</select></label>
-<label>Target room<select name="to_room_id">@foreach($rooms as $room)@if(in_array($room->housekeeping_status,['clean','inspected'],true))<option value="{{ $room->id }}">{{ $room->number }} · {{ $room->roomType->name }}</option>@endif @endforeach</select></label>
+@foreach($activeAssignments as $assignment)
+@php($transferRooms=$transferRoomsByAssignment[$assignment->id] ?? collect())
+<div class="panel">
+<strong>Current room {{ $assignment->room->number }} · {{ $assignment->room->roomType->name }}</strong>
+@if($transferRooms->isNotEmpty())
+<form class="actions" method="post" action="{{ route('admin.front-desk.transfer',$stay) }}">@csrf
+<input type="hidden" name="from_room_id" value="{{ $assignment->room_id }}">
+<label>Target room<select name="to_room_id">@foreach($transferRooms as $room)<option value="{{ $room->id }}">{{ $room->number }} · {{ $room->roomType->name }}</option>@endforeach</select></label>
 <button>Transfer room</button>
 </form>
+@else
+<p class="muted">No eligible ready room of the same type is currently available.</p>
+@endif
+</div>
+@endforeach
+</div>
 
 <form method="post" action="{{ route('admin.front-desk.extend',$stay) }}">@csrf
 <h3>Extend stay</h3>
