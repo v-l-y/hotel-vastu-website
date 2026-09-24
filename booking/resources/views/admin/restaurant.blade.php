@@ -61,7 +61,12 @@
 <form class="actions" method="post" action="{{ route('admin.restaurant.orders.status',$order) }}">@csrf<select name="status">@foreach($statusOptions as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select><button>Update</button></form>
 @endif
 @if(!($kitchenOnly ?? false) && $order->order_type !== 'room_service' && $order->payment_status !== 'paid' && $order->status==='served')
-<form class="actions" method="post" action="{{ route('admin.payments.store') }}">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><input type="hidden" name="target_type" value="restaurant_order"><input type="hidden" name="target_id" value="{{ $order->id }}"><input type="hidden" name="amount" value="{{ $order->total }}"><select name="method"><option>cash</option><option>upi</option><option>card</option></select><button>Pay</button></form>
+@php($succeededPayments=(float)$order->payments->where('status','succeeded')->sum('amount'))
+@php($succeededRefunds=(float)$order->payments->flatMap->refunds->where('status','succeeded')->sum('amount'))
+@php($outstanding=max(0,round((float)$order->total-$succeededPayments+$succeededRefunds,2)))
+@if($outstanding>0)
+<form class="actions" method="post" action="{{ route('admin.payments.store') }}">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><input type="hidden" name="target_type" value="restaurant_order"><input type="hidden" name="target_id" value="{{ $order->id }}"><input type="hidden" name="amount" value="{{ number_format($outstanding,2,'.','') }}"><span>Due ₹{{ number_format($outstanding,2) }}</span><select name="method"><option>cash</option><option>upi</option><option>card</option></select><button>Pay balance</button></form>
+@endif
 @endif
 </td>
 </tr>
