@@ -35,7 +35,7 @@ class AdminAuthenticated
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login');
+            return redirect()->guest(route('admin.login'));
         }
 
         $request->attributes->set('admin_user', $admin);
