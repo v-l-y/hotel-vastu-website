@@ -6,10 +6,6 @@
 <h2>Sign in to Admin</h2>
 <p class="auth-copy">Use your staff account to continue to the operational dashboard.</p>
 
-@if($errors->any())
-<div class="alert-error" role="alert" aria-live="polite">{{ $errors->first() }}</div>
-@endif
-
 <form method="post" action="{{ route('admin.login.submit') }}">
 @csrf
 <label>Email address
