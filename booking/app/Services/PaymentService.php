@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\CreditNote;
 use App\Models\Folio;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentGatewayOrder;
 use App\Models\Refund;
@@ -279,6 +281,8 @@ class PaymentService
                 throw new RuntimeException('Refund amount exceeds the refundable payment balance.');
             }
 
+            $this->assertRefundAccounting($payment, $refundType, $amount);
+
             $status = $payment->method === 'online_gateway'
                 ? 'pending'
                 : ($payment->method === 'cash' ? 'succeeded' : 'pending_manual');
@@ -548,6 +552,42 @@ class PaymentService
 
         if ($payment->reservation_id !== null) {
             $this->staleOpenGatewayOrders($payment->reservation_id);
+        }
+    }
+
+    private function assertRefundAccounting(Payment $payment, string $refundType, float $amount): void
+    {
+        $requiresRevenueAdjustment = in_array(
+            $refundType,
+            ['rate_adjustment', 'service_recovery'],
+            true
+        );
+
+        $invoice = $payment->folio_id === null
+            ? null
+            : Invoice::query()->where('folio_id', $payment->folio_id)->first();
+
+        if ($requiresRevenueAdjustment && $invoice === null) {
+            throw new RuntimeException(
+                'Rate or service-recovery refunds require an issued invoice. Before invoice, adjust the booking price instead.'
+            );
+        }
+
+        if ($invoice === null || ! in_array(
+            $refundType,
+            ['cancellation', 'rate_adjustment', 'service_recovery'],
+            true
+        )) {
+            return;
+        }
+
+        $credited = (float) CreditNote::query()
+            ->where('invoice_id', $invoice->id)
+            ->sum('amount');
+        $remainingCreditable = max(0, round((float) $invoice->total - $credited, 2));
+
+        if ($amount > $remainingCreditable + 0.009) {
+            throw new RuntimeException('Refund exceeds the remaining invoice amount available for credit note.');
         }
     }
 
