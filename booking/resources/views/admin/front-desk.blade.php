@@ -439,6 +439,11 @@
 @endforeach
 </select>
 </label>
+<label>
+<span class="front-desk-field-title"><span>Promo code</span><small>Optional</small></span>
+<input name="promo_code" value="{{ old('promo_code') }}" maxlength="40" autocomplete="off" placeholder="Enter active promo code">
+<span class="front-desk-field-help">Validated against active dates, minimum subtotal and usage limit.</span>
+</label>
 </div>
 </fieldset>
 
