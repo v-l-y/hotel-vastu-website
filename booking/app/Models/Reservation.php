@@ -36,4 +36,9 @@ class Reservation extends Model
     {
         return $this->hasMany(ReservationGuest::class);
     }
+
+    public function nightRates(): HasMany
+    {
+        return $this->hasMany(ReservationNightRate::class);
+    }
 }
