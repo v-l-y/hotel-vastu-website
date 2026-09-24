@@ -14,6 +14,8 @@ use App\Models\Stay;
 use App\Models\StayRoom;
 use App\Services\CustomerMessageService;
 use App\Services\FrontDeskService;
+use App\Services\PaymentService;
+use App\Services\PricingService;
 use App\Services\ReservationLifecycleService;
 use App\Services\ReservationService;
 use Carbon\CarbonImmutable;
@@ -232,6 +234,7 @@ class FrontDeskController extends Controller
             'adults' => ['required', 'integer', 'min:1', 'max:30'],
             'children' => ['required', 'integer', 'min:0', 'max:30'],
             'special_request' => ['nullable', 'string', 'max:2000'],
+            'promo_code' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
         ]);
 
         try {
@@ -287,6 +290,41 @@ class FrontDeskController extends Controller
         }
 
         return back()->with('status', 'Reservation updated and repriced.');
+    }
+
+    public function applyDiscount(
+        Request $request,
+        Reservation $reservation,
+        PricingService $pricing,
+        PaymentService $payments
+    ): RedirectResponse {
+        $data = $request->validate([
+            'discount_type' => ['required', 'in:fixed,percent'],
+            'discount_value' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'discount_reason' => ['required', 'string', 'min:3', 'max:255'],
+        ]);
+
+        $admin = $request->attributes->get('admin_user');
+
+        try {
+            $reservation = $pricing->applyManualDiscount(
+                $reservation,
+                $data['discount_type'],
+                (float) $data['discount_value'],
+                $data['discount_reason'],
+                $admin?->id
+            );
+            $reservation = $payments->syncReservationPaymentState($reservation, true);
+        } catch (RuntimeException $exception) {
+            return back()->withInput()->withErrors(['discount' => $exception->getMessage()]);
+        }
+
+        $message = 'Discount applied. New booking total ₹'.number_format((float) $reservation->total, 2).'.';
+        if ($reservation->payment_status === 'overpaid') {
+            $message .= ' Booking is now overpaid; refund the excess from Payments.';
+        }
+
+        return back()->with('status', $message);
     }
 
     public function checkIn(Request $request, Reservation $reservation, FrontDeskService $service): RedirectResponse
