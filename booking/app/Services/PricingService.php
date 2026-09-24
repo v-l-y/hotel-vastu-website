@@ -9,6 +9,7 @@ use App\Models\RoomRate;
 use App\Models\RoomType;
 use App\Models\TaxRule;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class PricingService
@@ -146,14 +147,93 @@ class PricingService
             $tax = round($tax + $quote['tax'], 2);
         }
 
+        $discount = $this->calculateDiscount($reservation, $subtotal);
+        $taxFactor = $subtotal > 0 ? max(0, ($subtotal - $discount) / $subtotal) : 1;
+        $discountedTax = round($tax * $taxFactor, 2);
+
         $reservation->update([
             'subtotal' => $subtotal,
-            'tax' => $tax,
-            'discount' => 0,
-            'total' => round($subtotal + $tax, 2),
+            'tax' => $discountedTax,
+            'discount' => $discount,
+            'total' => round($subtotal - $discount + $discountedTax, 2),
             'pricing_status' => 'priced',
         ]);
 
         return $reservation->fresh(['rooms']);
+    }
+
+    public function applyManualDiscount(
+        Reservation $reservation,
+        string $type,
+        float $value,
+        string $reason,
+        ?int $adminUserId
+    ): Reservation {
+        if (! in_array($type, ['fixed', 'percent'], true)) {
+            throw new RuntimeException('Discount type must be fixed or percent.');
+        }
+
+        $value = round($value, 2);
+        if ($value <= 0 || ($type === 'percent' && $value > 100)) {
+            throw new RuntimeException('Choose a valid discount value.');
+        }
+
+        $reason = trim($reason);
+        if ($reason === '') {
+            throw new RuntimeException('Discount reason is required.');
+        }
+
+        return DB::transaction(function () use ($reservation, $type, $value, $reason, $adminUserId) {
+            $reservation = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
+
+            if ($reservation->status !== 'confirmed') {
+                throw new RuntimeException('Manual discount can only be changed before guest check-in.');
+            }
+
+            if ($reservation->discount_source === 'promo') {
+                throw new RuntimeException('A promo-code booking cannot be replaced with a manual discount.');
+            }
+
+            $reservation->update([
+                'promotion_code_id' => null,
+                'promotion_code_snapshot' => null,
+                'discount_source' => 'manual',
+                'discount_type' => $type,
+                'discount_value' => $value,
+                'discount_max' => null,
+                'discount_reason' => $reason,
+                'discount_authorized_by' => $adminUserId,
+                'pricing_status' => 'pending',
+            ]);
+
+            return $this->priceReservation($reservation->fresh('rooms'));
+        }, 3);
+    }
+
+    private function calculateDiscount(Reservation $reservation, float $subtotal): float
+    {
+        $type = (string) ($reservation->discount_type ?? '');
+        $value = (float) ($reservation->discount_value ?? 0);
+
+        if ($type === '' || $value <= 0 || $subtotal <= 0) {
+            return 0.0;
+        }
+
+        if ($type === 'fixed') {
+            $discount = $value;
+        } elseif ($type === 'percent') {
+            if ($value > 100) {
+                throw new RuntimeException('Percentage discount cannot exceed 100%.');
+            }
+            $discount = round($subtotal * ($value / 100), 2);
+        } else {
+            throw new RuntimeException('Reservation discount configuration is invalid.');
+        }
+
+        if ($reservation->discount_max !== null) {
+            $discount = min($discount, (float) $reservation->discount_max);
+        }
+
+        return round(min($discount, $subtotal), 2);
     }
 }
