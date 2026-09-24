@@ -13,10 +13,6 @@ class CreditNoteService
 {
     public function createForRefund(Payment $payment, Refund $refund): ?CreditNote
     {
-        if (! in_array($refund->refund_type, ['cancellation', 'rate_adjustment', 'service_recovery'], true)) {
-            return null;
-        }
-
         if ($payment->folio_id === null) {
             return null;
         }
