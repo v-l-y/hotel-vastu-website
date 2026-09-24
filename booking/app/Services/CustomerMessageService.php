@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\CustomerMessageMail;
 use App\Models\Invoice;
 use App\Models\Reservation;
 use Illuminate\Support\Facades\Http;
@@ -197,7 +198,7 @@ class CustomerMessageService
     private function sendEmailBestEffort(string $email, string $subject, string $body): void
     {
         try {
-            Mail::raw($body, fn ($mail) => $mail->to($email)->subject($subject));
+            Mail::to($email)->send(new CustomerMessageMail($subject, $body));
         } catch (Throwable $exception) {
             Log::warning('Customer email delivery failed.', [
                 'email' => $email,
