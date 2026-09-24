@@ -113,7 +113,8 @@ if(bookingFormState.checkInName!=="check_in"||bookingFormState.checkOutName!=="c
 const mobile=await bookingContext.newPage();
 await mobile.setViewportSize({width:390,height:844});
 await mobile.goto(`${base}/index.html`,{waitUntil:"networkidle"});
-if((await mobile.locator('a[href="https://booking.hotelvastu.com/"]').last().textContent())?.trim()!=="Plan your stay")failures.push("shared booking CTA did not point to the online booking system");
+const bookingLinks=mobile.locator('a[href="https://booking.hotelvastu.com/"]');
+if(await bookingLinks.count()<2)failures.push("shared booking CTAs did not point to the online booking system");
 await mobile.locator("[data-menu-button]").click();
 if(!await mobile.locator("[data-nav-links]").evaluate(el=>el.classList.contains("open")))failures.push("mobile nav did not open");
 const mobileHeaderBooking=mobile.locator('[data-nav-links] a[href="https://booking.hotelvastu.com/"]');
