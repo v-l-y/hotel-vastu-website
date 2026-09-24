@@ -52,6 +52,10 @@ class PaymentService
                 throw new RuntimeException('A payment must target exactly one reservation, folio, or restaurant order.');
             }
 
+            if (! in_array($data['method'], ['cash', 'upi', 'card', 'bank_transfer', 'online_gateway'], true)) {
+                throw new RuntimeException('Unsupported payment method.');
+            }
+
             $amount = round((float) $data['amount'], 2);
             if ($amount <= 0) {
                 throw new RuntimeException('Payment amount must be greater than zero.');
@@ -424,6 +428,14 @@ class PaymentService
                 || (int) round((float) $refund->amount * 100) !== $amountSubunits
             ) {
                 throw new RuntimeException('Online refund does not match the local payment ledger.');
+            }
+
+            if ($refund->status === 'succeeded') {
+                return $refund->fresh();
+            }
+
+            if ($refund->status === 'failed' && $status === 'pending') {
+                return $refund->fresh();
             }
 
             $refund->update([
