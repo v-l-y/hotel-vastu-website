@@ -100,6 +100,10 @@ class ReservationService
             ]);
 
             $reservation = $this->pricing->priceReservation($reservation);
+            if ((float) $reservation->total <= 0.009) {
+                $reservation->update(['payment_status' => 'paid']);
+                $reservation = $reservation->fresh(['rooms']);
+            }
             $hold->update(['converted_reservation_id' => $reservation->id]);
 
             ReservationFeedback::query()->create([
@@ -205,6 +209,10 @@ class ReservationService
             ]);
 
             $reservation = $this->pricing->priceReservation($reservation);
+            if ((float) $reservation->total <= 0.009) {
+                $reservation->update(['payment_status' => 'paid']);
+                $reservation = $reservation->fresh(['rooms']);
+            }
 
             ReservationFeedback::query()->create([
                 'reservation_id' => $reservation->id,
