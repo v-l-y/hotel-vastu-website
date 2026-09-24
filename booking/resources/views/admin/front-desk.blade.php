@@ -38,6 +38,8 @@
 .front-desk-room-card.ready{border-color:#bfd8c3;background:#f8fcf8}
 .front-desk-room-card.dirty{border-color:#efd3a6;background:#fffaf2}
 .front-desk-room-card.out{border-color:#dec3c3;background:#fff8f8}
+.front-desk-room-card.occupied{border-color:#c9c2bb;background:#f4f1ee}
+.front-desk-room-card.occupied .front-desk-room-number:after{content:" · Occupied";font-size:.78rem;font-weight:800;color:#6b625b}
 .front-desk-room-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .front-desk-room-number{font-size:1.25rem;font-weight:800}
 .front-desk-room-type{color:#6f675f;font-size:.92rem}
@@ -322,16 +324,25 @@
 
 <div class="front-desk-room-board">
 @foreach($rooms as $room)
-@php($roomClass=in_array($room->housekeeping_status,['clean','inspected'],true) ? 'ready' : ($room->housekeeping_status==='dirty' ? 'dirty' : ($room->housekeeping_status==='out_of_order' ? 'out' : '')))
+@php($roomOccupied=in_array((int)$room->id,$occupiedRoomIds,true))
+@php($roomClass=$roomOccupied ? 'occupied' : (in_array($room->housekeeping_status,['clean','inspected'],true) ? 'ready' : ($room->housekeeping_status==='dirty' ? 'dirty' : ($room->housekeeping_status==='out_of_order' ? 'out' : ''))))
 <article class="front-desk-room-card {{ $roomClass }}">
 <div class="front-desk-room-top">
 <div><div class="front-desk-room-number">Room {{ $room->number }}</div><div class="front-desk-room-type">{{ $room->roomType->name }}</div></div>
+@if($roomOccupied)
+<span class="status-badge">Occupied</span>
+@else
 <span class="status-badge {{ in_array($room->housekeeping_status,['clean','inspected'],true) ? 'good' : ($room->housekeeping_status==='dirty' ? 'warn' : '') }}">{{ str_replace('_',' ',$room->housekeeping_status) }}</span>
+@endif
 </div>
+@if($roomOccupied)
+<div class="front-desk-field-help">Housekeeping status is locked while a guest is checked in. Checkout or transfer the room first.</div>
+@else
 <form method="post" action="{{ route('admin.front-desk.housekeeping',$room) }}">@csrf
 <select name="housekeeping_status" aria-label="Housekeeping status for room {{ $room->number }}">@foreach(['clean','dirty','inspected','out_of_order'] as $status)<option value="{{ $status }}" @selected($room->housekeeping_status===$status)>{{ str_replace('_',' ',$status) }}</option>@endforeach</select>
 <button>Update</button>
 </form>
+@endif
 </article>
 @endforeach
 </div>
