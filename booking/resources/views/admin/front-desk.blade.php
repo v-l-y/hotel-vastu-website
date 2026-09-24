@@ -62,7 +62,7 @@
 @if($tab === 'overview')
 <div class="metric-grid">
 <div class="metric-card"><span class="muted">Arrivals today</span><strong>{{ $arrivalCountToday }}</strong></div>
-<div class="metric-card"><span class="muted">In-house stays</span><strong>{{ $stays->count() }}</strong></div>
+<div class="metric-card"><span class="muted">In-house stays</span><strong>{{ $inHouseCount }}</strong></div>
 <div class="metric-card"><span class="muted">Departures today</span><strong>{{ $departureCountToday }}</strong></div>
 <div class="metric-card"><span class="muted">Rooms ready</span><strong>{{ $readyRoomCount }}</strong></div>
 </div>
@@ -185,8 +185,13 @@
 </div>
 </div>
 <div class="actions">
-<a class="button-link" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Record payment</a>
+@if(abs((float)$stay->folio->balance) > 0.009)
+<a class="button-link primary" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Settle ₹{{ number_format((float)$stay->folio->balance,2) }}</a>
+<span class="status-badge warn">Settle balance before checkout</span>
+@else
+<a class="button-link" href="{{ route('admin.payments',['folio_id'=>$stay->folio->id]) }}">Payments</a>
 <form method="post" action="{{ route('admin.front-desk.check-out',$stay) }}">@csrf<button type="submit">Check out</button></form>
+@endif
 </div>
 </div>
 
