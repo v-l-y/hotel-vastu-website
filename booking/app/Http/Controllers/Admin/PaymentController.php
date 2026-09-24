@@ -176,6 +176,7 @@ class PaymentController extends Controller
         $data = $request->validate([
             'idempotency_key' => ['required', 'uuid'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'refund_type' => ['required', 'in:overpayment,duplicate_payment,cancellation,rate_adjustment,service_recovery,other'],
             'reason' => ['required', 'string', 'min:3', 'max:255'],
         ]);
 
@@ -183,6 +184,7 @@ class PaymentController extends Controller
             $refund = $service->refund($payment, [
                 'idempotency_key' => $data['idempotency_key'],
                 'amount' => $data['amount'],
+                'refund_type' => $data['refund_type'],
                 'reason' => $data['reason'],
             ]);
         } catch (RuntimeException $exception) {
