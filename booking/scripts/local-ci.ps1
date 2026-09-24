@@ -57,6 +57,10 @@ function Assert-ScopeFreeze {
         throw "Expected booking/VERSION to be 1.0, found '$version'."
     }
 
+    if (-not (Test-Path "composer.lock")) {
+        throw "booking/composer.lock is missing."
+    }
+
     if (-not (Test-Path "docs/MASTER_BLUEPRINT.md")) {
         throw "docs/MASTER_BLUEPRINT.md is missing."
     }
