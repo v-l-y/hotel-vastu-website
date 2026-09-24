@@ -38,8 +38,19 @@ class PaymentService
                 throw new RuntimeException('A payment must target exactly one reservation, folio, or restaurant order.');
             }
 
-            if ((float) $data['amount'] <= 0) {
+            $amount = round((float) $data['amount'], 2);
+            if ($amount <= 0) {
                 throw new RuntimeException('Payment amount must be greater than zero.');
+            }
+
+            $due = $this->targetOutstanding(
+                $data['reservation_id'] ?? null,
+                $data['folio_id'] ?? null,
+                $data['restaurant_order_id'] ?? null
+            );
+
+            if ($amount > ($due + 0.009)) {
+                throw new RuntimeException('Payment amount exceeds the outstanding balance.');
             }
 
             $payment = Payment::query()->create([
@@ -49,7 +60,7 @@ class PaymentService
                 'restaurant_order_id' => $data['restaurant_order_id'] ?? null,
                 'method' => $data['method'],
                 'status' => $data['status'] ?? 'succeeded',
-                'amount' => $data['amount'],
+                'amount' => $amount,
                 'external_reference' => $data['external_reference'] ?? null,
                 'paid_at' => ($data['status'] ?? 'succeeded') === 'succeeded' ? now() : null,
             ]);
@@ -143,6 +154,59 @@ class PaymentService
         $this->creditNotes->createForRefund($payment, $refund->fresh());
 
         return $refund->fresh();
+    }
+
+    private function targetOutstanding(
+        ?int $reservationId,
+        ?int $folioId,
+        ?int $restaurantOrderId
+    ): float {
+        if ($reservationId !== null) {
+            $reservation = Reservation::query()->findOrFail($reservationId);
+            if ($reservation->status !== 'confirmed' || $reservation->pricing_status !== 'priced') {
+                throw new RuntimeException('Only a confirmed priced reservation can accept a payment.');
+            }
+
+            $payments = (float) Payment::query()
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'succeeded')
+                ->sum('amount');
+            $paymentIds = Payment::query()->where('reservation_id', $reservation->id)->pluck('id');
+            $refunds = $paymentIds->isEmpty() ? 0.0 : (float) Refund::query()
+                ->whereIn('payment_id', $paymentIds)
+                ->where('status', 'succeeded')
+                ->sum('amount');
+
+            return max(0, round((float) $reservation->total - $payments + $refunds, 2));
+        }
+
+        if ($folioId !== null) {
+            $folio = Folio::query()->findOrFail($folioId);
+            if ($folio->status !== 'open') {
+                throw new RuntimeException('Only an open folio can accept a payment.');
+            }
+
+            $folio = $this->folios->recalculate($folio);
+
+            return max(0, (float) $folio->balance);
+        }
+
+        $order = RestaurantOrder::query()->findOrFail((int) $restaurantOrderId);
+        if ($order->status === 'cancelled') {
+            throw new RuntimeException('A cancelled restaurant order cannot accept payment.');
+        }
+
+        $payments = (float) Payment::query()
+            ->where('restaurant_order_id', $order->id)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+        $paymentIds = Payment::query()->where('restaurant_order_id', $order->id)->pluck('id');
+        $refunds = $paymentIds->isEmpty() ? 0.0 : (float) Refund::query()
+            ->whereIn('payment_id', $paymentIds)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        return max(0, round((float) $order->total - $payments + $refunds, 2));
     }
 
     private function syncTarget(Payment $payment): void
