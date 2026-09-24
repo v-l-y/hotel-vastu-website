@@ -357,7 +357,7 @@
 @if($refunded > 0)
 <span class="status-badge warn">₹{{ number_format($refunded,2) }} refunded</span>
 @elseif($pendingRefunds > 0)
-<span class="status-badge warn">₹{{ number_format($pendingRefunds,2) }} pending</span>
+<span class="status-badge warn">Pending refund ₹{{ number_format($pendingRefunds,2) }}</span>
 @else
 <span class="status-badge good">No refund</span>
 @endif
