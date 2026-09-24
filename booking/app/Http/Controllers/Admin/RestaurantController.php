@@ -15,12 +15,22 @@ use RuntimeException;
 
 class RestaurantController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
+        $kitchenOnly = $role === 'kitchen';
+
         return view('admin.restaurant', [
-            'menuItems' => RestaurantMenuItem::query()->where('is_active', true)->orderBy('name')->get(),
-            'tables' => RestaurantTable::query()->where('is_active', true)->orderBy('code')->get(),
-            'folios' => Folio::query()->where('status', 'open')->orderByDesc('id')->get(),
+            'kitchenOnly' => $kitchenOnly,
+            'menuItems' => $kitchenOnly
+                ? collect()
+                : RestaurantMenuItem::query()->where('is_active', true)->orderBy('name')->get(),
+            'tables' => $kitchenOnly
+                ? collect()
+                : RestaurantTable::query()->where('is_active', true)->orderBy('code')->get(),
+            'folios' => $kitchenOnly
+                ? collect()
+                : Folio::query()->where('status', 'open')->orderByDesc('id')->get(),
             'orders' => RestaurantOrder::query()
                 ->with(['items', 'kitchenTicket'])
                 ->orderByDesc('id')
