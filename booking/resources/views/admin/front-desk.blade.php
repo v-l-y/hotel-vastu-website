@@ -46,7 +46,9 @@
 <input type="hidden" name="tab" value="{{ $tab }}">
 <input name="q" value="{{ $search }}" placeholder="Search booking, guest, phone or email">
 <button type="submit">Search</button>
-@if($search !== '')<a class="button-link" href="{{ route('admin.front-desk',['tab'=>$tab]) }}">Clear</a>@endif
+@if($search !== '')
+<a class="button-link" href="{{ route('admin.front-desk',['tab'=>$tab]) }}">Clear</a>
+@endif
 </form>
 
 <nav class="tabs" aria-label="Front desk sections">
@@ -76,7 +78,9 @@
 <div class="compact-row">
 <div>
 <strong>{{ $reservation->booking_number }}</strong>
-@if($guest)<br>{{ trim(($guest->first_name ?? '').' '.($guest->last_name ?? '')) }} · {{ $guest->phone }}@endif
+@if($guest)
+<br>{{ trim(($guest->first_name ?? '').' '.($guest->last_name ?? '')) }} · {{ $guest->phone }}
+@endif
 <br><span class="muted">{{ $line?->roomType?->name ?? 'Room' }} · {{ $reservation->rooms->sum('quantity') }} room(s) · ₹{{ number_format((float)$reservation->total,2) }}</span>
 </div>
 <a class="button-link" href="{{ route('admin.front-desk',['tab'=>'arrivals']).'#reservation-'.$reservation->id }}">Open</a>
@@ -97,7 +101,9 @@
 <div class="compact-row">
 <div>
 <strong>{{ $stay->reservation->booking_number }}</strong>
-@if($guest)<br>{{ trim(($guest->first_name ?? '').' '.($guest->last_name ?? '')) }}@endif
+@if($guest)
+<br>{{ trim(($guest->first_name ?? '').' '.($guest->last_name ?? '')) }}
+@endif
 <br><span class="muted">Room(s) {{ $activeAssignments->pluck('room.number')->join(', ') }} · Checkout {{ $stay->reservation->check_out_date->format('d M') }} · Balance ₹{{ number_format((float)$stay->folio->balance,2) }}</span>
 </div>
 <a class="button-link" href="{{ route('admin.front-desk',['tab'=>'in-house']).'#stay-'.$stay->id }}">Open</a>
@@ -122,7 +128,16 @@
 <section class="panel">
 <h2>Recent guest feedback</h2>
 @foreach($feedbacks->take(5) as $feedback)
-<div class="compact-row"><div><strong>{{ $feedback->reservation->booking_number }}</strong><br>{{ $feedback->overall_rating }}/5 overall@if($feedback->comment) · {{ $feedback->comment }}@endif</div><span class="muted">{{ $feedback->submitted_at->format('d M') }}</span></div>
+<div class="compact-row">
+<div>
+<strong>{{ $feedback->reservation->booking_number }}</strong><br>
+{{ $feedback->overall_rating }}/5 overall
+@if($feedback->comment)
+· {{ $feedback->comment }}
+@endif
+</div>
+<span class="muted">{{ $feedback->submitted_at->format('d M') }}</span>
+</div>
 @endforeach
 </section>
 @endif
@@ -161,7 +176,9 @@
 <div>
 <strong>{{ $stay->reservation->booking_number }}</strong>
 <div class="stay-meta">
-@if($stayGuest)<span>{{ trim(($stayGuest->first_name ?? '').' '.($stayGuest->last_name ?? '')) }}</span>@endif
+@if($stayGuest)
+<span>{{ trim(($stayGuest->first_name ?? '').' '.($stayGuest->last_name ?? '')) }}</span>
+@endif
 <span>Room(s) {{ $activeAssignments->pluck('room.number')->join(', ') }}</span>
 <span>Checkout {{ $stay->reservation->check_out_date->format('d M Y') }}</span>
 <span>Balance ₹{{ number_format((float)$stay->folio->balance,2) }}</span>
