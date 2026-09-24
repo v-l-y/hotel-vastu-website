@@ -30,6 +30,8 @@ class PricingService
         $nights = $checkIn->diffInDays($checkOut);
         $breakdown = [];
         $subtotal = 0.0;
+        $taxTotal = 0.0;
+        $taxRates = [];
 
         for ($date = $checkIn; $date->lessThan($checkOut); $date = $date->addDay()) {
             $rate = RoomRate::query()
@@ -53,27 +55,39 @@ class PricingService
             }
 
             $lineTotal = round($unitRate * $quantity, 2);
+            $taxRate = (float) TaxRule::query()
+                ->effectiveOn($date->toDateString())
+                ->whereIn('applies_to', ['hotel', 'all'])
+                ->sum('rate_percent');
+            $taxAmount = round($lineTotal * ($taxRate / 100), 2);
+            $grossTotal = round($lineTotal + $taxAmount, 2);
+
             $subtotal = round($subtotal + $lineTotal, 2);
+            $taxTotal = round($taxTotal + $taxAmount, 2);
+            $taxRates[] = $taxRate;
+
             $breakdown[] = [
                 'stay_date' => $date->toDateString(),
                 'unit_rate' => $unitRate,
                 'quantity' => $quantity,
                 'line_total' => $lineTotal,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'gross_total' => $grossTotal,
             ];
         }
 
-        $taxRate = (float) TaxRule::query()
-            ->effectiveOn($checkIn->toDateString())
-            ->whereIn('applies_to', ['hotel', 'all'])
-            ->sum('rate_percent');
-
-        $tax = round($subtotal * ($taxRate / 100), 2);
+        $uniqueTaxRates = array_values(array_unique(array_map(
+            fn ($rate) => number_format((float) $rate, 4, '.', ''),
+            $taxRates
+        )));
 
         return [
             'subtotal' => $subtotal,
-            'tax_rate' => $taxRate,
-            'tax' => $tax,
-            'total' => round($subtotal + $tax, 2),
+            'tax_rate' => count($uniqueTaxRates) === 1 ? (float) $uniqueTaxRates[0] : null,
+            'tax_rates' => array_map('floatval', $uniqueTaxRates),
+            'tax' => $taxTotal,
+            'total' => round($subtotal + $taxTotal, 2),
             'nights' => $breakdown,
         ];
     }
@@ -84,6 +98,7 @@ class PricingService
         ReservationNightRate::query()->where('reservation_id', $reservation->id)->delete();
 
         $subtotal = 0.0;
+        $tax = 0.0;
 
         foreach ($reservation->rooms as $reservationRoom) {
             if ($reservationRoom->rate_plan_id === null) {
@@ -108,6 +123,9 @@ class PricingService
                     'quantity' => $night['quantity'],
                     'unit_rate' => $night['unit_rate'],
                     'line_total' => $night['line_total'],
+                    'tax_rate' => $night['tax_rate'],
+                    'tax_amount' => $night['tax_amount'],
+                    'gross_total' => $night['gross_total'],
                 ]);
             }
 
@@ -116,14 +134,8 @@ class PricingService
             ]);
 
             $subtotal = round($subtotal + $quote['subtotal'], 2);
+            $tax = round($tax + $quote['tax'], 2);
         }
-
-        $taxRate = (float) TaxRule::query()
-            ->effectiveOn($reservation->check_in_date->toDateString())
-            ->whereIn('applies_to', ['hotel', 'all'])
-            ->sum('rate_percent');
-
-        $tax = round($subtotal * ($taxRate / 100), 2);
 
         $reservation->update([
             'subtotal' => $subtotal,

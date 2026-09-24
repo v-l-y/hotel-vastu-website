@@ -29,6 +29,8 @@ class RestaurantService
             }
 
             $folio = null;
+            $table = null;
+
             if ($type === 'room_service') {
                 $folio = Folio::query()->whereKey($data['folio_id'] ?? 0)->where('status', 'open')->first();
                 if ($folio === null) {
@@ -40,13 +42,23 @@ class RestaurantService
                 $table = RestaurantTable::query()
                     ->whereKey($data['restaurant_table_id'] ?? 0)
                     ->where('is_active', true)
+                    ->lockForUpdate()
                     ->first();
+
                 if ($table === null) {
                     throw new RuntimeException('Dine-in orders require an active restaurant table.');
                 }
+
+                if ($table->status !== 'available') {
+                    throw new RuntimeException('The selected restaurant table is already occupied.');
+                }
             }
 
-            $requestedItems = $data['items'] ?? [];
+            $requestedItems = array_values(array_filter(
+                $data['items'] ?? [],
+                fn ($item) => ! empty($item['menu_item_id'])
+            ));
+
             if ($requestedItems === []) {
                 throw new RuntimeException('At least one restaurant item is required.');
             }
@@ -83,7 +95,7 @@ class RestaurantService
                 'order_number' => 'RO-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
                 'order_type' => $type,
                 'folio_id' => $folio?->id,
-                'restaurant_table_id' => $data['restaurant_table_id'] ?? null,
+                'restaurant_table_id' => $table?->id,
                 'guest_name' => $data['guest_name'] ?? null,
                 'guest_phone' => $data['guest_phone'] ?? null,
                 'status' => 'accepted',
@@ -92,6 +104,10 @@ class RestaurantService
                 'tax' => $tax,
                 'total' => round($subtotal + $tax, 2),
             ]);
+
+            if ($table !== null) {
+                $table->update(['status' => 'occupied']);
+            }
 
             $ticket = KitchenTicket::query()->create([
                 'ticket_number' => 'KOT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
@@ -165,6 +181,17 @@ class RestaurantService
                     'source_key' => 'restaurant-order:'.$order->id,
                 ]);
                 $order->update(['payment_status' => 'charged_to_room']);
+            }
+
+            if (
+                $order->order_type === 'dine_in'
+                && $order->restaurant_table_id !== null
+                && in_array($nextStatus, ['served', 'cancelled'], true)
+            ) {
+                RestaurantTable::query()
+                    ->whereKey($order->restaurant_table_id)
+                    ->lockForUpdate()
+                    ->update(['status' => 'available']);
             }
 
             return $order->fresh(['items', 'kitchenTicket']);

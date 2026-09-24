@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RestaurantTable extends Model
 {
-    protected $fillable = ['code', 'name', 'capacity', 'is_active'];
+    protected $fillable = ['code', 'name', 'capacity', 'status', 'is_active'];
 
     protected function casts(): array
     {

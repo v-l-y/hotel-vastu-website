@@ -12,8 +12,10 @@ use RuntimeException;
 
 class PaymentService
 {
-    public function __construct(private FolioService $folios)
-    {
+    public function __construct(
+        private FolioService $folios,
+        private CreditNoteService $creditNotes
+    ) {
     }
 
     public function record(array $data): Payment
@@ -64,6 +66,8 @@ class PaymentService
                 return $existing;
             }
 
+            $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
             if ($payment->status !== 'succeeded') {
                 throw new RuntimeException('Only successful payments can be refunded.');
             }
@@ -86,6 +90,7 @@ class PaymentService
             ]);
 
             $this->syncTarget($payment->fresh());
+            $this->creditNotes->createForRefund($payment->fresh(), $refund);
 
             return $refund;
         }, 3);

@@ -10,6 +10,8 @@ class InvoiceController extends Controller
 {
     public function show(Invoice $invoice): View
     {
-        return view('admin.invoice', ['invoice' => $invoice->load('items')]);
+        return view('admin.invoice', [
+            'invoice' => $invoice->load(['items', 'creditNotes.items']),
+        ]);
     }
 }

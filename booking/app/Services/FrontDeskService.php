@@ -5,11 +5,14 @@ namespace App\Services;
 use App\Models\Folio;
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Models\ReservationNightRate;
+use App\Models\RestaurantOrder;
 use App\Models\Room;
 use App\Models\RoomBlock;
 use App\Models\Stay;
 use App\Models\StayGuest;
 use App\Models\StayRoom;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -17,7 +20,9 @@ class FrontDeskService
 {
     public function __construct(
         private FolioService $folios,
-        private InvoiceService $invoices
+        private InvoiceService $invoices,
+        private AvailabilityService $availability,
+        private PricingService $pricing
     ) {
     }
 
@@ -59,9 +64,14 @@ class FrontDeskService
             }
 
             foreach ($expectedByType as $roomTypeId => $requiredCount) {
-                $actual = $rooms->where('room_type_id', (int) $roomTypeId)->where('status', 'active')->count();
+                $actual = $rooms
+                    ->where('room_type_id', (int) $roomTypeId)
+                    ->where('status', 'active')
+                    ->filter(fn ($room) => in_array($room->housekeeping_status, ['clean', 'inspected'], true))
+                    ->count();
+
                 if ($actual !== $requiredCount) {
-                    throw new RuntimeException('Assigned physical rooms do not match the reserved room types.');
+                    throw new RuntimeException('Assigned rooms must match the reserved room types and be ready for guests.');
                 }
             }
 
@@ -139,6 +149,182 @@ class FrontDeskService
         }, 3);
     }
 
+    public function transferRoom(Stay $stay, int $fromRoomId, int $toRoomId): Stay
+    {
+        return DB::transaction(function () use ($stay, $fromRoomId, $toRoomId) {
+            $stay = Stay::query()->whereKey($stay->id)->lockForUpdate()->firstOrFail();
+            if ($stay->status !== 'checked_in') {
+                throw new RuntimeException('Room transfers require an active checked-in stay.');
+            }
+
+            $reservation = Reservation::query()->findOrFail($stay->reservation_id);
+            $assignment = StayRoom::query()
+                ->where('stay_id', $stay->id)
+                ->where('room_id', $fromRoomId)
+                ->whereNull('released_at')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $fromRoom = Room::query()->whereKey($fromRoomId)->lockForUpdate()->firstOrFail();
+            $toRoom = Room::query()->whereKey($toRoomId)->lockForUpdate()->firstOrFail();
+
+            if ($fromRoom->room_type_id !== $toRoom->room_type_id) {
+                throw new RuntimeException('Room transfer must use the same reserved room type.');
+            }
+
+            if ($toRoom->status !== 'active' || ! in_array($toRoom->housekeeping_status, ['clean', 'inspected'], true)) {
+                throw new RuntimeException('Target room is not ready for guests.');
+            }
+
+            $occupied = StayRoom::query()
+                ->where('room_id', $toRoom->id)
+                ->whereNull('released_at')
+                ->whereHas('stay', fn ($q) => $q->where('status', 'checked_in'))
+                ->exists();
+
+            if ($occupied) {
+                throw new RuntimeException('Target room is already occupied.');
+            }
+
+            $blocked = RoomBlock::query()
+                ->where('room_id', $toRoom->id)
+                ->where('status', 'active')
+                ->whereDate('starts_on', '<', $reservation->check_out_date->toDateString())
+                ->whereDate('ends_on', '>', today()->toDateString())
+                ->exists();
+
+            if ($blocked) {
+                throw new RuntimeException('Target room is blocked during the remaining stay.');
+            }
+
+            $assignment->update(['released_at' => now()]);
+            $fromRoom->update(['housekeeping_status' => 'dirty']);
+
+            StayRoom::query()->create([
+                'stay_id' => $stay->id,
+                'room_id' => $toRoom->id,
+                'assigned_at' => now(),
+            ]);
+
+            return $stay->fresh(['rooms.room', 'folio']);
+        }, 3);
+    }
+
+    public function extendStay(Stay $stay, CarbonImmutable $newCheckout): Stay
+    {
+        return DB::transaction(function () use ($stay, $newCheckout) {
+            $stay = Stay::query()->whereKey($stay->id)->lockForUpdate()->firstOrFail();
+            if ($stay->status !== 'checked_in') {
+                throw new RuntimeException('Only an active stay can be extended.');
+            }
+
+            $reservation = Reservation::query()->whereKey($stay->reservation_id)->lockForUpdate()->firstOrFail();
+            $oldCheckout = CarbonImmutable::parse($reservation->check_out_date);
+
+            if ($newCheckout->lessThanOrEqualTo($oldCheckout)) {
+                throw new RuntimeException('New checkout must be after the current checkout date.');
+            }
+
+            $reservation->load('rooms');
+
+            foreach ($reservation->rooms as $reservationRoom) {
+                $availability = $this->availability->forRoomType(
+                    $reservationRoom->room_type_id,
+                    $oldCheckout,
+                    $newCheckout
+                );
+
+                if ($availability['available_rooms'] < $reservationRoom->quantity) {
+                    throw new RuntimeException('The reserved room type is not available for the requested extension.');
+                }
+            }
+
+            $activeRoomIds = StayRoom::query()
+                ->where('stay_id', $stay->id)
+                ->whereNull('released_at')
+                ->pluck('room_id');
+
+            $blocked = RoomBlock::query()
+                ->whereIn('room_id', $activeRoomIds)
+                ->where('status', 'active')
+                ->whereDate('starts_on', '<', $newCheckout->toDateString())
+                ->whereDate('ends_on', '>', $oldCheckout->toDateString())
+                ->exists();
+
+            if ($blocked) {
+                throw new RuntimeException('One or more assigned rooms are blocked during the extension.');
+            }
+
+            $extraSubtotal = 0.0;
+            $extraTax = 0.0;
+
+            foreach ($reservation->rooms as $reservationRoom) {
+                if ($reservationRoom->rate_plan_id === null) {
+                    throw new RuntimeException('A rate plan is required to extend this stay.');
+                }
+
+                $quote = $this->pricing->quote(
+                    $reservationRoom->room_type_id,
+                    $reservationRoom->rate_plan_id,
+                    $oldCheckout,
+                    $newCheckout,
+                    $reservationRoom->quantity
+                );
+
+                foreach ($quote['nights'] as $night) {
+                    ReservationNightRate::query()->create([
+                        'reservation_id' => $reservation->id,
+                        'reservation_room_id' => $reservationRoom->id,
+                        'room_type_id' => $reservationRoom->room_type_id,
+                        'rate_plan_id' => $reservationRoom->rate_plan_id,
+                        'stay_date' => $night['stay_date'],
+                        'quantity' => $night['quantity'],
+                        'unit_rate' => $night['unit_rate'],
+                        'line_total' => $night['line_total'],
+                        'tax_rate' => $night['tax_rate'],
+                        'tax_amount' => $night['tax_amount'],
+                        'gross_total' => $night['gross_total'],
+                    ]);
+                }
+
+                $extraSubtotal = round($extraSubtotal + $quote['subtotal'], 2);
+                $extraTax = round($extraTax + $quote['tax'], 2);
+            }
+
+            $extraTotal = round($extraSubtotal + $extraTax, 2);
+            $reservation->update([
+                'check_out_date' => $newCheckout->toDateString(),
+                'subtotal' => round((float) $reservation->subtotal + $extraSubtotal, 2),
+                'tax' => round((float) $reservation->tax + $extraTax, 2),
+                'total' => round((float) $reservation->total + $extraTotal, 2),
+            ]);
+
+            $folio = Folio::query()->where('stay_id', $stay->id)->lockForUpdate()->firstOrFail();
+            $this->folios->addCharge($folio, [
+                'category' => 'room',
+                'description' => 'Stay extension through '.$newCheckout->toDateString(),
+                'quantity' => 1,
+                'subtotal' => $extraSubtotal,
+                'tax' => $extraTax,
+                'amount' => $extraTotal,
+                'source_key' => 'stay-extension:'.$stay->id.':'.$newCheckout->toDateString(),
+            ]);
+
+            return $stay->fresh(['reservation', 'rooms.room', 'folio']);
+        }, 3);
+    }
+
+    public function updateHousekeeping(Room $room, string $status): Room
+    {
+        if (! in_array($status, ['clean', 'dirty', 'inspected', 'out_of_order'], true)) {
+            throw new RuntimeException('Unsupported housekeeping status.');
+        }
+
+        $room->update(['housekeeping_status' => $status]);
+
+        return $room->fresh();
+    }
+
     public function checkOut(Stay $stay): array
     {
         return DB::transaction(function () use ($stay) {
@@ -149,16 +335,36 @@ class FrontDeskService
             }
 
             $folio = Folio::query()->where('stay_id', $stay->id)->lockForUpdate()->firstOrFail();
+
+            $activeRoomService = RestaurantOrder::query()
+                ->where('folio_id', $folio->id)
+                ->where('order_type', 'room_service')
+                ->whereIn('status', ['accepted', 'preparing', 'ready'])
+                ->exists();
+
+            if ($activeRoomService) {
+                throw new RuntimeException('Complete or cancel pending room-service orders before checkout.');
+            }
+
             $folio = $this->folios->recalculate($folio);
 
-            if ((float) $folio->balance > 0.009) {
+            if (abs((float) $folio->balance) > 0.009) {
                 throw new RuntimeException('The folio must be fully settled before checkout.');
             }
 
             $invoice = $this->invoices->createFromFolio($folio);
 
+            $activeAssignments = StayRoom::query()
+                ->where('stay_id', $stay->id)
+                ->whereNull('released_at')
+                ->get();
+
+            foreach ($activeAssignments as $assignment) {
+                Room::query()->whereKey($assignment->room_id)->update(['housekeeping_status' => 'dirty']);
+                $assignment->update(['released_at' => now()]);
+            }
+
             $folio->update(['status' => 'closed']);
-            StayRoom::query()->where('stay_id', $stay->id)->whereNull('released_at')->update(['released_at' => now()]);
             $stay->update(['status' => 'checked_out', 'checked_out_at' => now()]);
             Reservation::query()->whereKey($stay->reservation_id)->update(['status' => 'checked_out']);
 
