@@ -1,43 +1,48 @@
 # Hotel Vastu Booking
 
-Laravel 13 application for the separate Hotel Vastu booking, PMS and restaurant system.
+Laravel 13 application for the separate Hotel Vastu booking, PMS, billing and restaurant system.
 
 ## Deployment boundary
 
-- `hotelvastu.com` — existing static public website
-- `booking.hotelvastu.com` — this Laravel application
+- `hotelvastu.com` — static public/SEO website
+- `booking.hotelvastu.com` — this Laravel booking/PMS application
 
-The static site remains independent. Its Book Now links should be switched only after this app is deployed and real hotel inventory/rates are configured.
+Public booking CTAs and the homepage stay form now point to `https://booking.hotelvastu.com/`. The public form sends only non-PII stay-prefill values (dates, adults and room preference); guest name/contact details are collected inside the booking application.
 
 ## Implemented
 
 - PHP 8.3+ / Laravel 13 / MySQL production configuration
-- physical room inventory and room types
+- physical rooms, room types and housekeeping states
 - maintenance room blocks
 - room capacity validation
 - rate plans, base rates and non-overlapping dated rates
-- effective hotel/restaurant tax rules
-- overlap-safe availability calculation
-- 10-minute transaction-locked reservation holds
-- guest details and one-time hold conversion
-- immutable nightly reservation price snapshots
-- booking number + opaque public confirmation token
+- per-night effective tax calculation and immutable tax/rate snapshots
+- overlap-safe availability and 10-minute transaction-locked holds
+- guest details, booking number and opaque public confirmation token
+- pre-arrival reservation editing with availability recheck and repricing
 - cancellation and no-show lifecycle
-- manual verified payments: cash, UPI, card, bank transfer
-- idempotent payment/refund service
-- front desk check-in with physical room assignment
+- verified manual payments: cash, UPI, card and bank transfer
+- overpayment prevention and idempotent payment/refund accounting
+- optional verified Razorpay online checkout, signature verification and captured-payment verification
+- signed Razorpay webhooks for captured payments and refund reconciliation
+- provider-backed online refunds with pending/processed/failed lifecycle
+- front desk check-in with physical-room assignment
+- room transfers, stay extensions and housekeeping workflow
 - guest stays and guest folios
+- pending room-service checkout protection
+- checkout settlement enforcement
+- immutable invoice snapshots and post-invoice credit notes
 - restaurant dine-in, room service and takeaway
-- KOT creation and kitchen status flow
-- served room-service posting to guest folio
-- checkout balance enforcement
-- invoice snapshot generation
-- role-protected admin login and modules
-- administrator setup for rooms, rates, tax, maintenance blocks and restaurant master data
-- dashboard and basic operational reports
-- GitHub Actions Booking CI using PHP 8.3 and SQLite test database
+- multi-item POS orders, table occupancy and KOT workflow
+- role-protected admin modules
+- administrator user management, password reset and audit trail
+- operational payments/refunds console
+- occupancy, ADR, room revenue, tax, payment split and restaurant reports
+- SQLite feature CI plus MySQL 8 production-contract CI
+- MySQL row-lock contract coverage
+- static-site and browser booking-redirect regression guards
 
-No room count, room number, price, tax, occupancy limit, payment credential or hotel policy is invented by seed data.
+No room count, room number, price, tax, capacity, menu item, table count or hotel policy is invented by seed data.
 
 ## Admin roles
 
@@ -53,7 +58,7 @@ Create the first administrator after migration:
 php artisan admin:create admin@example.com --name="Hotel Administrator" --role=administrator
 ```
 
-The command prompts securely for a password and requires at least 12 characters.
+The command securely prompts for a password and requires at least 12 characters.
 
 ## Local setup
 
@@ -78,11 +83,41 @@ Open:
 - customer booking: `http://127.0.0.1:8000`
 - admin: `http://127.0.0.1:8000/admin/login`
 
-Before customer booking can proceed, configure real physical rooms, a rate plan, room pricing and applicable tax rules in Admin → Setup.
+Configure real rooms, rates, tax rules and restaurant master data before accepting bookings.
 
-## Payments
+## Razorpay activation
 
-The current application records **verified hotel-side payments** only: cash, UPI, card and bank transfer. It does not pretend an external online gateway payment succeeded. A real online gateway must be connected with its provider credentials, signed order/payment verification and webhook processing before `Book Now` can collect money online.
+Online payment remains hidden unless credentials are configured:
+
+```env
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+```
+
+For production:
+
+1. Set production Razorpay keys only in the server environment.
+2. Configure the webhook URL as `https://booking.hotelvastu.com/payments/razorpay/webhook`.
+3. Subscribe to captured-payment and refund lifecycle events used by the application.
+4. Keep the webhook secret different from the API key secret.
+5. Confirm payment capture behavior in the Razorpay account before live traffic.
+6. Run a real low-value live payment/refund reconciliation test before opening public checkout.
+
+Never commit live gateway credentials.
+
+## Production deployment checklist
+
+1. Point `booking.hotelvastu.com` DNS to the Laravel hosting environment.
+2. Set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://booking.hotelvastu.com`.
+3. Use production MySQL credentials and take a backup before migrations.
+4. Run `php artisan migrate --force`.
+5. Run `php artisan config:cache`, `php artisan route:cache` and `php artisan view:cache`.
+6. Ensure `storage/` and `bootstrap/cache/` are writable by PHP.
+7. Create the first administrator securely.
+8. Enter real rooms, rates, taxes, tables and menu items in Admin.
+9. Verify `/health`, customer booking, admin login, check-in/out, POS/KOT and invoice flow.
+10. If Razorpay is enabled, verify signed checkout, webhook delivery and refund reconciliation.
 
 ## Tests
 
@@ -90,4 +125,4 @@ The current application records **verified hotel-side payments** only: cash, UPI
 composer test
 ```
 
-CI runs Composer validation, dependency installation and the PHP test suite for every booking-system change.
+GitHub Booking CI treats warnings as failures and runs the PHP suite against both SQLite and MySQL 8.
