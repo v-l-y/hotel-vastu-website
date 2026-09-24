@@ -294,26 +294,25 @@ class InvoiceService
             throw new RuntimeException('Customer GSTIN is invalid. Correct billing details before issuing the invoice.');
         }
 
+        $name = trim((string) ($recipient['name'] ?? ''));
         $address = trim((string) ($recipient['address'] ?? ''));
         $state = trim((string) ($recipient['state'] ?? ''));
         $stateCode = trim((string) ($recipient['state_code'] ?? ''));
+        $completeRecipientIdentity =
+            $name !== ''
+            && $address !== ''
+            && $state !== ''
+            && preg_match('/^[0-9]{2}$/', $stateCode) === 1;
 
-        if (
-            $gstin !== ''
-            && (
-                $address === ''
-                || $state === ''
-                || ! preg_match('/^[0-9]{2}$/', $stateCode)
-            )
-        ) {
+        if ($gstin !== '' && ! $completeRecipientIdentity) {
             throw new RuntimeException(
-                'Registered customer billing address, State and State code are required for the GST invoice.'
+                'Registered customer name, billing address, State and State code are required for the GST invoice.'
             );
         }
 
-        if ($gstin === '' && $total >= 50000 && $address === '') {
+        if ($gstin === '' && $total >= 50000 && ! $completeRecipientIdentity) {
             throw new RuntimeException(
-                'Billing address is required for an unregistered customer when the invoice value is ₹50,000 or more.'
+                'Customer name, billing address, State and State code are required when an unregistered GST invoice is ₹50,000 or more.'
             );
         }
     }
