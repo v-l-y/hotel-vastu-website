@@ -29,6 +29,7 @@ class PaymentServiceTest extends TestCase
             'reservation_id'=>$reservation->id,
             'method'=>'upi',
             'amount'=>1000,
+            'external_reference'=>'upi-pay-1',
         ];
 
         $first = $service->record($payload);
@@ -37,6 +38,32 @@ class PaymentServiceTest extends TestCase
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Payment::query()->count());
         $this->assertSame('paid', $reservation->fresh()->payment_status);
+    }
+
+    public function test_non_cash_payment_requires_a_reference_at_service_boundary(): void
+    {
+        $reservation = Reservation::query()->create([
+            'booking_number'=>'HV-PAY-REF-REQ',
+            'public_token'=>'69696969-6969-4969-8969-696969696969',
+            'check_in_date'=>today(),
+            'check_out_date'=>today()->addDay(),
+            'status'=>'confirmed',
+            'pricing_status'=>'priced',
+            'payment_status'=>'unpaid',
+            'subtotal'=>1000,
+            'tax'=>0,
+            'total'=>1000,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('payment reference is required');
+
+        app(PaymentService::class)->record([
+            'idempotency_key'=>'70707070-7070-4070-8070-707070707070',
+            'reservation_id'=>$reservation->id,
+            'method'=>'upi',
+            'amount'=>500,
+        ]);
     }
 
     public function test_manual_payment_cannot_exceed_outstanding_balance(): void
@@ -74,16 +101,28 @@ class PaymentServiceTest extends TestCase
             'reservation_id'=>$reservation->id,
             'method'=>'card',
             'amount'=>1000,
+            'external_reference'=>'card-pay-1',
         ]);
 
-        $service->refund($payment, [
+        $refund = $service->refund($payment, [
             'idempotency_key'=>'79797979-7979-4797-8797-797979797979',
             'amount'=>250,
+            'refund_type'=>'service_recovery',
             'reason'=>'Guest adjustment',
         ]);
 
+        $this->assertSame('pending_manual', $refund->status);
+        $this->assertSame('paid', $reservation->fresh()->payment_status);
+
+        $service->confirmManualRefund($refund, 'card-refund-1');
+
         $this->assertSame('partially_paid', $reservation->fresh()->payment_status);
-        $this->assertDatabaseHas('refunds', ['payment_id'=>$payment->id, 'amount'=>250]);
+        $this->assertDatabaseHas('refunds', [
+            'payment_id'=>$payment->id,
+            'amount'=>250,
+            'refund_type'=>'service_recovery',
+            'status'=>'succeeded',
+        ]);
     }
     public function test_restaurant_payment_requires_a_served_non_room_service_order(): void
     {
