@@ -255,7 +255,7 @@ if(!contactPage.includes(`href="${bookingUrl}"`)) fail("contact.html","online bo
 const homeBookingSource=read("js/home-booking.js");
 const homeBookingMarkup=read("index.html").match(/<form[^>]*data-home-booking[^>]*>[\s\S]*?<\/form>/i)?.[0]||"";
 if(!homeBookingMarkup.includes(`action="${bookingUrl}"`)||!homeBookingMarkup.includes('method="get"')) fail("index.html","homepage booking form must submit to booking.hotelvastu.com");
-for(const name of ["check_in","check_out","adults","room_code"]){
+for(const name of ["check_in","check_out","adults","children","room_code"]){
   if(!homeBookingMarkup.includes(`name="${name}"`)) fail("index.html","homepage booking form missing field "+name);
 }
 if(homeBookingSource.includes("sessionStorage")||homeBookingSource.includes("contact.html#booking")) fail("js/home-booking.js","homepage booking must redirect directly without local draft storage");
