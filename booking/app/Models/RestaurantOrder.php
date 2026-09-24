@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RestaurantOrder extends Model
 {
     protected $fillable = [
-        'order_number', 'order_type', 'folio_id', 'restaurant_table_id',
+        'order_number', 'idempotency_key', 'order_type', 'folio_id', 'restaurant_table_id',
         'guest_name', 'guest_phone', 'status', 'payment_status',
         'subtotal', 'tax', 'total',
     ];
@@ -22,4 +23,6 @@ class RestaurantOrder extends Model
     public function items(): HasMany { return $this->hasMany(RestaurantOrderItem::class); }
     public function payments(): HasMany { return $this->hasMany(Payment::class); }
     public function kitchenTicket(): HasOne { return $this->hasOne(KitchenTicket::class); }
+    public function restaurantTable(): BelongsTo { return $this->belongsTo(RestaurantTable::class); }
+    public function folio(): BelongsTo { return $this->belongsTo(Folio::class); }
 }
