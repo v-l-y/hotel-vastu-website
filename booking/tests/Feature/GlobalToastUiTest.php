@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class GlobalToastUiTest extends TestCase
 {
-    public function test_shared_toaster_supports_flash_validation_and_frontend_messages(): void
+    public function test_shared_toaster_normalizes_flash_validation_and_frontend_messages(): void
     {
         $toast = file_get_contents(resource_path('views/partials/toast.blade.php'));
 
@@ -14,9 +14,14 @@ class GlobalToastUiTest extends TestCase
         $this->assertStringContainsString("'status' => 'success'", $toast);
         $this->assertStringContainsString("'error' => 'error'", $toast);
         $this->assertStringContainsString('$errors->all()', $toast);
+        $this->assertStringContainsString('->unique()', $toast);
+        $this->assertStringContainsString('Check the form', $toast);
+        $this->assertStringContainsString('Illuminate\\Support\\Js::from', $toast);
         $this->assertStringContainsString('window.HotelToast', $toast);
-        $this->assertStringContainsString('success: (message', $toast);
-        $this->assertStringContainsString('error: (message', $toast);
+        $this->assertStringContainsString('messageFromPayload', $toast);
+        $this->assertStringContainsString('errorFromPayload', $toast);
+        $this->assertStringContainsString('const maxVisible = 4', $toast);
+        $this->assertStringContainsString('activeToasts', $toast);
         $this->assertStringContainsString('textContent = safeMessage', $toast);
     }
 
@@ -42,7 +47,7 @@ class GlobalToastUiTest extends TestCase
         }
     }
 
-    public function test_duplicate_validation_banners_are_removed_and_ajax_uses_toasts(): void
+    public function test_duplicate_validation_banners_are_removed_and_ajax_uses_shared_error_parsing(): void
     {
         foreach ([
             resource_path('views/admin/layout.blade.php'),
@@ -60,7 +65,11 @@ class GlobalToastUiTest extends TestCase
         }
 
         $guest = file_get_contents(resource_path('views/booking/guest.blade.php'));
+        $this->assertIsString($guest);
         $this->assertStringContainsString('window.HotelToast?.success', $guest);
         $this->assertStringContainsString('window.HotelToast?.error', $guest);
+        $this->assertStringContainsString('window.HotelToast?.messageFromPayload', $guest);
+        $this->assertStringContainsString('response.json().catch(() => ({}))', $guest);
+        $this->assertStringNotContainsString("payload?.errors?.promo_code?.[0]", $guest);
     }
 }
