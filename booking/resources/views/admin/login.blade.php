@@ -10,7 +10,7 @@
 <div class="alert-error" role="alert" aria-live="polite">{{ $errors->first() }}</div>
 @endif
 
-<form method="post" action="{{ route('admin.login.submit') }}" novalidate>
+<form method="post" action="{{ route('admin.login.submit') }}">
 @csrf
 <label>Email address
 <input type="email" name="email" autocomplete="username" inputmode="email" required autofocus value="{{ old('email') }}" placeholder="name@example.com">
