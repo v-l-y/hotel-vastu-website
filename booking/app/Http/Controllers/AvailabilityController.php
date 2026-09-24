@@ -55,17 +55,30 @@ class AvailabilityController extends Controller
 
         $quote = null;
         $quoteError = null;
+        $adults = (int) $data['adults'];
+        $children = (int) ($data['children'] ?? 0);
 
-        try {
-            $quote = $pricingService->quote(
-                $roomType->id,
-                $ratePlan->id,
-                $checkIn,
-                $checkOut,
-                $rooms
-            );
-        } catch (RuntimeException $exception) {
-            $quoteError = $exception->getMessage();
+        if ($roomType->max_adults !== null && $adults > ($roomType->max_adults * $rooms)) {
+            $quoteError = 'The selected room quantity cannot accommodate this many adults.';
+        } elseif (
+            $roomType->max_children !== null
+            && $children > ($roomType->max_children * $rooms)
+        ) {
+            $quoteError = 'The selected room quantity cannot accommodate this many children.';
+        }
+
+        if ($quoteError === null) {
+            try {
+                $quote = $pricingService->quote(
+                    $roomType->id,
+                    $ratePlan->id,
+                    $checkIn,
+                    $checkOut,
+                    $rooms
+                );
+            } catch (RuntimeException $exception) {
+                $quoteError = $exception->getMessage();
+            }
         }
 
         return view('booking.search', [
