@@ -1,6 +1,6 @@
-.site-header{position:fixed;inset:0 0 auto;z-index:1000;background:rgba(255,253,249,.94);backdrop-filter:blur(16px);color:var(--ink);border-bottom:1px solid rgba(33,26,22,.07);box-shadow:0 6px 22px rgba(33,26,22,.04);transition:background .25s ease,box-shadow .25s ease,border-color .25s ease}.site-header.is-scrolled{background:rgba(255,253,249,.985);border-color:rgba(33,26,22,.11);box-shadow:0 12px 36px rgba(33,26,22,.09)}.site-header.is-scrolled .brand-logo img{width:158px}
+.site-header{position:fixed;inset:0 0 auto;z-index:1000;background:rgba(255,253,249,.94);backdrop-filter:blur(16px);color:var(--ink);border-bottom:1px solid rgba(33,26,22,.07);box-shadow:0 6px 22px rgba(33,26,22,.04);transition:background .25s ease,box-shadow .25s ease,border-color .25s ease}.site-header.is-scrolled{background:rgba(255,253,249,.985);border-color:rgba(33,26,22,.11);box-shadow:0 12px 36px rgba(33,26,22,.09)}
 .nav{min-height:var(--header);display:flex;align-items:center;justify-content:space-between;gap:22px}
-.brand{display:inline-flex;align-items:center;line-height:0}.brand-logo img{display:block;width:168px;height:auto;max-height:52px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(33,26,22,.08));transition:width .24s ease,filter .24s ease}
+.brand{display:inline-flex;align-items:center;line-height:0}.brand-logo img{display:block;width:168px;height:auto;max-height:52px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(33,26,22,.08));transition:filter .24s ease}
 
 
 .nav-links{display:flex;align-items:center;gap:21px}
