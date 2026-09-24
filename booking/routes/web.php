@@ -27,6 +27,7 @@ Route::get('/', [AvailabilityController::class, 'index'])->name('booking.search'
 Route::get('/availability', [AvailabilityController::class, 'search'])->name('booking.availability');
 Route::post('/holds', [ReservationHoldController::class, 'store'])->middleware('throttle:5,1')->name('booking.holds.store');
 Route::get('/holds/{token}/guest', [GuestDetailsController::class, 'show'])->name('booking.guest');
+Route::post('/holds/{token}/promo-preview', [GuestDetailsController::class, 'previewPromo'])->middleware('throttle:20,1')->name('booking.promo.preview');
 Route::post('/holds/{token}/confirm', [BookingVerificationController::class, 'send'])->middleware('throttle:5,1')->name('booking.otp.send');
 Route::get('/holds/{token}/verify', [BookingVerificationController::class, 'show'])->name('booking.otp.form');
 Route::post('/holds/{token}/verify', [BookingVerificationController::class, 'verify'])->middleware('throttle:10,1')->name('booking.otp.verify');
