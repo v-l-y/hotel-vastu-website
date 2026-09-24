@@ -42,6 +42,7 @@ class WebsiteBookingHandoffTest extends TestCase
             'check_in' => $checkIn,
             'check_out' => $checkOut,
             'adults' => 2,
+            'children' => 1,
             'room_code' => 'club',
         ]));
 
@@ -50,7 +51,34 @@ class WebsiteBookingHandoffTest extends TestCase
         $response->assertRedirect('/holds/'.$hold->token.'/guest');
         $this->assertSame($club->id, $hold->room_type_id);
         $this->assertSame(2, $hold->adults);
+        $this->assertSame(1, $hold->children);
         $this->assertSame(1, $hold->quantity);
+    }
+
+    public function test_room_page_room_code_only_prefills_search_without_validation_errors_or_hold(): void
+    {
+        $club = RoomType::query()->create([
+            'code' => 'club',
+            'name' => 'Club Room',
+            'max_adults' => 2,
+            'max_children' => 1,
+            'base_rate' => 3000,
+            'is_active' => true,
+        ]);
+        RatePlan::query()->create([
+            'code' => 'room-only',
+            'name' => 'Room Only',
+            'is_active' => true,
+        ]);
+
+        $this->get('/?room_code=club')
+            ->assertOk()
+            ->assertSee('Check room availability')
+            ->assertSee('value="'.$club->id.'" selected', false)
+            ->assertDontSee('The check in field is required')
+            ->assertDontSee('The check out field is required');
+
+        $this->assertSame(0, ReservationHold::query()->count());
     }
 
     public function test_guest_details_show_price_before_otp(): void
