@@ -18,6 +18,7 @@ class DemoBookingSeeder extends Seeder
         }
 
         $this->call(HotelSetupSeeder::class);
+        $this->call(DemoRestaurantSeeder::class);
 
         $ratePlans = collect([
             [
