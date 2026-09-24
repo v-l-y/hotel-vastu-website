@@ -30,6 +30,19 @@ class AdminAuthSecurityTest extends TestCase
         ]);
     }
 
+    public function test_login_returns_user_to_requested_admin_page(): void
+    {
+        $admin = $this->admin('intended@example.com');
+
+        $this->get('/admin/reports')
+            ->assertRedirect('/admin/login');
+
+        $this->post('/admin/login', [
+            'email' => $admin->email,
+            'password' => 'Strong!Password123',
+        ])->assertRedirect('/admin/reports');
+    }
+
     public function test_stale_session_version_is_rejected(): void
     {
         $admin = $this->admin('stale@example.com');
