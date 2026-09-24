@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CustomerMessageMail;
 use App\Models\Guest;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
@@ -34,8 +35,52 @@ class CustomerCommunicationTest extends TestCase
 
         $this->get('/confirmation/'.$reservation->public_token)
             ->assertOk()
+            ->assertSee('Booking confirmation')
             ->assertSee('Booking confirmed successfully!')
-            ->assertSee('Your room has been booked at Hotel Vastu Premium.');
+            ->assertSee('Your room has been booked at Hotel Vastu Premium.')
+            ->assertDontSee('Keep this secure link to check the latest booking status.')
+            ->assertDontSee('<strong>Status</strong>', false);
+    }
+
+    public function test_confirmation_email_contains_booking_details_without_status_link(): void
+    {
+        Mail::fake();
+
+        $reservation = $this->reservationWithGuest(
+            'HV-CONFIRM-MSG',
+            today()->addDay(),
+            'confirmation@example.com'
+        );
+
+        app(CustomerMessageService::class)->sendBookingConfirmation($reservation->fresh());
+
+        Mail::assertSent(CustomerMessageMail::class, function (CustomerMessageMail $mail) {
+            return str_contains($mail->messageBody, 'Your Hotel Vastu Premium booking is confirmed.')
+                && str_contains($mail->messageBody, 'Booking number: HV-CONFIRM-MSG')
+                && ! str_contains($mail->messageBody, 'View booking status:')
+                && ! str_contains($mail->messageBody, 'secure link');
+        });
+    }
+
+    public function test_cancellation_customer_notification_sends_email_copy_without_status_link(): void
+    {
+        Mail::fake();
+
+        $reservation = $this->reservationWithGuest(
+            'HV-CANCEL-MSG',
+            today()->addDays(2),
+            'cancelled@example.com'
+        );
+        $reservation->update(['status' => 'cancelled']);
+
+        app(CustomerMessageService::class)->sendCancellation($reservation->fresh());
+
+        Mail::assertSent(CustomerMessageMail::class, function (CustomerMessageMail $mail) {
+            return str_contains($mail->messageSubject, 'Booking cancelled - HV-CANCEL-MSG')
+                && str_contains($mail->messageBody, 'Status: Cancelled')
+                && ! str_contains($mail->messageBody, 'View booking status:')
+                && ! str_contains($mail->messageBody, '/confirmation/');
+        });
     }
 
     public function test_no_show_customer_notification_sends_email_copy(): void
@@ -47,7 +92,11 @@ class CustomerCommunicationTest extends TestCase
 
         app(CustomerMessageService::class)->sendNoShow($reservation->fresh());
 
-        Mail::assertSentCount(1);
+        Mail::assertSent(CustomerMessageMail::class, function (CustomerMessageMail $mail) {
+            return str_contains($mail->messageBody, 'Status: No show')
+                && ! str_contains($mail->messageBody, 'View booking status:')
+                && ! str_contains($mail->messageBody, '/confirmation/');
+        });
     }
 
     public function test_pre_arrival_reminder_is_sent_only_once(): void
@@ -66,7 +115,11 @@ class CustomerCommunicationTest extends TestCase
         $this->assertNotNull($reservation->fresh()->pre_arrival_reminder_sent_at);
         $this->assertSame(0, $service->sendForTomorrow());
 
-        Mail::assertSentCount(1);
+        Mail::assertSent(CustomerMessageMail::class, function (CustomerMessageMail $mail) {
+            return str_contains($mail->messageSubject, 'Stay reminder - HV-REMINDER-1')
+                && ! str_contains($mail->messageBody, 'Booking status:')
+                && ! str_contains($mail->messageBody, '/confirmation/');
+        });
     }
 
     private function reservationWithGuest(string $bookingNumber, mixed $checkIn, string $email): Reservation
