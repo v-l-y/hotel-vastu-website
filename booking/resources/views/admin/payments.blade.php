@@ -320,7 +320,7 @@
 <div class="payment-ledger-amount">
 <strong>₹{{ number_format((float)$payment->amount,2) }}</strong>
 @if($refunded > 0)<span class="muted">Refunded ₹{{ number_format($refunded,2) }}</span>@endif
-@if($pendingRefunds > 0)<span class="muted">Pending ₹{{ number_format($pendingRefunds,2) }}</span>@endif
+@if($pendingRefunds > 0)<span class="muted">Pending refund ₹{{ number_format($pendingRefunds,2) }}</span>@endif
 </div>
 </div>
 
