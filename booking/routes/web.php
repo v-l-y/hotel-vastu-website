@@ -56,6 +56,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,front_desk')->group(function () {
             Route::get('/front-desk', [FrontDeskController::class, 'index'])->name('front-desk');
+            Route::post('/front-desk/reservations/{reservation}/modify', [FrontDeskController::class, 'modifyReservation'])->name('front-desk.modify');
             Route::post('/front-desk/reservations/{reservation}/check-in', [FrontDeskController::class, 'checkIn'])->name('front-desk.check-in');
             Route::post('/front-desk/reservations/{reservation}/cancel', [FrontDeskController::class, 'cancel'])->name('front-desk.cancel');
             Route::post('/front-desk/reservations/{reservation}/no-show', [FrontDeskController::class, 'noShow'])->name('front-desk.no-show');
@@ -72,6 +73,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::middleware('admin.role:administrator,front_desk,accounts,restaurant')->group(function () {
+            Route::get('/payments', [PaymentController::class, 'index'])->name('payments');
             Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
             Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
         });
