@@ -80,7 +80,7 @@ class PaymentController extends Controller
         ]);
 
         try {
-            $service->refund($payment, [
+            $refund = $service->refund($payment, [
                 'idempotency_key' => (string) Str::uuid(),
                 'amount' => $data['amount'],
                 'reason' => $data['reason'] ?? null,
@@ -89,6 +89,11 @@ class PaymentController extends Controller
             return back()->withErrors(['refund' => $exception->getMessage()]);
         }
 
-        return back()->with('status', 'Refund recorded.');
+        return back()->with(
+            'status',
+            $refund->status === 'pending'
+                ? 'Online refund initiated and awaiting provider processing.'
+                : 'Refund completed.'
+        );
     }
 }

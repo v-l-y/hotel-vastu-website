@@ -41,14 +41,12 @@ class OnlinePaymentService
             throw new RuntimeException('Only confirmed priced reservations can be paid online.');
         }
 
-        $netPaid = $this->reservationNetPaid($reservation->id);
-        $due = round((float) $reservation->total - $netPaid, 2);
+        $due = round((float) $reservation->total - $this->reservationNetPaid($reservation->id), 2);
         if ($due <= 0) {
             throw new RuntimeException('This booking is already fully paid.');
         }
 
         $amountSubunits = (int) round($due * 100);
-
         $existing = PaymentGatewayOrder::query()
             ->where('provider', 'razorpay')
             ->where('reservation_id', $reservation->id)
@@ -103,7 +101,7 @@ class OnlinePaymentService
             ->where('provider_order_id', $providerOrderId)
             ->firstOrFail();
 
-        if ($gatewayOrder->status !== 'created' && $gatewayOrder->status !== 'paid') {
+        if (! in_array($gatewayOrder->status, ['created', 'paid'], true)) {
             throw new RuntimeException('This online payment order is no longer valid.');
         }
 
@@ -184,7 +182,6 @@ class OnlinePaymentService
                     if ((int) ($payment['amount'] ?? 0) !== (int) $gatewayOrder->amount_subunits) {
                         throw new RuntimeException('Webhook payment amount does not match booking order.');
                     }
-
                     if ($gatewayOrder->status === 'stale') {
                         throw new RuntimeException('Captured payment belongs to a stale booking order and requires manual reconciliation.');
                     }
@@ -195,24 +192,15 @@ class OnlinePaymentService
                         (int) $payment['amount']
                     );
                 }
-            } elseif (in_array($eventName, ['refund.processed', 'refund.failed'], true)) {
-                $refund = $payload['payload']['refund']['entity'] ?? [];
-                $providerRefundId = $refund['id'] ?? null;
-                $providerPaymentId = $refund['payment_id'] ?? null;
+            } elseif (in_array($eventName, ['refund.created', 'refund.processed', 'refund.failed'], true)) {
+                $providerRefund = $payload['payload']['refund']['entity'] ?? [];
+                $providerPaymentId = $providerRefund['payment_id'] ?? null;
 
-                if (! is_string($providerRefundId) || ! is_string($providerPaymentId)) {
+                if (! is_array($providerRefund) || ! is_string($providerPaymentId)) {
                     throw new RuntimeException('Malformed refund webhook.');
                 }
 
-                if ($eventName === 'refund.processed') {
-                    $this->payments->markProviderRefundProcessed($providerRefundId);
-                } else {
-                    $this->payments->markProviderRefundFailed($providerRefundId);
-                }
-
-                $event->update([
-                    'provider_payment_id' => $providerPaymentId,
-                ]);
+                $this->payments->reconcileProviderRefund($providerRefund);
             }
 
             $event->update([

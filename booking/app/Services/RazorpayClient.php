@@ -48,11 +48,19 @@ class RazorpayClient
         return $response->json();
     }
 
-    public function refundPayment(string $paymentId, int $amountSubunits, string $reason = ''): array
-    {
+    public function refundPayment(
+        string $paymentId,
+        int $amountSubunits,
+        string $receipt,
+        string $reason = ''
+    ): array {
         $this->assertEnabled();
 
-        $payload = ['amount' => $amountSubunits];
+        $payload = [
+            'amount' => $amountSubunits,
+            'receipt' => mb_substr($receipt, 0, 40),
+        ];
+
         if ($reason !== '') {
             $payload['notes'] = ['reason' => mb_substr($reason, 0, 250)];
         }
@@ -69,6 +77,21 @@ class RazorpayClient
         return $response->json();
     }
 
+    public function fetchRefundsForPayment(string $paymentId): array
+    {
+        $this->assertEnabled();
+
+        $response = $this->request()->get(
+            $this->base().'/payments/'.rawurlencode($paymentId).'/refunds'
+        );
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Online refund reconciliation could not be fetched.');
+        }
+
+        return $response->json('items', []);
+    }
+
     public function verifyCheckoutSignature(string $orderId, string $paymentId, string $signature): bool
     {
         $secret = $this->keySecret();
@@ -76,9 +99,10 @@ class RazorpayClient
             return false;
         }
 
-        $expected = hash_hmac('sha256', $orderId.'|'.$paymentId, $secret);
-
-        return hash_equals($expected, $signature);
+        return hash_equals(
+            hash_hmac('sha256', $orderId.'|'.$paymentId, $secret),
+            $signature
+        );
     }
 
     public function verifyWebhookSignature(string $rawBody, string $signature): bool
