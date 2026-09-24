@@ -6,12 +6,85 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Schema;
 
 Artisan::command('hotel:status', function () {
     $this->info('Hotel Vastu booking application is ready.');
 });
 
-Artisan::command('hotel:infra-check', function () {
+$billingSchemaRequirements = [
+    'invoices' => [
+        'public_token',
+        'document_type',
+        'restaurant_order_id',
+        'is_gst_invoice',
+        'cgst',
+        'sgst',
+        'igst',
+        'last_sent_at',
+    ],
+    'invoice_items' => [
+        'sac_code',
+        'tax_rate_percent',
+        'cgst_amount',
+        'sgst_amount',
+        'igst_amount',
+    ],
+    'restaurant_orders' => [
+        'guest_email',
+        'guest_gstin',
+        'guest_billing_address',
+        'guest_billing_state',
+        'guest_billing_state_code',
+    ],
+];
+
+$checkBillingSchema = static function () use ($billingSchemaRequirements): array {
+    $missing = [];
+
+    foreach ($billingSchemaRequirements as $table => $columns) {
+        if (! Schema::hasTable($table)) {
+            $missing[] = $table.' table';
+            continue;
+        }
+
+        foreach ($columns as $column) {
+            if (! Schema::hasColumn($table, $column)) {
+                $missing[] = $table.'.'.$column;
+            }
+        }
+    }
+
+    if (! Schema::hasTable('billing_document_sequences')) {
+        $missing[] = 'billing_document_sequences table';
+    }
+
+    return $missing;
+};
+
+Artisan::command('hotel:schema-check', function () use ($checkBillingSchema) {
+    try {
+        DB::select('SELECT 1');
+        $missing = $checkBillingSchema();
+    } catch (\Throwable $exception) {
+        $this->error('Database schema check failed: '.$exception->getMessage());
+        return 1;
+    }
+
+    if ($missing !== []) {
+        $this->error('Database schema is behind the application.');
+        foreach ($missing as $item) {
+            $this->line(' - Missing: '.$item);
+        }
+        $this->line('Run: php artisan migrate');
+        return 1;
+    }
+
+    $this->info('Database schema is current for hotel and restaurant billing.');
+    return 0;
+})->purpose('Verify required billing schema before serving the application.');
+
+Artisan::command('hotel:infra-check', function () use ($checkBillingSchema) {
     if (config('session.driver') !== 'redis') {
         $this->error('SESSION_DRIVER must be redis.');
         return 1;
@@ -29,6 +102,15 @@ Artisan::command('hotel:infra-check', function () {
 
     try {
         DB::select('SELECT 1');
+
+        $missing = $checkBillingSchema();
+        if ($missing !== []) {
+            $this->error('Database schema is behind the application. Run: php artisan migrate');
+            foreach ($missing as $item) {
+                $this->line(' - Missing: '.$item);
+            }
+            return 1;
+        }
 
         $key = 'hotel-vastu-infra-check-'.bin2hex(random_bytes(8));
         cache()->put($key, 'ok', 30);
