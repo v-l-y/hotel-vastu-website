@@ -20,7 +20,7 @@
   .availability-bar{grid-template-columns:1fr 1fr;padding:18px;gap:16px}
   .availability-field{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--line)}
   .availability-submit{margin-left:0;min-width:0;width:100%}
-  .menu-btn{display:block}
+  .menu-btn{display:grid;place-items:center;flex:0 0 44px}
   .nav-links{display:none;position:absolute;top:var(--header);left:0;right:0;padding:22px 24px 28px;background:rgba(255,253,249,.99);color:var(--ink);border-top:1px solid var(--line);box-shadow:0 22px 45px rgba(33,26,22,.14);flex-direction:column;align-items:flex-start;gap:8px}
   .nav-links.open{display:flex}
   .nav-links>a:not(.btn){width:100%;padding:11px 0}
