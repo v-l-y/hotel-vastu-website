@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use App\Models\PaymentGatewayOrder;
 use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\RoomType;
@@ -89,6 +90,11 @@ class ReservationLifecycleService
             ]);
 
             $reservation = $this->pricing->priceReservation($reservation->fresh('rooms'));
+
+            PaymentGatewayOrder::query()
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'created')
+                ->update(['status' => 'stale']);
 
             $payments = (float) Payment::query()
                 ->where('reservation_id', $reservation->id)

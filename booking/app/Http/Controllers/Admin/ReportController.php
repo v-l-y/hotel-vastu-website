@@ -37,7 +37,10 @@ class ReportController extends Controller
 
         $bookedRoomNights = (int) (clone $nightQuery)->sum('reservation_night_rates.quantity');
         $roomRevenue = (float) (clone $nightQuery)->sum('reservation_night_rates.line_total');
-        $activeRooms = Room::query()->where('status', 'active')->count();
+        $activeRooms = Room::query()
+            ->where('status', 'active')
+            ->where('housekeeping_status', '!=', 'out_of_order')
+            ->count();
         $days = $from->startOfDay()->diffInDays($to->startOfDay()) + 1;
         $availableRoomNights = $activeRooms * $days;
 

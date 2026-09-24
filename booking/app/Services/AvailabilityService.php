@@ -24,13 +24,15 @@ class AvailabilityService
         $totalRooms = Room::query()
             ->where('room_type_id', $roomTypeId)
             ->where('status', 'active')
+            ->where('housekeeping_status', '!=', 'out_of_order')
             ->count();
 
         $blockedRooms = RoomBlock::query()
             ->where('status', 'active')
             ->whereHas('room', fn ($query) => $query
                 ->where('room_type_id', $roomTypeId)
-                ->where('status', 'active'))
+                ->where('status', 'active')
+                ->where('housekeeping_status', '!=', 'out_of_order'))
             ->whereDate('starts_on', '<', $checkOut->toDateString())
             ->whereDate('ends_on', '>', $checkIn->toDateString())
             ->distinct()

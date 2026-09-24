@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Folio;
 use App\Models\Payment;
+use App\Models\PaymentGatewayOrder;
 use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\RestaurantOrder;
@@ -52,6 +53,13 @@ class PaymentService
                 'external_reference' => $data['external_reference'] ?? null,
                 'paid_at' => ($data['status'] ?? 'succeeded') === 'succeeded' ? now() : null,
             ]);
+
+            if ($payment->reservation_id !== null) {
+                PaymentGatewayOrder::query()
+                    ->where('reservation_id', $payment->reservation_id)
+                    ->where('status', 'created')
+                    ->update(['status' => 'stale']);
+            }
 
             $this->syncTarget($payment);
 
