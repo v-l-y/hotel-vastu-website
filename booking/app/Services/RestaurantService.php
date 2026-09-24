@@ -114,8 +114,14 @@ class RestaurantService
                     ->sum('rate_percent');
                 $tax = round($subtotal * ($taxRate / 100), 2);
 
-                $guestName = trim((string) ($data['guest_name'] ?? ''));
-                $guestPhone = trim((string) ($data['guest_phone'] ?? ''));
+                $directBill = $type !== 'room_service';
+                $guestName = $directBill ? trim((string) ($data['guest_name'] ?? '')) : '';
+                $guestPhone = $directBill ? trim((string) ($data['guest_phone'] ?? '')) : '';
+                $guestEmail = $directBill ? trim((string) ($data['guest_email'] ?? '')) : '';
+                $guestGstin = $directBill ? strtoupper(trim((string) ($data['guest_gstin'] ?? ''))) : '';
+                $guestBillingAddress = $directBill ? trim((string) ($data['guest_billing_address'] ?? '')) : '';
+                $guestBillingState = $directBill ? trim((string) ($data['guest_billing_state'] ?? '')) : '';
+                $guestBillingStateCode = $directBill ? trim((string) ($data['guest_billing_state_code'] ?? '')) : '';
 
                 $order = RestaurantOrder::query()->create([
                     'order_number' => 'RO-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
@@ -125,6 +131,11 @@ class RestaurantService
                     'restaurant_table_id' => $table?->id,
                     'guest_name' => $guestName !== '' ? $guestName : null,
                     'guest_phone' => $guestPhone !== '' ? $guestPhone : null,
+                    'guest_email' => $guestEmail !== '' ? $guestEmail : null,
+                    'guest_gstin' => $guestGstin !== '' ? $guestGstin : null,
+                    'guest_billing_address' => $guestBillingAddress !== '' ? $guestBillingAddress : null,
+                    'guest_billing_state' => $guestBillingState !== '' ? $guestBillingState : null,
+                    'guest_billing_state_code' => $guestBillingStateCode !== '' ? $guestBillingStateCode : null,
                     'status' => 'accepted',
                     'payment_status' => $type === 'room_service' ? 'room_charge_pending' : 'unpaid',
                     'subtotal' => $subtotal,
@@ -264,6 +275,11 @@ class RestaurantService
             'restaurant_table_id' => (int) ($data['restaurant_table_id'] ?? 0),
             'guest_name' => trim((string) ($data['guest_name'] ?? '')),
             'guest_phone' => trim((string) ($data['guest_phone'] ?? '')),
+            'guest_email' => trim((string) ($data['guest_email'] ?? '')),
+            'guest_gstin' => strtoupper(trim((string) ($data['guest_gstin'] ?? ''))),
+            'guest_billing_address' => trim((string) ($data['guest_billing_address'] ?? '')),
+            'guest_billing_state' => trim((string) ($data['guest_billing_state'] ?? '')),
+            'guest_billing_state_code' => trim((string) ($data['guest_billing_state_code'] ?? '')),
             'items' => $this->requestedItems($data),
         ];
 
@@ -273,6 +289,11 @@ class RestaurantService
             'restaurant_table_id' => (int) ($order->restaurant_table_id ?? 0),
             'guest_name' => trim((string) ($order->guest_name ?? '')),
             'guest_phone' => trim((string) ($order->guest_phone ?? '')),
+            'guest_email' => trim((string) ($order->guest_email ?? '')),
+            'guest_gstin' => strtoupper(trim((string) ($order->guest_gstin ?? ''))),
+            'guest_billing_address' => trim((string) ($order->guest_billing_address ?? '')),
+            'guest_billing_state' => trim((string) ($order->guest_billing_state ?? '')),
+            'guest_billing_state_code' => trim((string) ($order->guest_billing_state_code ?? '')),
             'items' => $order->items()
                 ->orderBy('id')
                 ->get()
