@@ -133,8 +133,48 @@ Never commit live gateway credentials.
 
 ## Tests
 
+Quick application test:
+
 ```bash
 composer test
 ```
 
-GitHub Booking CI treats warnings as failures and runs the PHP suite against both SQLite and MySQL 8.
+### Full local GitHub-CI parity on Windows
+
+The repository includes a local runner that mirrors the Booking CI gates: v1.0 scope-freeze verification, Composer validation/install, SQLite feature suite, route/view cache build, and the full MySQL production-contract suite.
+
+From `booking/`:
+
+```bat
+scripts\local-ci.cmd
+```
+
+The default local MySQL test connection is:
+
+- host: `127.0.0.1`
+- port: `3306`
+- database: `hotel_vastu_booking_ci`
+- username: `root`
+- password: empty
+
+For a different local MySQL password or port:
+
+```bat
+scripts\local-ci.cmd -MySqlPassword "your-password" -MySqlPort 3306
+```
+
+Or from PowerShell:
+
+```powershell
+.\scripts\local-ci.ps1 -MySqlUsername root -MySqlPassword ""
+```
+
+Safety guarantees:
+
+- the runner refuses a MySQL database name unless it ends in `_ci` or `_test`;
+- it never uses the normal `hotel_vastu_booking` database by default;
+- the existing local `.env` is backed up before the run and restored in `finally`, including failed runs;
+- `.env.example` is used temporarily so route/view cache checks match GitHub CI;
+- required PHP 8.3 extensions are checked before tests start.
+
+GitHub Booking CI treats warnings as failures and runs the PHP suite against both SQLite and MySQL 8. The local runner executes the same application gates against the locally installed MySQL-compatible server. For engine-identical verification, use MySQL 8.4 locally.
