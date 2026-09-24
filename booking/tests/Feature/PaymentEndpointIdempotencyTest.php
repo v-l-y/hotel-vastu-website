@@ -6,6 +6,7 @@ use App\Models\AdminUser;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Reservation;
+use App\Models\RestaurantOrder;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -168,6 +169,45 @@ class PaymentEndpointIdempotencyTest extends TestCase
         $this->withSession(['admin_user_id' => $admin->id])
             ->get('/admin/payments')
             ->assertOk();
+    }
+
+    public function test_front_desk_payment_form_renders_required_idempotency_token(): void
+    {
+        $admin = $this->administrator();
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->get('/admin/front-desk')
+            ->assertOk()
+            ->assertSee('name="idempotency_key"', false);
+    }
+
+    public function test_restaurant_quick_pay_uses_only_remaining_balance_after_partial_payment(): void
+    {
+        $admin = $this->administrator();
+
+        $order = RestaurantOrder::query()->create([
+            'order_number' => 'RO-QUICK-PAY-BALANCE',
+            'order_type' => 'takeaway',
+            'status' => 'served',
+            'payment_status' => 'unpaid',
+            'subtotal' => 500,
+            'tax' => 0,
+            'total' => 500,
+        ]);
+
+        app(PaymentService::class)->record([
+            'idempotency_key' => '67676767-6767-4767-8767-676767676767',
+            'restaurant_order_id' => $order->id,
+            'method' => 'cash',
+            'amount' => 200,
+        ]);
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->get('/admin/restaurant')
+            ->assertOk()
+            ->assertSee('Due ₹300.00')
+            ->assertSee('name="amount" value="300.00"', false)
+            ->assertSee('Pay balance');
     }
 
 }
