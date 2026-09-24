@@ -119,6 +119,7 @@ class PaymentController extends Controller
             'restaurantOrders' => $restaurantOrders,
             'invoices' => $showHotelPayments
                 ? Invoice::query()
+                    ->where('document_type', 'hotel')
                     ->latest('id')
                     ->paginate(20, ['*'], 'invoices_page')
                     ->withQueryString()
