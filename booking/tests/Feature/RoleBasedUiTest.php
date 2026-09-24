@@ -46,11 +46,11 @@ class RoleBasedUiTest extends TestCase
             $response->assertOk();
 
             foreach ($expectations['see'] as $label) {
-                $response->assertSee($label);
+                $response->assertSee($label, false);
             }
 
             foreach ($expectations['hide'] as $label) {
-                $response->assertDontSee($label);
+                $response->assertDontSee($label, false);
             }
         }
     }
