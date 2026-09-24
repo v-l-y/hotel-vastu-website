@@ -45,8 +45,8 @@ class RestaurantController extends Controller
                 ])
                 ->whereIn('status', ['served', 'cancelled'])
                 ->orderByDesc('id')
-                ->limit(50)
-                ->get();
+                ->paginate(20, ['*'], 'history_page')
+                ->withQueryString();
 
         return view('admin.restaurant', [
             'kitchenOnly' => $kitchenOnly,
