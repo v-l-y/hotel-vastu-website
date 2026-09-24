@@ -65,6 +65,11 @@ class RestaurantController extends Controller
             'status' => ['required', 'in:preparing,ready,served,cancelled'],
         ]);
 
+        $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
+        if ($role === 'kitchen' && ! in_array($data['status'], ['preparing', 'ready'], true)) {
+            abort(403);
+        }
+
         try {
             $service->changeStatus($order, $data['status']);
         } catch (RuntimeException $exception) {
