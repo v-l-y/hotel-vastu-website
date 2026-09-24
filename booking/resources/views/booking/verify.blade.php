@@ -10,6 +10,7 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 </style>
 </head>
 <body>
+@include('partials.toast')
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Verify your mobile</h1>
@@ -17,7 +18,6 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 @if(config('services.sms.driver','log')==='log')
 <p class="muted">Local mode: the OTP is written to <code>storage/logs/laravel.log</code>.</p>
 @endif
-@if ($errors->any()) <div class="error"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 <section class="panel">
 <form method="post" action="{{ route('booking.otp.verify',['token'=>$hold->token]) }}">@csrf
 <label>Verification code
