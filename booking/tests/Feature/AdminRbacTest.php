@@ -74,6 +74,7 @@ class AdminRbacTest extends TestCase
 
         $this->withSession(['admin_user_id'=>$user->id])
             ->post('/admin/payments', [
+                'idempotency_key'=>'56565656-5656-4565-8565-565656565656',
                 'target_type'=>'reservation',
                 'target_id'=>1,
                 'method'=>'cash',
