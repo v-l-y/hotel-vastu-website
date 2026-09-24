@@ -262,9 +262,9 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
 <td><strong>{{ $order->order_number }}</strong><br><span class="muted">{{ $order->kitchenTicket?->ticket_number ?? '—' }}</span></td>
 <td>
 <strong>{{ $destination }}</strong><br>
-<?php foreach ($order->items as $item): ?>
+<?php foreach ($order->items as $itemIndex => $item): ?>
 {{ $item->quantity }}× {{ $item->item_name }}<?php if ($item->note): ?> <span class="muted">({{ $item->note }})</span><?php endif; ?>
-<?php if (!$loop->last): ?><br><?php endif; ?>
+<?php if ($itemIndex < $order->items->count() - 1): ?><br><?php endif; ?>
 <?php endforeach; ?>
 </td>
 <td><span class="status-badge {{ $order->status }}">{{ ucfirst($order->status) }}</span><br><span class="muted">{{ str_replace('_',' ',$order->payment_status) }}</span></td>
