@@ -16,4 +16,4 @@ Route::get('/availability', [AvailabilityController::class, 'search'])->name('bo
 Route::post('/holds', [ReservationHoldController::class, 'store'])->name('booking.holds.store');
 Route::get('/holds/{token}/guest', [GuestDetailsController::class, 'show'])->name('booking.guest');
 Route::post('/holds/{token}/confirm', [ReservationController::class, 'store'])->name('booking.confirm');
-Route::get('/confirmation/{bookingNumber}', [ReservationController::class, 'show'])->name('booking.confirmation');
+Route::get('/confirmation/{token}', [ReservationController::class, 'show'])->name('booking.confirmation');

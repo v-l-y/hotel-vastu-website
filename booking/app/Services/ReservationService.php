@@ -48,6 +48,7 @@ class ReservationService
 
             $reservation = Reservation::query()->create([
                 'booking_number' => $this->nextBookingNumber(),
+                'public_token' => (string) Str::uuid(),
                 'check_in_date' => $hold->check_in_date,
                 'check_out_date' => $hold->check_out_date,
                 'adults' => $hold->adults,

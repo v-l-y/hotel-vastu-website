@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Reservation extends Model
 {
     protected $fillable = [
-        'booking_number', 'check_in_date', 'check_out_date', 'adults', 'children',
-        'status', 'source', 'special_request', 'subtotal', 'tax', 'discount',
-        'total', 'payment_status', 'pricing_status', 'expires_at',
+        'booking_number', 'public_token', 'check_in_date', 'check_out_date',
+        'adults', 'children', 'status', 'source', 'special_request',
+        'subtotal', 'tax', 'discount', 'total', 'payment_status',
+        'pricing_status', 'expires_at',
     ];
 
     protected function casts(): array

@@ -45,6 +45,8 @@ class ReservationServiceTest extends TestCase
 
         $this->assertSame('confirmed', $reservation->status);
         $this->assertSame('pending', $reservation->pricing_status);
+        $this->assertNotNull($reservation->public_token);
+        $this->assertNotSame($reservation->booking_number, $reservation->public_token);
         $this->assertSame(2, $reservation->adults);
         $this->assertSame(1, $reservation->children);
         $this->assertDatabaseHas('reservation_guests', ['reservation_id' => $reservation->id, 'role' => 'primary']);

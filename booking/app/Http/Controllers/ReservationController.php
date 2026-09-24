@@ -25,14 +25,14 @@ class ReservationController extends Controller
         }
 
         return redirect()->route('booking.confirmation', [
-            'bookingNumber' => $reservation->booking_number,
+            'token' => $reservation->public_token,
         ]);
     }
 
-    public function show(string $bookingNumber): View
+    public function show(string $token): View
     {
         $reservation = Reservation::query()
-            ->where('booking_number', $bookingNumber)
+            ->where('public_token', $token)
             ->with(['rooms', 'guestLinks.guest'])
             ->firstOrFail();
 
