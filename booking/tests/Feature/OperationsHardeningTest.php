@@ -13,6 +13,7 @@ use App\Models\ReservationNightRate;
 use App\Models\RestaurantCategory;
 use App\Models\RestaurantMenuItem;
 use App\Models\Room;
+use App\Models\RoomRate;
 use App\Models\RoomType;
 use App\Services\AvailabilityService;
 use App\Services\FrontDeskService;
@@ -173,7 +174,16 @@ class OperationsHardeningTest extends TestCase
 
     public function test_stay_extension_adds_new_night_snapshot_and_folio_charge(): void
     {
-        [, , , $reservation, $stay] = $this->checkedInFixture();
+        [$type, $plan, , $reservation, $stay] = $this->checkedInFixture();
+
+        RoomRate::query()->create([
+            'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
+            'starts_on' => today()->addDay()->toDateString(),
+            'ends_on' => today()->addDay()->toDateString(),
+            'nightly_rate' => 2000,
+            'min_stay' => 2,
+        ]);
 
         app(FrontDeskService::class)->extendStay($stay, CarbonImmutable::parse(today()->addDays(2)));
 
