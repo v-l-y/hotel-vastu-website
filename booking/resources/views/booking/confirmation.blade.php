@@ -47,7 +47,16 @@ No refund is processed automatically. Please contact the hotel for any applicabl
 </div>
 
 <p class="amount">Total: ₹{{ number_format((float) $reservation->total, 2) }}</p>
-<p>Room ₹{{ number_format((float) $reservation->subtotal, 2) }} + tax ₹{{ number_format((float) $reservation->tax, 2) }}</p>
+<p>
+Room ₹{{ number_format((float) $reservation->subtotal, 2) }}
+@if((float)$reservation->discount > 0)
+− discount ₹{{ number_format((float) $reservation->discount, 2) }}
+@endif
++ tax ₹{{ number_format((float) $reservation->tax, 2) }}
+</p>
+@if($reservation->promotion_code_snapshot)
+<p class="note"><strong>Promo applied:</strong> {{ $reservation->promotion_code_snapshot }} · saved ₹{{ number_format((float)$reservation->discount,2) }}</p>
+@endif
 <div class="actions">
 @if(config('services.razorpay.key_id') && in_array($reservation->payment_status,['unpaid','partially_paid'],true) && $reservation->status==='confirmed')
 <a class="button" href="{{ route('booking.payment.razorpay',['token'=>$reservation->public_token]) }}">Pay online securely</a>
