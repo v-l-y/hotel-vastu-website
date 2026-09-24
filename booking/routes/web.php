@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\RazorpayPaymentController;
 use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ReservationHoldController;
@@ -26,6 +27,9 @@ Route::post('/holds', [ReservationHoldController::class, 'store'])->name('bookin
 Route::get('/holds/{token}/guest', [GuestDetailsController::class, 'show'])->name('booking.guest');
 Route::post('/holds/{token}/confirm', [ReservationController::class, 'store'])->name('booking.confirm');
 Route::get('/confirmation/{token}', [ReservationController::class, 'show'])->name('booking.confirmation');
+Route::get('/payment/{token}/razorpay', [RazorpayPaymentController::class, 'start'])->name('booking.payment.razorpay');
+Route::post('/payment/{token}/razorpay/verify', [RazorpayPaymentController::class, 'verify'])->name('booking.payment.razorpay.verify');
+Route::post('/payments/razorpay/webhook', [RazorpayPaymentController::class, 'webhook'])->name('booking.payment.razorpay.webhook');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'show'])->name('login');

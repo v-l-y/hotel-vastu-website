@@ -28,7 +28,12 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 
 <p class="amount">Total: ₹{{ number_format((float) $reservation->total, 2) }}</p>
 <p>Room ₹{{ number_format((float) $reservation->subtotal, 2) }} + tax ₹{{ number_format((float) $reservation->tax, 2) }}</p>
-<p class="note">Your room inventory and quoted price have been saved with this booking. Payment can be collected through the configured hotel payment flow.</p>
+<p class="note">Your room inventory and quoted price have been saved with this booking.</p>
+@if(config('services.razorpay.key_id') && in_array($reservation->payment_status,['unpaid','partially_paid'],true) && $reservation->status==='confirmed')
+<p><a href="{{ route('booking.payment.razorpay',['token'=>$reservation->public_token]) }}" style="display:inline-block;padding:12px 18px;background:#2b211b;color:#fff;text-decoration:none;border-radius:8px">Pay online securely</a></p>
+@else
+<p>Payment can be completed through the configured hotel payment flow.</p>
+@endif
 </section>
 </main>
 </body>

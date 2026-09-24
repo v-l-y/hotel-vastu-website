@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: ['payments/razorpay/webhook']);
         $middleware->alias([
             'admin' => AdminAuthenticated::class,
             'admin.audit' => AdminAudit::class,
