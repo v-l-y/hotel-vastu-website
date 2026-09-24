@@ -11,6 +11,7 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Stay;
+use App\Services\FrontDeskService;
 use App\Services\PaymentService;
 use App\Services\PricingService;
 use App\Services\ReservationService;
@@ -170,6 +171,67 @@ class PaymentDiscountClosureTest extends TestCase
         $this->assertSame('800.00', $discounted->total);
         $this->assertSame('overpaid', $discounted->payment_status);
         $this->assertSame(200.0, $payments->reservationOverpaid($discounted->id));
+    }
+
+    public function test_discounted_checkin_and_percent_extension_keep_folio_math_consistent(): void
+    {
+        [$type, $plan] = $this->roomFixture('extend');
+
+        PromotionCode::query()->create([
+            'code' => 'STAY10',
+            'name' => 'Stay ten percent',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'min_subtotal' => 0,
+            'times_used' => 0,
+            'is_active' => true,
+        ]);
+
+        $reservation = app(ReservationService::class)->createFrontDeskBooking([
+            'first_name' => 'Extend',
+            'phone' => '9000000003',
+            'check_in' => today()->toDateString(),
+            'check_out' => today()->addDay()->toDateString(),
+            'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
+            'rooms' => 1,
+            'adults' => 1,
+            'children' => 0,
+            'promo_code' => 'STAY10',
+        ]);
+
+        app(PaymentService::class)->record([
+            'idempotency_key' => '11111111-2222-4333-8444-555555555558',
+            'reservation_id' => $reservation->id,
+            'method' => 'cash',
+            'amount' => 900,
+        ]);
+
+        $room = Room::query()->where('room_type_id', $type->id)->firstOrFail();
+        $stay = app(FrontDeskService::class)->checkIn($reservation->fresh(), [$room->id]);
+
+        $this->assertDatabaseHas('folio_charges', [
+            'folio_id' => $stay->folio->id,
+            'category' => 'room',
+            'subtotal' => 900,
+            'tax' => 0,
+            'amount' => 900,
+        ]);
+
+        app(FrontDeskService::class)->extendStay($stay, today()->addDays(2));
+
+        $extended = $reservation->fresh();
+        $this->assertSame('2000.00', $extended->subtotal);
+        $this->assertSame('200.00', $extended->discount);
+        $this->assertSame('1800.00', $extended->total);
+        $this->assertDatabaseHas('folio_charges', [
+            'folio_id' => $stay->folio->id,
+            'category' => 'room',
+            'subtotal' => 900,
+            'tax' => 0,
+            'amount' => 900,
+            'source_key' => 'stay-extension:'.$stay->id.':'.today()->addDays(2)->toDateString(),
+        ]);
     }
 
     public function test_late_provider_capture_posts_to_open_in_house_folio(): void
