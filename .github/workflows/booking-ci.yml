@@ -45,6 +45,7 @@ jobs:
       - name: Verify v1.0 scope-freeze contract
         run: |
           test "$(tr -d '\r\n' < VERSION)" = "1.0"
+          test -f composer.lock
           test -f docs/MASTER_BLUEPRINT.md
           grep -Fq "MASTER BLUEPRINT v1.0 — BOOKING SYSTEM SCOPE FREEZE" docs/MASTER_BLUEPRINT.md
           grep -Fq "Booking System v1.0 is scope-frozen" README.md
