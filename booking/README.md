@@ -2,6 +2,18 @@
 
 Laravel 13 application for the separate Hotel Vastu booking, PMS, billing and restaurant system.
 
+## v1.0 scope freeze
+
+**Booking System v1.0 is scope-frozen.** The canonical contract is:
+
+- [MASTER BLUEPRINT v1.0 — BOOKING SYSTEM SCOPE FREEZE](docs/MASTER_BLUEPRINT.md)
+
+For v1.0, that document is the single source of truth from public booking search through checkout, invoice, restaurant/POS/KOT, RBAC, reporting and release gates.
+
+A future v1.0 review may identify a concrete bug, regression, security/authorization issue, data-integrity/concurrency defect, missing implementation against the blueprint, or deployment/configuration issue. It must **not** introduce a new product capability or new business rule and then treat that enhancement as unfinished v1.0 work.
+
+New product scope requires an explicitly approved later version such as v1.1 or v2.0.
+
 ## Deployment boundary
 
 - `hotelvastu.com` — static public/SEO website
@@ -13,16 +25,16 @@ Public booking CTAs and the homepage stay form now point to `https://booking.hot
 
 - PHP 8.3+ / Laravel 13 / MySQL production configuration
 - physical rooms, room types and housekeeping states
-- maintenance room blocks
+- inventory-safe maintenance room blocks with historical closure tracking
 - room capacity validation
 - rate plans, base rates and non-overlapping dated rates
 - per-night effective tax calculation and immutable tax/rate snapshots
-- overlap-safe availability and 10-minute transaction-locked holds
+- peak-night overlap-safe availability and 10-minute transaction-locked holds
 - guest details, booking number and opaque public confirmation token
 - pre-arrival reservation editing with availability recheck and repricing
 - cancellation and no-show lifecycle
 - verified manual payments: cash, UPI, card and bank transfer
-- overpayment prevention and idempotent payment/refund accounting
+- manual overpayment prevention, explicit provider-capture overpayment state and idempotent payment/refund accounting
 - optional verified Razorpay online checkout, signature verification and captured-payment verification
 - signed Razorpay webhooks for captured payments and refund reconciliation
 - provider-backed online refunds with pending/processed/failed lifecycle
@@ -34,10 +46,10 @@ Public booking CTAs and the homepage stay form now point to `https://booking.hot
 - immutable invoice snapshots and post-invoice credit notes
 - restaurant dine-in, room service and takeaway
 - multi-item POS orders, table occupancy and KOT workflow
-- role-protected admin modules
+- role-protected admin modules with restaurant/kitchen financial and operational boundaries
 - administrator user management, password reset and audit trail
 - operational payments/refunds console
-- occupancy, ADR, room revenue, tax, payment split and restaurant reports
+- date-safe occupancy, ADR, room revenue, tax, payment split and served-at restaurant reports
 - SQLite feature CI plus MySQL 8 production-contract CI
 - MySQL row-lock contract coverage
 - static-site and browser booking-redirect regression guards
