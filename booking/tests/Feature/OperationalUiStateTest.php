@@ -31,8 +31,8 @@ class OperationalUiStateTest extends TestCase
             ->assertSee('id="restaurant-order-modal"', false)
             ->assertSee('id="restaurant-order-form"', false)
             ->assertSee('order-modal-footer', false)
-            ->assertSee('Customer &amp; billing details', false)
-            ->assertSee('Create order &amp; KOT', false);
+            ->assertSee('Customer & billing details', false)
+            ->assertSee('Create order & KOT', false);
 
         $kitchen = $this->admin('kitchen', 'kitchen-no-order-modal@example.com');
 
