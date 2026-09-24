@@ -89,7 +89,29 @@
 @if($promotionCodes->isNotEmpty())
 <div class="section-list" style="margin-top:18px">
 @foreach($promotionCodes as $promo)
-<div class="compact-row"><div><strong>{{ $promo->code }}</strong> · {{ $promo->name }}<br><span class="muted">{{ $promo->discount_type === 'percent' ? number_format((float)$promo->discount_value,2).'%' : '₹'.number_format((float)$promo->discount_value,2) }} off@if($promo->max_discount) · max ₹{{ number_format((float)$promo->max_discount,2) }}@endif · used {{ $promo->times_used }}{{ $promo->usage_limit ? '/'.$promo->usage_limit : '' }}</span></div><form method="post" action="{{ route('admin.setup.promotion-codes.status',$promo) }}">@csrf<input type="hidden" name="is_active" value="{{ $promo->is_active ? 0 : 1 }}"><button type="submit">{{ $promo->is_active ? 'Deactivate' : 'Activate' }}</button></form></div>
+<div class="compact-row">
+<div>
+<strong>{{ $promo->code }}</strong> · {{ $promo->name }}
+<br>
+<span class="muted">
+@if($promo->discount_type === 'percent')
+{{ number_format((float)$promo->discount_value,2) }}%
+@else
+₹{{ number_format((float)$promo->discount_value,2) }}
+@endif
+off
+@if($promo->max_discount)
+ · max ₹{{ number_format((float)$promo->max_discount,2) }}
+@endif
+ · used {{ $promo->times_used }}{{ $promo->usage_limit ? '/'.$promo->usage_limit : '' }}
+</span>
+</div>
+<form method="post" action="{{ route('admin.setup.promotion-codes.status',$promo) }}">
+@csrf
+<input type="hidden" name="is_active" value="{{ $promo->is_active ? 0 : 1 }}">
+<button type="submit">{{ $promo->is_active ? 'Deactivate' : 'Activate' }}</button>
+</form>
+</div>
 @endforeach
 </div>
 @endif
