@@ -20,28 +20,63 @@ class RestaurantController extends Controller
         $role = (string) ($request->attributes->get('admin_user')?->role ?? '');
         $kitchenOnly = $role === 'kitchen';
 
+        $activeOrders = RestaurantOrder::query()
+            ->with([
+                'items',
+                'kitchenTicket',
+                'restaurantTable',
+                'folio.stay.rooms.room',
+                'payments.refunds',
+            ])
+            ->whereIn('status', ['accepted', 'preparing', 'ready'])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $historyOrders = $kitchenOnly
+            ? collect()
+            : RestaurantOrder::query()
+                ->with([
+                    'items',
+                    'kitchenTicket',
+                    'restaurantTable',
+                    'folio.stay.rooms.room',
+                    'payments.refunds',
+                ])
+                ->whereIn('status', ['served', 'cancelled'])
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get();
+
         return view('admin.restaurant', [
             'kitchenOnly' => $kitchenOnly,
             'menuItems' => $kitchenOnly
                 ? collect()
-                : RestaurantMenuItem::query()->where('is_active', true)->orderBy('name')->get(),
+                : RestaurantMenuItem::query()
+                    ->with('category')
+                    ->where('is_active', true)
+                    ->orderBy('restaurant_category_id')
+                    ->orderBy('name')
+                    ->get(),
             'tables' => $kitchenOnly
                 ? collect()
                 : RestaurantTable::query()->where('is_active', true)->orderBy('code')->get(),
             'folios' => $kitchenOnly
                 ? collect()
-                : Folio::query()->where('status', 'open')->orderByDesc('id')->get(),
-            'orders' => RestaurantOrder::query()
-                ->with(['items', 'kitchenTicket', 'payments.refunds'])
-                ->orderByDesc('id')
-                ->limit(75)
-                ->get(),
+                : Folio::query()
+                    ->with('stay.rooms.room')
+                    ->where('status', 'open')
+                    ->orderByDesc('id')
+                    ->get(),
+            'activeOrders' => $activeOrders,
+            'historyOrders' => $historyOrders,
         ]);
     }
 
     public function store(Request $request, RestaurantService $service): RedirectResponse
     {
         $data = $request->validate([
+            'idempotency_key' => ['required', 'uuid'],
             'order_type' => ['required', 'in:dine_in,room_service,takeaway'],
             'folio_id' => ['nullable', 'integer', 'exists:folios,id'],
             'restaurant_table_id' => ['nullable', 'integer', 'exists:restaurant_tables,id'],
@@ -55,6 +90,7 @@ class RestaurantController extends Controller
 
         try {
             $service->createOrder([
+                'idempotency_key' => $data['idempotency_key'],
                 'order_type' => $data['order_type'],
                 'folio_id' => $data['folio_id'] ?? null,
                 'restaurant_table_id' => $data['restaurant_table_id'] ?? null,
