@@ -262,7 +262,7 @@ code{padding:.16em .4em;border-radius:6px;background:#f0e9df;font-size:.9em}
 .nav-links a[aria-current="page"]{color:var(--gold-dark)}
 .header-call{font-size:.76rem!important;font-weight:950!important;white-space:nowrap;color:var(--gold-dark);letter-spacing:.035em!important}
 .header-call::after{display:none!important}
-.menu-btn{display:none;border:0;background:none;color:var(--ink);font-size:1.55rem}
+.menu-btn{display:none;width:44px;height:44px;padding:10px;border:0;background:none;color:var(--ink);font-size:1.55rem;line-height:1}
 
 .hero{position:relative;min-height:780px;display:flex;align-items:center;padding:calc(var(--header) + 86px) 0 118px;color:#fff;background:linear-gradient(90deg,rgba(22,16,12,.88) 0%,rgba(22,16,12,.70) 38%,rgba(22,16,12,.22) 78%),url("../images/hotel/home-banner-1.webp") center/cover}
 .hero::after{content:"";position:absolute;inset:auto 0 0;height:160px;background:linear-gradient(180deg,transparent,rgba(18,13,10,.22))}
@@ -352,7 +352,7 @@ code{padding:.16em .4em;border-radius:6px;background:#f0e9df;font-size:.9em}
   .availability-bar{grid-template-columns:1fr 1fr;padding:18px;gap:16px}
   .availability-field{padding:0 0 14px;border-right:0;border-bottom:1px solid var(--line)}
   .availability-submit{margin-left:0;min-width:0;width:100%}
-  .menu-btn{display:block}
+  .menu-btn{display:grid;place-items:center;flex:0 0 44px}
   .nav-links{display:none;position:absolute;top:var(--header);left:0;right:0;padding:22px 24px 28px;background:rgba(255,253,249,.99);color:var(--ink);border-top:1px solid var(--line);box-shadow:0 22px 45px rgba(33,26,22,.14);flex-direction:column;align-items:flex-start;gap:8px}
   .nav-links.open{display:flex}
   .nav-links>a:not(.btn){width:100%;padding:11px 0}
