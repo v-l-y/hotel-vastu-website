@@ -101,11 +101,14 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
                 },
                 body: JSON.stringify({ promo_code: promoCode }),
             });
-            const payload = await response.json();
+            const payload = await response.json().catch(() => ({}));
 
             if (!response.ok) {
-                const validationMessage = payload?.errors?.promo_code?.[0];
-                throw new Error(validationMessage || payload?.message || 'Promo code could not be applied.');
+                const message = window.HotelToast?.messageFromPayload(
+                    payload,
+                    'Promo code could not be applied.'
+                ) || 'Promo code could not be applied.';
+                throw new Error(message);
             }
 
             code.value = payload.code;
