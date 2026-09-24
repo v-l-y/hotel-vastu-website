@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AdminUser;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Models\RestaurantOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -168,6 +169,37 @@ class AdminRbacTest extends TestCase
         $response->assertViewHas('canRefund', false);
         $response->assertViewHas('reservations', fn ($rows) => $rows->isEmpty());
         $response->assertViewHas('folios', fn ($rows) => $rows->isEmpty());
+    }
+
+    public function test_restaurant_role_cannot_reconcile_online_refunds(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Restaurant Reconcile',
+            'email'=>'restaurant-reconcile@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'restaurant',
+            'is_active'=>true,
+        ]);
+
+        $payment = Payment::query()->create([
+            'idempotency_key'=>'21212121-2121-4212-8212-212121212121',
+            'method'=>'online_gateway',
+            'status'=>'succeeded',
+            'amount'=>100,
+            'external_reference'=>'pay_rbac_reconcile',
+            'paid_at'=>now(),
+        ]);
+
+        $refund = Refund::query()->create([
+            'idempotency_key'=>'22222222-2222-4222-8222-222222222222',
+            'payment_id'=>$payment->id,
+            'amount'=>10,
+            'status'=>'pending',
+        ]);
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->post('/admin/payments/refunds/'.$refund->id.'/reconcile')
+            ->assertForbidden();
     }
 
 }
