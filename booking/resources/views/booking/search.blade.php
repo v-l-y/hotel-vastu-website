@@ -22,8 +22,22 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <form class="grid" method="get" action="{{ route('booking.availability') }}">
 <label>Check-in<input type="date" name="check_in" required value="{{ old('check_in', $search['check_in'] ?? request('check_in')) }}"></label>
 <label>Check-out<input type="date" name="check_out" required value="{{ old('check_out', $search['check_out'] ?? request('check_out')) }}"></label>
-<label>Room type<select name="room_type_id" required><option value="">Choose a room</option>@foreach ($roomTypes as $roomType)<option value="{{ $roomType->id }}" @selected((string) old('room_type_id', $search['room_type_id'] ?? request('room_type_id')) === (string) $roomType->id)>{{ $roomType->name }}</option>@endforeach</select></label>
-<label>Rate plan<select name="rate_plan_id" required><option value="">Choose a rate plan</option>@foreach ($ratePlans as $ratePlan)<option value="{{ $ratePlan->id }}" @selected((string) old('rate_plan_id', $search['rate_plan_id'] ?? request('rate_plan_id')) === (string) $ratePlan->id)>{{ $ratePlan->name }}@if($ratePlan->includes_breakfast) · Breakfast included@endif</option>@endforeach</select></label>
+<label>Room type
+<select name="room_type_id" required>
+<option value="">Choose a room</option>
+@foreach ($roomTypes as $roomType)
+<option value="{{ $roomType->id }}" {{ (string) old('room_type_id', $search['room_type_id'] ?? request('room_type_id')) === (string) $roomType->id ? 'selected' : '' }}>{{ $roomType->name }}</option>
+@endforeach
+</select>
+</label>
+<label>Rate plan
+<select name="rate_plan_id" required>
+<option value="">Choose a rate plan</option>
+@foreach ($ratePlans as $ratePlan)
+<option value="{{ $ratePlan->id }}" {{ (string) old('rate_plan_id', $search['rate_plan_id'] ?? request('rate_plan_id')) === (string) $ratePlan->id ? 'selected' : '' }}>{{ $ratePlan->name }}{{ $ratePlan->includes_breakfast ? ' · Breakfast included' : '' }}</option>
+@endforeach
+</select>
+</label>
 <label>Rooms<input type="number" name="rooms" min="1" max="10" required value="{{ old('rooms', $search['rooms'] ?? request('rooms', 1)) }}"></label>
 <label>Adults<input type="number" name="adults" min="1" max="30" required value="{{ old('adults', $search['adults'] ?? request('adults', 2)) }}"></label>
 <label>Children<input type="number" name="children" min="0" max="30" value="{{ old('children', $search['children'] ?? request('children', 0)) }}"></label>
