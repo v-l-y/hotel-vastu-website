@@ -1,28 +1,47 @@
 @php
-    $hotelToastMessages = [];
-
-    foreach ([
+    $hotelToastMessages = collect();
+    $flashTypes = [
         'status' => 'success',
         'success' => 'success',
         'error' => 'error',
         'warning' => 'warning',
-    ] as $flashKey => $toastType) {
-        if (session()->has($flashKey) && filled(session($flashKey))) {
-            $hotelToastMessages[] = [
+    ];
+
+    foreach ($flashTypes as $flashKey => $toastType) {
+        $message = session()->has($flashKey)
+            ? trim((string) session($flashKey))
+            : '';
+
+        if ($message !== '') {
+            $hotelToastMessages->push([
                 'type' => $toastType,
-                'message' => (string) session($flashKey),
-            ];
+                'message' => $message,
+            ]);
         }
     }
 
     if (isset($errors) && $errors->any()) {
-        foreach ($errors->all() as $message) {
-            $hotelToastMessages[] = [
+        $validationMessages = collect($errors->all())
+            ->map(static fn ($message) => trim((string) $message))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($validationMessages->isNotEmpty()) {
+            $hotelToastMessages->push([
                 'type' => 'error',
-                'message' => (string) $message,
-            ];
+                'title' => $validationMessages->count() === 1 ? 'Validation error' : 'Check the form',
+                'message' => $validationMessages->count() === 1
+                    ? $validationMessages->first()
+                    : 'Please fix: '.$validationMessages->implode(' • '),
+            ]);
         }
     }
+
+    $hotelToastMessages = $hotelToastMessages
+        ->unique(static fn (array $item) => $item['type'].'|'.$item['message'])
+        ->values()
+        ->all();
 @endphp
 
 <style>
@@ -49,14 +68,56 @@
     const region = document.querySelector('[data-hotel-toast-region]');
     if (!region) return;
 
-    const normalizeType = (type) => ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+    const validTypes = new Set(['success', 'error', 'warning', 'info']);
     const labels = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Notice' };
     const symbols = { success: '✓', error: '!', warning: '!', info: 'i' };
+    const activeToasts = new Map();
+    const timers = new WeakMap();
+    const maxVisible = 4;
+
+    const normalizeType = (type) => validTypes.has(type) ? type : 'info';
+    const clearTimer = (toast) => {
+        const timer = timers.get(toast);
+        if (timer) {
+            window.clearTimeout(timer);
+            timers.delete(toast);
+        }
+    };
 
     const dismiss = (toast) => {
         if (!toast || toast.classList.contains('is-leaving')) return;
+
+        clearTimer(toast);
+        if (toast.dataset.toastKey) {
+            activeToasts.delete(toast.dataset.toastKey);
+        }
+
         toast.classList.add('is-leaving');
         window.setTimeout(() => toast.remove(), 180);
+    };
+
+    const scheduleDismiss = (toast, duration) => {
+        clearTimer(toast);
+        if (duration <= 0) return;
+
+        timers.set(toast, window.setTimeout(() => dismiss(toast), duration));
+    };
+
+    const messageFromPayload = (payload, fallback = 'Something went wrong. Please try again.') => {
+        const errors = payload?.errors;
+        if (errors && typeof errors === 'object') {
+            for (const value of Object.values(errors)) {
+                const messages = Array.isArray(value) ? value : [value];
+                const first = messages.find((message) => typeof message === 'string' && message.trim() !== '');
+                if (first) return first.trim();
+            }
+        }
+
+        if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
+            return payload.message.trim();
+        }
+
+        return fallback;
     };
 
     const show = (message, type = 'info', options = {}) => {
@@ -64,9 +125,29 @@
         if (!safeMessage) return null;
 
         type = normalizeType(type);
+        const titleText = String(options.title || labels[type]).trim() || labels[type];
+        const toastKey = type + '|' + titleText + '|' + safeMessage;
+        const duration = Number.isFinite(options.duration)
+            ? Math.max(0, options.duration)
+            : (type === 'error' ? 8000 : 5000);
+
+        const existing = activeToasts.get(toastKey);
+        if (existing && existing.isConnected && !existing.classList.contains('is-leaving')) {
+            scheduleDismiss(existing, duration);
+            return existing;
+        }
+
+        while (region.children.length >= maxVisible) {
+            dismiss(region.firstElementChild);
+            if (region.children.length >= maxVisible && region.firstElementChild?.classList.contains('is-leaving')) {
+                region.firstElementChild.remove();
+            }
+        }
+
         const toast = document.createElement('div');
         toast.className = 'hotel-toast';
         toast.dataset.type = type;
+        toast.dataset.toastKey = toastKey;
         toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
         toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
 
@@ -80,7 +161,7 @@
 
         const title = document.createElement('strong');
         title.className = 'hotel-toast-title';
-        title.textContent = options.title || labels[type];
+        title.textContent = titleText;
 
         const body = document.createElement('span');
         body.className = 'hotel-toast-message';
@@ -96,23 +177,13 @@
         copy.append(title, body);
         toast.append(icon, copy, close);
         region.appendChild(toast);
+        activeToasts.set(toastKey, toast);
 
-        const duration = Number.isFinite(options.duration)
-            ? Math.max(0, options.duration)
-            : (type === 'error' ? 8000 : 5000);
-
-        if (duration > 0) {
-            let timer = window.setTimeout(() => dismiss(toast), duration);
-            const pause = () => window.clearTimeout(timer);
-            const resume = () => {
-                window.clearTimeout(timer);
-                timer = window.setTimeout(() => dismiss(toast), Math.min(duration, 2500));
-            };
-            toast.addEventListener('mouseenter', pause);
-            toast.addEventListener('mouseleave', resume);
-            toast.addEventListener('focusin', pause);
-            toast.addEventListener('focusout', resume);
-        }
+        toast.addEventListener('mouseenter', () => clearTimer(toast));
+        toast.addEventListener('mouseleave', () => scheduleDismiss(toast, Math.min(duration, 2500)));
+        toast.addEventListener('focusin', () => clearTimer(toast));
+        toast.addEventListener('focusout', () => scheduleDismiss(toast, Math.min(duration, 2500)));
+        scheduleDismiss(toast, duration);
 
         return toast;
     };
@@ -124,12 +195,21 @@
         error: (message, options = {}) => show(message, 'error', options),
         warning: (message, options = {}) => show(message, 'warning', options),
         info: (message, options = {}) => show(message, 'info', options),
+        messageFromPayload,
+        errorFromPayload: (payload, fallback, options = {}) => {
+            const message = messageFromPayload(payload, fallback);
+            show(message, 'error', options);
+            return message;
+        },
         dismissAll: () => [...region.children].forEach(dismiss),
     };
 
-    const initialMessages = @json($hotelToastMessages);
+    const initialMessages = {{ Illuminate\Support\Js::from($hotelToastMessages) }};
     initialMessages.forEach((item, index) => {
-        window.setTimeout(() => show(item.message, item.type), index * 90);
+        window.setTimeout(
+            () => show(item.message, item.type, item.title ? { title: item.title } : {}),
+            index * 90
+        );
     });
 })();
 </script>
