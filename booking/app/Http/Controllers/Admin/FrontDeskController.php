@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Stay;
 use App\Services\FrontDeskService;
+use App\Services\ReservationLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -61,5 +62,27 @@ class FrontDeskController extends Controller
         return redirect()
             ->route('admin.invoices.show', $result['invoice'])
             ->with('status', 'Checkout completed.');
+    }
+
+    public function cancel(Reservation $reservation, ReservationLifecycleService $service): RedirectResponse
+    {
+        try {
+            $service->cancel($reservation);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['front_desk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Reservation cancelled. Review any collected payment for refund.');
+    }
+
+    public function noShow(Reservation $reservation, ReservationLifecycleService $service): RedirectResponse
+    {
+        try {
+            $service->markNoShow($reservation);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['front_desk' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Reservation marked no-show.');
     }
 }

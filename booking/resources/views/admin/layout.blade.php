@@ -9,7 +9,8 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f5f2ee;color:#231e1a}
 </style>
 </head>
 <body>
-<header><div class="wrap"><strong>Hotel Vastu Admin</strong><nav><a href="{{ route('admin.dashboard') }}">Dashboard</a><a href="{{ route('admin.front-desk') }}">Front Desk</a><a href="{{ route('admin.restaurant') }}">Restaurant</a>@if(request()->attributes->get('admin_user')?->role === 'administrator')<a href="{{ route('admin.setup') }}">Setup</a>@endif</nav><form method="post" action="{{ route('admin.logout') }}" style="margin-left:auto">@csrf<button type="submit">Logout</button></form></div></header>
+@php($currentAdmin=request()->attributes->get('admin_user'))
+<header><div class="wrap"><strong>Hotel Vastu Admin</strong><nav><a href="{{ route('admin.dashboard') }}">Dashboard</a>@if(in_array($currentAdmin?->role,['administrator','front_desk'],true))<a href="{{ route('admin.front-desk') }}">Front Desk</a>@endif @if(in_array($currentAdmin?->role,['administrator','restaurant','kitchen'],true))<a href="{{ route('admin.restaurant') }}">Restaurant</a>@endif @if(in_array($currentAdmin?->role,['administrator','front_desk','accounts'],true))<a href="{{ route('admin.reports') }}">Reports</a>@endif @if($currentAdmin?->role === 'administrator')<a href="{{ route('admin.setup') }}">Setup</a>@endif</nav><form method="post" action="{{ route('admin.logout') }}" style="margin-left:auto">@csrf<button type="submit">Logout</button></form></div></header>
 <main class="wrap">
 @if(session('status'))<div class="notice">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="error"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

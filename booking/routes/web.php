@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FrontDeskController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\AvailabilityController;
@@ -37,6 +38,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/setup', [SetupController::class, 'index'])->name('setup');
             Route::post('/setup/room-types/{roomType}', [SetupController::class, 'updateRoomType'])->name('setup.room-types.update');
             Route::post('/setup/rooms', [SetupController::class, 'storeRoom'])->name('setup.rooms.store');
+            Route::post('/setup/room-blocks', [SetupController::class, 'storeRoomBlock'])->name('setup.room-blocks.store');
+            Route::post('/setup/room-blocks/{roomBlock}/close', [SetupController::class, 'closeRoomBlock'])->name('setup.room-blocks.close');
             Route::post('/setup/rate-plans', [SetupController::class, 'storeRatePlan'])->name('setup.rate-plans.store');
             Route::post('/setup/room-rates', [SetupController::class, 'storeRoomRate'])->name('setup.room-rates.store');
             Route::post('/setup/tax-rules', [SetupController::class, 'storeTaxRule'])->name('setup.tax-rules.store');
@@ -48,6 +51,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('admin.role:administrator,front_desk')->group(function () {
             Route::get('/front-desk', [FrontDeskController::class, 'index'])->name('front-desk');
             Route::post('/front-desk/reservations/{reservation}/check-in', [FrontDeskController::class, 'checkIn'])->name('front-desk.check-in');
+            Route::post('/front-desk/reservations/{reservation}/cancel', [FrontDeskController::class, 'cancel'])->name('front-desk.cancel');
+            Route::post('/front-desk/reservations/{reservation}/no-show', [FrontDeskController::class, 'noShow'])->name('front-desk.no-show');
             Route::post('/front-desk/stays/{stay}/check-out', [FrontDeskController::class, 'checkOut'])->name('front-desk.check-out');
         });
 
@@ -64,6 +69,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::get('/reports', [ReportController::class, 'index'])->name('reports');
         });
     });
 });

@@ -1,39 +1,59 @@
 # Hotel Vastu Booking
 
-Laravel 13 application for the separate Hotel Vastu booking/PMS system.
+Laravel 13 application for the separate Hotel Vastu booking, PMS and restaurant system.
 
-## Boundary
+## Deployment boundary
 
-- `hotelvastu.com`: existing static public website
-- `booking.hotelvastu.com`: this Laravel application
+- `hotelvastu.com` — existing static public website
+- `booking.hotelvastu.com` — this Laravel application
 
-The static site's booking links should be switched only after this app is deployed and real room inventory has been configured.
+The static site remains independent. Its Book Now links should be switched only after this app is deployed and real hotel inventory/rates are configured.
 
 ## Implemented
 
-### Phase 1 — availability foundation
-- Laravel 13 / PHP 8.3+
-- MySQL configuration
-- room types and physical rooms
+- PHP 8.3+ / Laravel 13 / MySQL production configuration
+- physical room inventory and room types
 - maintenance room blocks
-- rate-plan and dated-rate schema
-- reservations and reservation room lines
-- expiring reservation holds
-- overlap-based availability calculation
-- transaction + row lock for hold creation
+- room capacity validation
+- rate plans, base rates and non-overlapping dated rates
+- effective hotel/restaurant tax rules
+- overlap-safe availability calculation
+- 10-minute transaction-locked reservation holds
+- guest details and one-time hold conversion
+- immutable nightly reservation price snapshots
+- booking number + opaque public confirmation token
+- cancellation and no-show lifecycle
+- manual verified payments: cash, UPI, card, bank transfer
+- idempotent payment/refund service
+- front desk check-in with physical room assignment
+- guest stays and guest folios
+- restaurant dine-in, room service and takeaway
+- KOT creation and kitchen status flow
+- served room-service posting to guest folio
+- checkout balance enforcement
+- invoice snapshot generation
+- role-protected admin login and modules
+- administrator setup for rooms, rates, tax, maintenance blocks and restaurant master data
+- dashboard and basic operational reports
+- GitHub Actions Booking CI using PHP 8.3 and SQLite test database
 
-### Phase 2 — guest booking conversion
-- adult/child counts carried into the inventory hold
-- configured room-capacity enforcement when capacity values exist
-- guest details form
-- active hold validation
-- one-time hold-to-reservation conversion under a database transaction
-- unique public booking number
-- primary guest linkage
-- booking confirmation page
-- pricing status kept explicitly pending until real hotel pricing/tax rules are configured
+No room count, room number, price, tax, occupancy limit, payment credential or hotel policy is invented by seed data.
 
-Only confirmed room category names are seeded: Classic, Club and Premium. No room count, room number, rate, occupancy limit, tax, payment setting or hotel policy is invented.
+## Admin roles
+
+- `administrator`
+- `front_desk`
+- `restaurant`
+- `kitchen`
+- `accounts`
+
+Create the first administrator after migration:
+
+```bash
+php artisan admin:create admin@example.com --name="Hotel Administrator" --role=administrator
+```
+
+The command prompts securely for a password and requires at least 12 characters.
 
 ## Local setup
 
@@ -44,15 +64,25 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Create the MySQL database from `.env`, then:
+Create the MySQL database configured in `.env`, then:
 
 ```bash
 php artisan migrate
 php artisan db:seed
+php artisan admin:create admin@example.com --name="Hotel Administrator"
 php artisan serve
 ```
 
-Add the hotel's real physical rooms before testing availability.
+Open:
+
+- customer booking: `http://127.0.0.1:8000`
+- admin: `http://127.0.0.1:8000/admin/login`
+
+Before customer booking can proceed, configure real physical rooms, a rate plan, room pricing and applicable tax rules in Admin → Setup.
+
+## Payments
+
+The current application records **verified hotel-side payments** only: cash, UPI, card and bank transfer. It does not pretend an external online gateway payment succeeded. A real online gateway must be connected with its provider credentials, signed order/payment verification and webhook processing before `Book Now` can collect money online.
 
 ## Tests
 
@@ -60,6 +90,4 @@ Add the hotel's real physical rooms before testing availability.
 composer test
 ```
 
-## Next
-
-Pricing/tax configuration, payment workflow, front desk/stays, folios/invoices, restaurant POS/KOT, admin authentication and reports.
+CI runs Composer validation, dependency installation and the PHP test suite for every booking-system change.
