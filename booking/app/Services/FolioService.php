@@ -61,6 +61,10 @@ class FolioService
             ? 0.0
             : (float) CreditNote::query()
                 ->where('invoice_id', $invoiceId)
+                ->whereHas('refund', fn ($query) => $query->whereIn(
+                    'refund_type',
+                    ['cancellation', 'rate_adjustment', 'service_recovery']
+                ))
                 ->sum('amount');
 
         $folio->update([
