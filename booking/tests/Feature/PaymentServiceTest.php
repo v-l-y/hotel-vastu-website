@@ -107,7 +107,7 @@ class PaymentServiceTest extends TestCase
         $refund = $service->refund($payment, [
             'idempotency_key'=>'79797979-7979-4797-8797-797979797979',
             'amount'=>250,
-            'refund_type'=>'service_recovery',
+            'refund_type'=>'other',
             'reason'=>'Guest adjustment',
         ]);
 
@@ -120,10 +120,44 @@ class PaymentServiceTest extends TestCase
         $this->assertDatabaseHas('refunds', [
             'payment_id'=>$payment->id,
             'amount'=>250,
-            'refund_type'=>'service_recovery',
+            'refund_type'=>'other',
             'status'=>'succeeded',
         ]);
     }
+    public function test_revenue_adjustment_refund_requires_an_issued_invoice(): void
+    {
+        $reservation = Reservation::query()->create([
+            'booking_number'=>'HV-PAY-ADJUSTMENT-GUARD',
+            'public_token'=>'71717171-7171-4171-8171-717171717171',
+            'check_in_date'=>today(),
+            'check_out_date'=>today()->addDay(),
+            'status'=>'confirmed',
+            'pricing_status'=>'priced',
+            'payment_status'=>'unpaid',
+            'subtotal'=>1000,
+            'tax'=>0,
+            'total'=>1000,
+        ]);
+
+        $service = app(PaymentService::class);
+        $payment = $service->record([
+            'idempotency_key'=>'72727272-7272-4272-8272-727272727272',
+            'reservation_id'=>$reservation->id,
+            'method'=>'cash',
+            'amount'=>1000,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('require an issued invoice');
+
+        $service->refund($payment, [
+            'idempotency_key'=>'73737373-7373-4373-8373-737373737373',
+            'amount'=>100,
+            'refund_type'=>'service_recovery',
+            'reason'=>'Service recovery before invoice',
+        ]);
+    }
+
     public function test_restaurant_payment_requires_a_served_non_room_service_order(): void
     {
         $order = RestaurantOrder::query()->create([
