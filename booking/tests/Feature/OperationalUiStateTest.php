@@ -71,7 +71,7 @@ class OperationalUiStateTest extends TestCase
         [$reservation] = $this->reservationFixture('FUTURE', today()->addDay(), today()->addDays(2));
 
         $this->withSession($this->sessionFor($frontDesk))
-            ->get('/admin/front-desk')
+            ->get('/admin/front-desk?tab=reservations')
             ->assertOk()
             ->assertSee('Check-in becomes available during the reserved stay window')
             ->assertDontSee('action="'.route('admin.front-desk.check-in', $reservation).'"', false)
@@ -129,7 +129,7 @@ class OperationalUiStateTest extends TestCase
         ]);
 
         $response = $this->withSession($this->sessionFor($frontDesk))
-            ->get('/admin/front-desk');
+            ->get('/admin/front-desk?tab=arrivals');
 
         $response->assertOk();
         $response->assertViewHas('checkInReadyByReservation', fn ($map) => ($map[$reservation->id] ?? false) === true);
