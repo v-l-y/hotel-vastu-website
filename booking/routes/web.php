@@ -70,13 +70,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('admin.role:administrator,restaurant,kitchen')->group(function () {
             Route::get('/restaurant', [RestaurantController::class, 'index'])->name('restaurant');
-            Route::post('/restaurant/orders', [RestaurantController::class, 'store'])->name('restaurant.orders.store');
             Route::post('/restaurant/orders/{order}/status', [RestaurantController::class, 'status'])->name('restaurant.orders.status');
+        });
+
+        Route::middleware('admin.role:administrator,restaurant')->group(function () {
+            Route::post('/restaurant/orders', [RestaurantController::class, 'store'])->name('restaurant.orders.store');
         });
 
         Route::middleware('admin.role:administrator,front_desk,accounts,restaurant')->group(function () {
             Route::get('/payments', [PaymentController::class, 'index'])->name('payments');
             Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        });
+
+        Route::middleware('admin.role:administrator,front_desk,accounts')->group(function () {
             Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
         });
 
