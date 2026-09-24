@@ -30,10 +30,13 @@ button{cursor:pointer}
 .admin-nav-link{display:flex;align-items:center;gap:10px;min-height:42px;padding:9px 11px;border-radius:10px;color:#eee5df;text-decoration:none;font-weight:700}
 .admin-nav-link:hover,.admin-nav-link:focus-visible{background:rgba(255,255,255,.08);outline:none}
 .admin-nav-link.active{background:#fff;color:#211a16;box-shadow:0 8px 20px rgba(0,0,0,.16)}
-.admin-nav-icon{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.09);font-size:.72rem;font-weight:900;letter-spacing:.03em;flex:0 0 auto}
-.admin-nav-link.active .admin-nav-icon{background:#eee8e2}
+.ui-icon-box{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:#eee8e2;color:#3b2e27;flex:0 0 34px}
+.ui-icon-box svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.admin-nav-link .ui-icon-box{width:30px;height:30px;flex-basis:30px;background:rgba(255,255,255,.09);color:#fff}
+.admin-nav-link.active .ui-icon-box{background:#eee8e2;color:#211a16}
 .admin-sidebar-foot{margin-top:auto;display:grid;gap:10px}
-.admin-logout{width:100%;min-height:42px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.07);color:#fff;font-weight:800}
+.admin-logout{width:100%;min-height:42px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.07);color:#fff;font-weight:800;display:flex;gap:9px;align-items:center;justify-content:center}
+.admin-logout .ui-icon-box{width:28px;height:28px;flex-basis:28px;background:rgba(255,255,255,.1);color:#fff}
 .admin-logout:hover{background:rgba(255,255,255,.13)}
 .admin-main{min-width:0}
 .admin-topbar{min-height:70px;padding:14px 24px;border-bottom:1px solid var(--line);background:rgba(245,242,238,.94);backdrop-filter:blur(10px);display:flex;gap:16px;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30}
@@ -62,11 +65,22 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .error ul{margin:0;padding-left:18px}
 .muted{color:var(--muted)}
 .full{grid-column:1/-1}
-.table-wrap{overflow:auto;border:1px solid var(--line-soft);border-radius:12px}
+.table-wrap{overflow:auto;border:1px solid var(--line-soft);border-radius:12px;background:#fff}
 table{width:100%;border-collapse:collapse}
-th,td{text-align:left;border-bottom:1px solid #e7e1dc;padding:10px;vertical-align:top}
-th{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#776d65;background:#faf8f6}
+th,td{text-align:left;border-bottom:1px solid #e7e1dc;padding:11px 12px;vertical-align:top}
+th{font-size:.76rem;letter-spacing:.055em;text-transform:uppercase;color:#776d65;background:#faf8f6;white-space:nowrap;position:sticky;top:0;z-index:1}
+tbody tr:hover{background:#fcfaf8}
 tbody tr:last-child td{border-bottom:0}
+.table-primary{font-weight:800}
+.table-secondary{display:block;color:var(--muted);font-size:.86rem;margin-top:3px}
+.table-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.pagination-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.pagination-summary{color:var(--muted);font-size:.88rem}
+.pagination-actions{display:flex;gap:6px;flex-wrap:wrap}
+.pagination-link{min-width:38px;min-height:36px;padding:0 10px;border:1px solid #d5cbc2;border-radius:9px;background:#fff;color:#2b211b;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800}
+.pagination-link:hover{border-color:#a98b72;background:#faf7f4}
+.pagination-link.active{background:#2b211b;border-color:#2b211b;color:#fff}
+.pagination-link.disabled{opacity:.45;cursor:not-allowed}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
@@ -105,7 +119,7 @@ code{word-break:break-all}
 .admin-sidebar{position:relative;height:auto;z-index:50;padding:10px 14px;gap:10px}
 .admin-brand{padding:0}.admin-brand span,.admin-user-card,.admin-nav-title{display:none}
 .admin-nav-group{display:block}.admin-nav{display:flex;overflow:auto;padding-bottom:2px;scrollbar-width:thin}
-.admin-nav-link{white-space:nowrap;flex:0 0 auto}.admin-nav-icon{display:none}
+.admin-nav-link{white-space:nowrap;flex:0 0 auto}.admin-nav-link .ui-icon-box{width:28px;height:28px;flex-basis:28px}
 .admin-sidebar-foot{margin:0;position:absolute;right:14px;top:10px}
 .admin-logout{width:auto;padding-inline:12px}
 .admin-topbar{top:0;padding:12px 16px;min-height:58px}
@@ -152,18 +166,18 @@ $roleLabel = match($currentAdmin?->role) {
 <div class="admin-nav-group">
 <div class="admin-nav-title">Operations</div>
 <nav class="admin-nav" aria-label="Admin operations">
-<a class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}" @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif><span class="admin-nav-icon">DB</span><span>Dashboard</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}" @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'dashboard'])<span>Dashboard</span></a>
 @if(in_array($currentAdmin?->role,['administrator','front_desk'],true))
-<a class="admin-nav-link {{ request()->routeIs('admin.front-desk*') ? 'active' : '' }}" href="{{ route('admin.front-desk') }}" @if(request()->routeIs('admin.front-desk*')) aria-current="page" @endif><span class="admin-nav-icon">FD</span><span>Front Desk</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.front-desk*') ? 'active' : '' }}" href="{{ route('admin.front-desk') }}" @if(request()->routeIs('admin.front-desk*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'front-desk'])<span>Front Desk</span></a>
 @endif
 @if(in_array($currentAdmin?->role,['administrator','restaurant','kitchen'],true))
-<a class="admin-nav-link {{ request()->routeIs('admin.restaurant*') ? 'active' : '' }}" href="{{ route('admin.restaurant') }}" @if(request()->routeIs('admin.restaurant*')) aria-current="page" @endif><span class="admin-nav-icon">KT</span><span>{{ $currentAdmin?->role === 'kitchen' ? 'Kitchen KOT' : 'Restaurant & KOT' }}</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.restaurant*') ? 'active' : '' }}" href="{{ route('admin.restaurant') }}" @if(request()->routeIs('admin.restaurant*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'restaurant'])<span>{{ $currentAdmin?->role === 'kitchen' ? 'Kitchen KOT' : 'Restaurant & KOT' }}</span></a>
 @endif
 @if(in_array($currentAdmin?->role,['administrator','front_desk','accounts','restaurant'],true))
-<a class="admin-nav-link {{ request()->routeIs('admin.payments*') || request()->routeIs('admin.invoices*') ? 'active' : '' }}" href="{{ route('admin.payments') }}" @if(request()->routeIs('admin.payments*') || request()->routeIs('admin.invoices*')) aria-current="page" @endif><span class="admin-nav-icon">₹</span><span>Payments</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.payments*') || request()->routeIs('admin.invoices*') ? 'active' : '' }}" href="{{ route('admin.payments') }}" @if(request()->routeIs('admin.payments*') || request()->routeIs('admin.invoices*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'payments'])<span>Payments</span></a>
 @endif
 @if(in_array($currentAdmin?->role,['administrator','front_desk','accounts'],true))
-<a class="admin-nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}" href="{{ route('admin.reports') }}" @if(request()->routeIs('admin.reports*')) aria-current="page" @endif><span class="admin-nav-icon">RP</span><span>Reports</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}" href="{{ route('admin.reports') }}" @if(request()->routeIs('admin.reports*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'reports'])<span>Reports</span></a>
 @endif
 </nav>
 </div>
@@ -172,17 +186,17 @@ $roleLabel = match($currentAdmin?->role) {
 <div class="admin-nav-title">Administration</div>
 <nav class="admin-nav" aria-label="Admin settings">
 @if($currentAdmin?->role === 'administrator')
-<a class="admin-nav-link {{ request()->routeIs('admin.setup*') ? 'active' : '' }}" href="{{ route('admin.setup') }}" @if(request()->routeIs('admin.setup*')) aria-current="page" @endif><span class="admin-nav-icon">ST</span><span>Setup</span></a>
-<a class="admin-nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}" href="{{ route('admin.users') }}" @if(request()->routeIs('admin.users*')) aria-current="page" @endif><span class="admin-nav-icon">UA</span><span>Users & Audit</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.setup*') ? 'active' : '' }}" href="{{ route('admin.setup') }}" @if(request()->routeIs('admin.setup*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'setup'])<span>Setup</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}" href="{{ route('admin.users') }}" @if(request()->routeIs('admin.users*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'users'])<span>Users & Audit</span></a>
 @endif
-<a class="admin-nav-link {{ request()->routeIs('admin.security*') ? 'active' : '' }}" href="{{ route('admin.security') }}" @if(request()->routeIs('admin.security*')) aria-current="page" @endif><span class="admin-nav-icon">SC</span><span>Security</span></a>
+<a class="admin-nav-link {{ request()->routeIs('admin.security*') ? 'active' : '' }}" href="{{ route('admin.security') }}" @if(request()->routeIs('admin.security*')) aria-current="page" @endif>@include('admin.partials.icon',['name'=>'security'])<span>Security</span></a>
 </nav>
 </div>
 
 <div class="admin-sidebar-foot">
 <form method="post" action="{{ route('admin.logout') }}">
 @csrf
-<button class="admin-logout" type="submit">Sign out</button>
+<button class="admin-logout" type="submit">@include('admin.partials.icon',['name'=>'logout'])<span>Sign out</span></button>
 </form>
 </div>
 </aside>
