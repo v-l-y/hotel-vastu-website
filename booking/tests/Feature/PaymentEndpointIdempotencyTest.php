@@ -8,6 +8,7 @@ use App\Models\Refund;
 use App\Models\Reservation;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class PaymentEndpointIdempotencyTest extends TestCase
@@ -112,4 +113,55 @@ class PaymentEndpointIdempotencyTest extends TestCase
             ->assertOk()
             ->assertSee('name="idempotency_key"', false);
     }
+    public function test_pending_online_refund_can_be_reconciled_from_payment_console(): void
+    {
+        config()->set('services.razorpay.key_id', 'rzp_test_key');
+        config()->set('services.razorpay.key_secret', 'test-secret');
+        config()->set('services.razorpay.api_base', 'https://api.razorpay.com/v1');
+
+        $admin = $this->administrator();
+        $reservation = $this->reservation();
+
+        $payment = app(PaymentService::class)->record([
+            'idempotency_key' => '31313131-3131-4313-8313-313131313131',
+            'reservation_id' => $reservation->id,
+            'method' => 'online_gateway',
+            'amount' => 1000,
+            'external_reference' => 'pay_reconcile_endpoint',
+        ]);
+
+        $refund = Refund::query()->create([
+            'idempotency_key' => '32323232-3232-4323-8323-323232323232',
+            'payment_id' => $payment->id,
+            'amount' => 250,
+            'status' => 'pending',
+            'reason' => 'Provider response recovery',
+        ]);
+
+        Http::fake([
+            'https://api.razorpay.com/v1/payments/pay_reconcile_endpoint/refunds' => Http::response([
+                'items' => [[
+                    'id' => 'rfnd_reconcile_endpoint',
+                    'payment_id' => 'pay_reconcile_endpoint',
+                    'amount' => 25000,
+                    'currency' => 'INR',
+                    'receipt' => $refund->idempotency_key,
+                    'status' => 'processed',
+                ]],
+            ], 200),
+        ]);
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->post('/admin/payments/refunds/'.$refund->id.'/reconcile')
+            ->assertRedirect();
+
+        $this->assertSame('succeeded', $refund->fresh()->status);
+        $this->assertSame('rfnd_reconcile_endpoint', $refund->fresh()->external_reference);
+        $this->assertSame('partially_paid', $reservation->fresh()->payment_status);
+
+        $this->withSession(['admin_user_id' => $admin->id])
+            ->get('/admin/payments')
+            ->assertOk();
+    }
+
 }
