@@ -30,7 +30,7 @@ class FrontDeskController extends Controller
     {
         $reservations = Reservation::query()
             ->where('status', 'confirmed')
-            ->with('rooms')
+            ->with(['rooms', 'guestLinks.guest'])
             ->orderBy('check_in_date')
             ->limit(50)
             ->get();
