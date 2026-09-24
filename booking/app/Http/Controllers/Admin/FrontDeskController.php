@@ -15,6 +15,7 @@ use App\Models\StayRoom;
 use App\Services\CustomerMessageService;
 use App\Services\FrontDeskService;
 use App\Services\ReservationLifecycleService;
+use App\Services\ReservationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -135,6 +136,44 @@ class FrontDeskController extends Controller
                 ->limit(20)
                 ->get(),
         ]);
+    }
+
+    public function createReservation(
+        Request $request,
+        ReservationService $reservations,
+        CustomerMessageService $messages
+    ): RedirectResponse {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+() -]{7,30}$/'],
+            'email' => ['nullable', 'email:rfc', 'max:190'],
+            'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in'],
+            'room_type_id' => ['required', 'integer', 'exists:room_types,id'],
+            'rate_plan_id' => ['required', 'integer', 'exists:rate_plans,id'],
+            'rooms' => ['required', 'integer', 'min:1', 'max:10'],
+            'adults' => ['required', 'integer', 'min:1', 'max:30'],
+            'children' => ['required', 'integer', 'min:0', 'max:30'],
+            'special_request' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $reservation = $reservations->createFrontDeskBooking($data);
+        } catch (RuntimeException $exception) {
+            return back()
+                ->withInput()
+                ->withErrors(['front_desk_booking' => $exception->getMessage()]);
+        }
+
+        $messages->sendBookingConfirmation($reservation);
+
+        return back()->with(
+            'status',
+            "Booking {$reservation->booking_number} created successfully. Total ₹"
+            .number_format((float) $reservation->total, 2)
+            .'. Customer confirmation processed.'
+        );
     }
 
     public function modifyReservation(
