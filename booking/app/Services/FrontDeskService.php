@@ -125,11 +125,19 @@ class FrontDeskService
                 'status' => 'open',
             ]);
 
+            $netRoomSubtotal = round(
+                (float) $reservation->subtotal - (float) $reservation->discount,
+                2
+            );
+            $discountLabel = (float) $reservation->discount > 0
+                ? ' · discount ₹'.number_format((float) $reservation->discount, 2)
+                : '';
+
             $this->folios->addCharge($folio, [
                 'category' => 'room',
-                'description' => 'Room reservation '.$reservation->booking_number,
+                'description' => 'Room reservation '.$reservation->booking_number.$discountLabel,
                 'quantity' => 1,
-                'subtotal' => $reservation->subtotal,
+                'subtotal' => $netRoomSubtotal,
                 'tax' => $reservation->tax,
                 'amount' => $reservation->total,
                 'source_key' => 'reservation:'.$reservation->id,
@@ -268,6 +276,11 @@ class FrontDeskService
                 throw new RuntimeException('One or more assigned rooms are blocked during the extension.');
             }
 
+            $oldSubtotal = (float) $reservation->subtotal;
+            $oldTax = (float) $reservation->tax;
+            $oldDiscount = (float) $reservation->discount;
+            $oldTotal = (float) $reservation->total;
+
             $extraSubtotal = 0.0;
             $extraTax = 0.0;
             $totalStayNights = CarbonImmutable::parse($reservation->check_in_date)
@@ -307,12 +320,20 @@ class FrontDeskService
                 $extraTax = round($extraTax + $quote['tax'], 2);
             }
 
-            $extraTotal = round($extraSubtotal + $extraTax, 2);
+            $newSubtotal = round($oldSubtotal + $extraSubtotal, 2);
+            $newDiscount = $this->pricing->discountForSubtotal($reservation, $newSubtotal);
+            $incrementalDiscount = max(0, round($newDiscount - $oldDiscount, 2));
+            $extraNetSubtotal = max(0, round($extraSubtotal - $incrementalDiscount, 2));
+            $extraTaxFactor = $extraSubtotal > 0 ? $extraNetSubtotal / $extraSubtotal : 1;
+            $extraDiscountedTax = round($extraTax * $extraTaxFactor, 2);
+            $extraTotal = round($extraNetSubtotal + $extraDiscountedTax, 2);
+
             $reservation->update([
                 'check_out_date' => $newCheckout->toDateString(),
-                'subtotal' => round((float) $reservation->subtotal + $extraSubtotal, 2),
-                'tax' => round((float) $reservation->tax + $extraTax, 2),
-                'total' => round((float) $reservation->total + $extraTotal, 2),
+                'subtotal' => $newSubtotal,
+                'discount' => $newDiscount,
+                'tax' => round($oldTax + $extraDiscountedTax, 2),
+                'total' => round($oldTotal + $extraTotal, 2),
             ]);
 
             $folio = Folio::query()->where('stay_id', $stay->id)->lockForUpdate()->firstOrFail();
@@ -320,8 +341,8 @@ class FrontDeskService
                 'category' => 'room',
                 'description' => 'Stay extension through '.$newCheckout->toDateString(),
                 'quantity' => 1,
-                'subtotal' => $extraSubtotal,
-                'tax' => $extraTax,
+                'subtotal' => $extraNetSubtotal,
+                'tax' => $extraDiscountedTax,
                 'amount' => $extraTotal,
                 'source_key' => 'stay-extension:'.$stay->id.':'.$newCheckout->toDateString(),
             ]);
