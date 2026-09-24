@@ -178,7 +178,7 @@ try {
     }
 
     Invoke-ExternalStep "SQLite feature suite" {
-        php artisan test --fail-on-warning --exclude-group=mysql
+        php artisan test --fail-on-warning
     }
 
     Invoke-ExternalStep "Route cache build" {
