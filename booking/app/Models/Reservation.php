@@ -12,6 +12,9 @@ class Reservation extends Model
         'booking_number', 'public_token', 'check_in_date', 'check_out_date',
         'adults', 'children', 'status', 'source', 'special_request',
         'subtotal', 'tax', 'discount', 'total', 'payment_status',
+        'promotion_code_id', 'promotion_code_snapshot', 'discount_source',
+        'discount_type', 'discount_value', 'discount_max', 'discount_reason',
+        'discount_authorized_by',
         'pricing_status', 'expires_at', 'pre_arrival_reminder_sent_at',
     ];
 
@@ -25,6 +28,8 @@ class Reservation extends Model
             'subtotal' => 'decimal:2',
             'tax' => 'decimal:2',
             'discount' => 'decimal:2',
+            'discount_value' => 'decimal:2',
+            'discount_max' => 'decimal:2',
             'total' => 'decimal:2',
         ];
     }
