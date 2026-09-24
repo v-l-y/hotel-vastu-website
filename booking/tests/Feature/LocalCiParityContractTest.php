@@ -23,6 +23,7 @@ class LocalCiParityContractTest extends TestCase
             'php artisan route:clear',
             'php artisan view:clear',
             'php artisan test --fail-on-warning',
+            'php artisan test --fail-on-warning tests/MySql/MySqlLockingContractTest.php',
         ] as $command) {
             $this->assertStringContainsString($command, $workflow);
             $this->assertStringContainsString($command, $runner);
