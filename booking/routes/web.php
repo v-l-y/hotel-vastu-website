@@ -71,6 +71,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/setup/room-blocks/{roomBlock}/close', [SetupController::class, 'closeRoomBlock'])->name('setup.room-blocks.close');
             Route::post('/setup/rate-plans', [SetupController::class, 'storeRatePlan'])->name('setup.rate-plans.store');
             Route::post('/setup/room-rates', [SetupController::class, 'storeRoomRate'])->name('setup.room-rates.store');
+            Route::post('/setup/promotion-codes', [SetupController::class, 'storePromotionCode'])->name('setup.promotion-codes.store');
+            Route::post('/setup/promotion-codes/{promotionCode}/status', [SetupController::class, 'updatePromotionCodeStatus'])->name('setup.promotion-codes.status');
             Route::post('/setup/tax-rules', [SetupController::class, 'storeTaxRule'])->name('setup.tax-rules.store');
             Route::post('/setup/restaurant/categories', [SetupController::class, 'storeRestaurantCategory'])->name('setup.restaurant-categories.store');
             Route::post('/setup/restaurant/menu-items', [SetupController::class, 'storeRestaurantMenuItem'])->name('setup.restaurant-menu-items.store');
