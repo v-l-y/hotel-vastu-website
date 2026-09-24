@@ -3,20 +3,23 @@
 use Illuminate\Support\Str;
 
 return [
-    'driver' => env('SESSION_DRIVER', 'file'),
+    'driver' => env('SESSION_DRIVER', 'redis'),
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
     'expire_on_close' => false,
-    'encrypt' => false,
+    'encrypt' => env('SESSION_ENCRYPT', env('APP_ENV') === 'production'),
     'files' => storage_path('framework/sessions'),
-    'connection' => env('SESSION_CONNECTION'),
+    'connection' => env('SESSION_CONNECTION', 'default'),
     'table' => 'sessions',
     'store' => env('SESSION_STORE'),
     'lottery' => [2, 100],
-    'cookie' => env('SESSION_COOKIE', Str::slug((string) env('APP_NAME', 'hotel-vastu-booking')).'-session'),
+    'cookie' => env(
+        'SESSION_COOKIE',
+        Str::slug((string) env('APP_NAME', 'hotel-vastu-booking')).'-session'
+    ),
     'path' => '/',
     'domain' => env('SESSION_DOMAIN'),
     'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
     'http_only' => true,
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
     'partitioned' => false,
 ];

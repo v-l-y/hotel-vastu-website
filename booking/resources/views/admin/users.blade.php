@@ -1,10 +1,12 @@
 @extends('admin.layout')
 @section('title','Users & Audit')
 @section('content')
+@php($currentAdmin=request()->attributes->get('admin_user'))
 <h1>Admin users & audit</h1>
 
 <section class="panel">
 <h2>Create admin user</h2>
+<p class="muted">Passwords require 12+ characters with upper/lowercase letters, a number and a symbol.</p>
 <form class="grid" method="post" action="{{ route('admin.users.store') }}">@csrf
 <label>Name<input name="name" required></label>
 <label>Email<input type="email" name="email" required></label>
@@ -17,7 +19,7 @@
 
 <section class="panel">
 <h2>Users</h2>
-<table><thead><tr><th>User</th><th>Access</th><th>Password reset</th></tr></thead><tbody>
+<table><thead><tr><th>User</th><th>Access</th><th>Password reset</th><th>2FA</th></tr></thead><tbody>
 @foreach($users as $user)
 <tr>
 <td><strong>{{ $user->name }}</strong><br>{{ $user->email }}<br><span class="muted">Last login: {{ $user->last_login_at?->format('d M Y, h:i A') ?? 'Never' }}</span></td>
@@ -35,7 +37,28 @@
 <button>Reset password</button>
 </form>
 </td>
+<td>
+@if($user->hasTwoFactorEnabled())
+<strong>Enabled</strong>
+@if($currentAdmin?->id !== $user->id)
+<form method="post" action="{{ route('admin.users.two-factor.reset',$user) }}" style="margin-top:8px">@csrf<button class="danger">Reset 2FA</button></form>
+@else
+<br><a href="{{ route('admin.security') }}">Manage mine</a>
+@endif
+@else
+<span class="muted">Not enabled</span>
+@endif
+</td>
 </tr>
+@endforeach
+</tbody></table>
+</section>
+
+<section class="panel">
+<h2>Authentication security events</h2>
+<table><thead><tr><th>Time</th><th>User</th><th>Event</th><th>Network</th></tr></thead><tbody>
+@foreach($authEvents as $event)
+<tr><td>{{ $event->created_at->format('d M Y, h:i:s A') }}</td><td>{{ $event->adminUser?->name ?? 'Unknown account' }}</td><td>{{ str_replace('_',' ',$event->event_type) }}</td><td>{{ $event->ip_address ?? '—' }}</td></tr>
 @endforeach
 </tbody></table>
 </section>

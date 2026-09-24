@@ -9,10 +9,11 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\SetupController;
+use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\AvailabilityController;
-use App\Http\Controllers\RazorpayPaymentController;
 use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\RazorpayPaymentController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ReservationHoldController;
 use Illuminate\Support\Facades\Route;
@@ -31,11 +32,28 @@ Route::post('/payments/razorpay/webhook', [RazorpayPaymentController::class, 'we
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'show'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:6,1')->name('login.submit');
+    Route::post('/login', [AdminAuthController::class, 'login'])
+        ->middleware('throttle:admin-login')
+        ->name('login.submit');
+
+    Route::get('/two-factor', [TwoFactorController::class, 'challenge'])
+        ->name('two-factor.challenge');
+    Route::post('/two-factor', [TwoFactorController::class, 'verifyChallenge'])
+        ->middleware('throttle:admin-two-factor')
+        ->name('two-factor.verify');
 
     Route::middleware(['admin', 'admin.audit'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/', DashboardController::class)->name('dashboard');
+
+        Route::get('/security', [TwoFactorController::class, 'settings'])
+            ->name('security');
+        Route::post('/security/two-factor/setup', [TwoFactorController::class, 'beginSetup'])
+            ->name('security.two-factor.setup');
+        Route::post('/security/two-factor/enable', [TwoFactorController::class, 'enable'])
+            ->name('security.two-factor.enable');
+        Route::post('/security/two-factor/disable', [TwoFactorController::class, 'disable'])
+            ->name('security.two-factor.disable');
 
         Route::middleware('admin.role:administrator')->group(function () {
             Route::get('/setup', [SetupController::class, 'index'])->name('setup');
@@ -54,6 +72,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
             Route::post('/users/{adminUser}', [AdminUserController::class, 'update'])->name('users.update');
             Route::post('/users/{adminUser}/password', [AdminUserController::class, 'resetPassword'])->name('users.password');
+            Route::post('/users/{adminUser}/two-factor/reset', [AdminUserController::class, 'resetTwoFactor'])->name('users.two-factor.reset');
         });
 
         Route::middleware('admin.role:administrator,front_desk')->group(function () {

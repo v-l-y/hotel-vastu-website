@@ -2,6 +2,7 @@
 
 use App\Models\AdminUser;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
 
 Artisan::command('hotel:status', function () {
     $this->info('Hotel Vastu booking application is ready.');
@@ -23,28 +24,44 @@ Artisan::command('admin:create {email} {--name=} {--role=administrator}', functi
         return 1;
     }
 
-    $password = (string) $this->secret('Password (minimum 12 characters)');
-    if (strlen($password) < 12) {
-        $this->error('Password must contain at least 12 characters.');
+    $password = (string) $this->secret(
+        'Password (12+ chars with upper, lower, number and symbol)'
+    );
+
+    $strong = strlen($password) >= 12
+        && preg_match('/[a-z]/', $password)
+        && preg_match('/[A-Z]/', $password)
+        && preg_match('/\d/', $password)
+        && preg_match('/[^A-Za-z0-9]/', $password);
+
+    if (! $strong) {
+        $this->error(
+            'Password must be at least 12 characters and include upper/lowercase letters, a number and a symbol.'
+        );
         return 1;
     }
 
     $confirm = (string) $this->secret('Confirm password');
+
     if (! hash_equals($password, $confirm)) {
         $this->error('Passwords do not match.');
         return 1;
     }
 
-    AdminUser::query()->updateOrCreate(
-        ['email' => $email],
-        [
-            'name' => $name,
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'role' => $role,
-            'is_active' => true,
-        ]
-    );
+    $admin = AdminUser::query()->firstOrNew(['email' => $email]);
+    $nextVersion = $admin->exists
+        ? ((int) $admin->session_version + 1)
+        : 1;
 
-    $this->info('Admin user saved.');
+    $admin->forceFill([
+        'name' => $name,
+        'password_hash' => Hash::make($password),
+        'role' => $role,
+        'is_active' => true,
+        'session_version' => $nextVersion,
+        'password_changed_at' => now(),
+    ])->save();
+
+    $this->info('Admin user saved. Existing sessions for this account were revoked.');
     return 0;
 });

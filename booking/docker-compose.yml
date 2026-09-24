@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8080:80"
+    environment:
+      APP_NAME: "Hotel Vastu Booking"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8080
+      APP_KEY: \${APP_KEY}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: hotel_vastu_booking
+      DB_USERNAME: hotel_vastu
+      DB_PASSWORD: hotel_vastu_dev
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SESSION_DRIVER: redis
+      SESSION_CONNECTION: default
+      SESSION_ENCRYPT: "true"
+      CACHE_STORE: redis
+      CACHE_LIMITER: redis
+      QUEUE_CONNECTION: sync
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: hotel_vastu_booking
+      MYSQL_USER: hotel_vastu
+      MYSQL_PASSWORD: hotel_vastu_dev
+      MYSQL_ROOT_PASSWORD: root_dev_only
+    volumes:
+      - booking_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot_dev_only"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - booking_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  booking_mysql:
+  booking_redis:

@@ -21,59 +21,36 @@ class AdminRbacTest extends TestCase
 
     public function test_administrator_can_open_setup(): void
     {
-        $admin = AdminUser::query()->create([
-            'name'=>'Admin',
-            'email'=>'admin@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'administrator',
-            'is_active'=>true,
-        ]);
+        $admin = $this->admin('Admin', 'admin@example.com', 'administrator');
 
-        $this->withSession(['admin_user_id'=>$admin->id])
+        $this->withSession($this->sessionFor($admin))
             ->get('/admin/setup')
             ->assertOk();
     }
 
     public function test_front_desk_cannot_open_administrator_setup(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Front Desk',
-            'email'=>'frontdesk@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'front_desk',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Front Desk', 'frontdesk@example.com', 'front_desk');
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->get('/admin/setup')
             ->assertForbidden();
     }
 
     public function test_disabled_admin_session_is_rejected(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Disabled',
-            'email'=>'disabled@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'administrator',
-            'is_active'=>false,
-        ]);
+        $user = $this->admin('Disabled', 'disabled@example.com', 'administrator', false);
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->get('/admin')
             ->assertRedirect('/admin/login');
     }
+
     public function test_restaurant_role_cannot_post_hotel_reservation_payment(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Restaurant',
-            'email'=>'restaurant@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'restaurant',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Restaurant', 'restaurant@example.com', 'restaurant');
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->post('/admin/payments', [
                 'idempotency_key'=>'56565656-5656-4565-8565-565656565656',
                 'target_type'=>'reservation',
@@ -86,13 +63,7 @@ class AdminRbacTest extends TestCase
 
     public function test_restaurant_role_cannot_refund_payments(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Restaurant',
-            'email'=>'restaurant-refund@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'restaurant',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Restaurant', 'restaurant-refund@example.com', 'restaurant');
         $payment = Payment::query()->create([
             'idempotency_key'=>'11111111-1111-4111-8111-111111111111',
             'method'=>'cash',
@@ -101,20 +72,14 @@ class AdminRbacTest extends TestCase
             'paid_at'=>now(),
         ]);
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->post('/admin/payments/'.$payment->id.'/refund', ['amount'=>10])
             ->assertForbidden();
     }
 
     public function test_kitchen_role_cannot_create_restaurant_orders_or_serve_them(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Kitchen',
-            'email'=>'kitchen@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'kitchen',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Kitchen', 'kitchen@example.com', 'kitchen');
         $order = RestaurantOrder::query()->create([
             'order_number'=>'RO-RBAC-1',
             'order_type'=>'takeaway',
@@ -125,26 +90,20 @@ class AdminRbacTest extends TestCase
             'total'=>100,
         ]);
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->post('/admin/restaurant/orders', [])
             ->assertForbidden();
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->post('/admin/restaurant/orders/'.$order->id.'/status', ['status'=>'served'])
             ->assertForbidden();
     }
 
     public function test_kitchen_view_hides_order_creation_and_table_controls(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Kitchen View',
-            'email'=>'kitchen-view@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'kitchen',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Kitchen View', 'kitchen-view@example.com', 'kitchen');
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->get('/admin/restaurant')
             ->assertOk()
             ->assertSee('Orders')
@@ -154,15 +113,9 @@ class AdminRbacTest extends TestCase
 
     public function test_restaurant_payment_console_hides_hotel_balances_and_refund_capability(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Restaurant Payments',
-            'email'=>'restaurant-payments@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'restaurant',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Restaurant Payments', 'restaurant-payments@example.com', 'restaurant');
 
-        $response = $this->withSession(['admin_user_id'=>$user->id])
+        $response = $this->withSession($this->sessionFor($user))
             ->get('/admin/payments');
 
         $response->assertOk();
@@ -173,13 +126,7 @@ class AdminRbacTest extends TestCase
 
     public function test_restaurant_role_cannot_reconcile_online_refunds(): void
     {
-        $user = AdminUser::query()->create([
-            'name'=>'Restaurant Reconcile',
-            'email'=>'restaurant-reconcile@example.com',
-            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
-            'role'=>'restaurant',
-            'is_active'=>true,
-        ]);
+        $user = $this->admin('Restaurant Reconcile', 'restaurant-reconcile@example.com', 'restaurant');
 
         $payment = Payment::query()->create([
             'idempotency_key'=>'21212121-2121-4212-8212-212121212121',
@@ -197,9 +144,31 @@ class AdminRbacTest extends TestCase
             'status'=>'pending',
         ]);
 
-        $this->withSession(['admin_user_id'=>$user->id])
+        $this->withSession($this->sessionFor($user))
             ->post('/admin/payments/refunds/'.$refund->id.'/reconcile')
             ->assertForbidden();
     }
 
+    private function admin(
+        string $name,
+        string $email,
+        string $role,
+        bool $active = true
+    ): AdminUser {
+        return AdminUser::query()->create([
+            'name' => $name,
+            'email' => $email,
+            'password_hash' => password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role' => $role,
+            'is_active' => $active,
+        ]);
+    }
+
+    private function sessionFor(AdminUser $admin): array
+    {
+        return [
+            'admin_user_id' => $admin->id,
+            'admin_session_version' => $admin->session_version,
+        ];
+    }
 }
