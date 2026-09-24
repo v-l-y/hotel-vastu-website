@@ -44,7 +44,7 @@ class DashboardController extends Controller
             ],
             'accounts' => [
                 ['label' => 'Successful payments', 'value' => Payment::query()->where('status', 'succeeded')->count()],
-                ['label' => 'Pending refunds', 'value' => Refund::query()->where('status', 'pending')->count()],
+                ['label' => 'Pending refunds', 'value' => Refund::query()->whereIn('status', ['pending', 'pending_manual'])->count()],
                 ['label' => 'Invoices issued', 'value' => Invoice::query()->count()],
             ],
             default => [
