@@ -357,7 +357,7 @@ for(const token of ["translate3d(0,26px,0)","scale(.992)","will-change:opacity,t
   if(!componentCss.includes(token)) fail("css/components.css","missing premium scroll-transition token "+token);
 }
 if(!exists("scripts/browser-check.mjs")) fail("browser-qa","browser QA script missing");
-if(!exists(".github/workflows/browser-qa.yml")) fail("browser-qa","browser QA workflow missing");
+if(!exists("../.github/workflows/browser-qa.yml")) fail("browser-qa","browser QA workflow missing");
 for(const file of ["js/main.js","js/booking.js","js/gallery.js","js/home-booking.js"]){
   try{new Function(read(file));}catch(e){fail(file,"JavaScript syntax error: "+e.message);}
 }
@@ -428,7 +428,7 @@ for(const staleHash of ["DzljoJNY","KKyyZ1OO","B3IF7IY_","BfCtKmSj"]){
 }
 
 // Maintenance workflow guard: source-mutating jobs must be manual-only.
-for(const file of [".github/workflows/final-polish.yml",".github/workflows/migrate-current-photos.yml",".github/workflows/discover-live-images.yml",".github/workflows/audit-live-images.yml",".github/workflows/audit-rendered-live-photos.yml",".github/workflows/migrate-rendered-hotel-photos.yml"]){
+for(const file of ["../.github/workflows/final-polish.yml","../.github/workflows/migrate-current-photos.yml","../.github/workflows/discover-live-images.yml","../.github/workflows/audit-live-images.yml","../.github/workflows/audit-rendered-live-photos.yml","../.github/workflows/migrate-rendered-hotel-photos.yml"]){
   const workflow=read(file);
   if(!workflow.includes("workflow_dispatch:")) fail(file,"manual workflow_dispatch trigger missing");
   if(/\n\s*push:\s*\n/.test(workflow)) fail(file,"maintenance workflow must not auto-run on push");
