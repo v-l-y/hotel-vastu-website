@@ -27,6 +27,8 @@
 <span>{{ $reservation->check_in_date->format('d M Y') }} → {{ $reservation->check_out_date->format('d M Y') }}</span>
 <span>{{ $line?->roomType?->name ?? 'Room' }} · {{ $reservation->rooms->sum('quantity') }} room(s)</span>
 <span>₹{{ number_format((float)$reservation->total,2) }}</span>
+@if((float)$reservation->discount > 0)<span>Discount −₹{{ number_format((float)$reservation->discount,2) }}</span>@endif
+@if($reservation->promotion_code_snapshot)<span>Promo {{ $reservation->promotion_code_snapshot }}</span>@endif
 <span>{{ str_replace('_',' ',$reservation->payment_status) }}</span>
 </div>
 </div>
@@ -80,11 +82,27 @@
 
 <details class="front-desk-manage">
 <summary>More actions</summary>
+<div style="margin-top:10px">
+@if($reservation->promotion_code_snapshot)
+<div class="front-desk-form-note"><strong>Promo {{ $reservation->promotion_code_snapshot }}</strong> applied · saved ₹{{ number_format((float)$reservation->discount,2) }}. Promo snapshots are not replaced by manual discounts.</div>
+@else
+<div class="front-desk-transfer-card">
+<strong>{{ $reservation->discount_source === 'manual' ? 'Update manual discount' : 'Manual discount' }}</strong>
+<form class="grid" method="post" action="{{ route('admin.front-desk.discount',$reservation) }}" style="margin-top:10px">
+@csrf
+<label>Type<select name="discount_type"><option value="fixed" @selected($reservation->discount_type==='fixed')>Fixed amount</option><option value="percent" @selected($reservation->discount_type==='percent')>Percent</option></select></label>
+<label>Value<input type="number" step="0.01" min="0.01" name="discount_value" value="{{ $reservation->discount_source === 'manual' ? $reservation->discount_value : '' }}" required></label>
+<label class="full">Reason<input name="discount_reason" maxlength="255" value="{{ $reservation->discount_source === 'manual' ? $reservation->discount_reason : '' }}" placeholder="Manager adjustment / service recovery / negotiated rate" required></label>
+<div class="full"><button type="submit">{{ $reservation->discount_source === 'manual' ? 'Update discount' : 'Apply discount' }}</button></div>
+</form>
+</div>
+@endif
 <div class="actions" style="margin-top:10px">
 <form method="post" action="{{ route('admin.front-desk.cancel',$reservation) }}">@csrf<button class="danger">Cancel reservation</button></form>
 @if(!today()->lt($reservation->check_in_date))
 <form method="post" action="{{ route('admin.front-desk.no-show',$reservation) }}">@csrf<button class="danger">Mark no-show</button></form>
 @endif
+</div>
 </div>
 </details>
 </article>
