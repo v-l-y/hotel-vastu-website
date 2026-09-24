@@ -116,14 +116,23 @@
 </div>
 <div class="payments-card-list">
 @forelse($folios as $folio)
+@php($folioBalance=(float)$folio->balance)
 <article class="payment-target-card {{ $targetedFolio ? 'focused' : '' }}">
 <div class="payment-target-head">
 <div>
-<div class="payment-target-title"><strong>Folio #{{ $folio->id }}</strong><span class="status-badge warn">Open balance</span></div>
+<div class="payment-target-title">
+<strong>Folio #{{ $folio->id }}</strong>
+@if($folioBalance > 0)<span class="status-badge warn">Open balance</span>@else<span class="status-badge warn">Credit / overpayment</span>@endif
+</div>
 <div class="payment-target-meta"><span>Reservation #{{ $folio->reservation_id }}</span><span>In-house account</span></div>
 </div>
-<div class="payment-amount">₹{{ number_format((float)$folio->balance,2) }} due</div>
+@if($folioBalance > 0)
+<div class="payment-amount">₹{{ number_format($folioBalance,2) }} due</div>
+@else
+<div class="payment-ledger-amount"><strong>₹{{ number_format(abs($folioBalance),2) }} credit</strong><span class="muted">Refund the excess from the payment ledger below.</span></div>
+@endif
 </div>
+@if($folioBalance > 0)
 <form class="payment-entry-form" data-payment-entry method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
@@ -138,13 +147,16 @@
 </select>
 </label>
 <label>Amount
-<input type="number" step="0.01" min="0.01" max="{{ $folio->balance }}" name="amount" value="{{ $folio->balance }}" inputmode="decimal" required>
+<input type="number" step="0.01" min="0.01" max="{{ $folioBalance }}" name="amount" value="{{ number_format($folioBalance,2,'.','') }}" inputmode="decimal" required>
 </label>
 <label>Reference <span class="payment-help">Optional for cash; required for UPI/card/bank transfer.</span>
 <input name="external_reference" maxlength="190" autocomplete="off" placeholder="Transaction / receipt reference">
 </label>
 <button type="submit">Record payment</button>
 </form>
+@else
+<div class="error"><strong>Overpayment requires refund.</strong> Checkout stays blocked until the folio balance returns to ₹0.00.</div>
+@endif
 </article>
 @empty
 <div class="payments-empty">No open folio balances.</div>
