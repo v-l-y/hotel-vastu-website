@@ -194,7 +194,28 @@ class OnlinePaymentServiceTest extends TestCase
         $this->assertSame('1000.00', $payment->amount);
         $this->assertSame('pay_stale', $payment->external_reference);
         $this->assertSame('paid_stale', $order->fresh()->status);
-        $this->assertSame('paid', $reservation->fresh()->payment_status);
+        $this->assertSame('overpaid', $reservation->fresh()->payment_status);
+    }
+
+    public function test_duplicate_checkout_requests_reuse_one_live_provider_order(): void
+    {
+        $reservation = $this->reservation('4');
+
+        Http::fake([
+            'https://api.razorpay.com/v1/orders' => Http::response([
+                'id' => 'order_single',
+                'amount' => 100000,
+                'currency' => 'INR',
+            ], 200),
+        ]);
+
+        $service = app(OnlinePaymentService::class);
+        $first = $service->createOrder($reservation);
+        $second = $service->createOrder($reservation->fresh());
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertSame(1, PaymentGatewayOrder::query()->count());
+        Http::assertSentCount(1);
     }
 
     public function test_webhook_route_accepts_valid_signed_server_to_server_request_without_csrf_token(): void
