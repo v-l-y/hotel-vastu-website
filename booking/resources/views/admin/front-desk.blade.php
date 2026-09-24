@@ -3,6 +3,27 @@
 @section('content')
 <h1>Front desk</h1>
 
+<section class="panel" data-front-desk-booking>
+<h2>New / walk-in booking</h2>
+<p class="muted">Create a confirmed reservation at the desk. Inventory and pricing are checked again when you save. Same-day bookings can be checked in immediately after creation.</p>
+<form class="grid" method="post" action="{{ route('admin.front-desk.create') }}">
+@csrf
+<label>First name<input name="first_name" value="{{ old('first_name') }}" maxlength="100" required></label>
+<label>Last name<input name="last_name" value="{{ old('last_name') }}" maxlength="100"></label>
+<label>Phone<input name="phone" value="{{ old('phone') }}" maxlength="30" required></label>
+<label>Email<input type="email" name="email" value="{{ old('email') }}" maxlength="190"></label>
+<label>Check-in<input type="date" name="check_in" value="{{ old('check_in', today()->toDateString()) }}" min="{{ today()->toDateString() }}" required></label>
+<label>Check-out<input type="date" name="check_out" value="{{ old('check_out', today()->addDay()->toDateString()) }}" min="{{ today()->addDay()->toDateString() }}" required></label>
+<label>Room type<select name="room_type_id" required><option value="">Choose room type</option>@foreach($roomTypes as $type)<option value="{{ $type->id }}" @selected((string)old('room_type_id')===(string)$type->id)>{{ $type->name }}</option>@endforeach</select></label>
+<label>Rate plan<select name="rate_plan_id" required><option value="">Choose rate plan</option>@foreach($ratePlans as $plan)<option value="{{ $plan->id }}" @selected((string)old('rate_plan_id')===(string)$plan->id)>{{ $plan->name }}</option>@endforeach</select></label>
+<label>Rooms<input type="number" name="rooms" min="1" max="10" value="{{ old('rooms',1) }}" required></label>
+<label>Adults<input type="number" name="adults" min="1" max="30" value="{{ old('adults',1) }}" required></label>
+<label>Children<input type="number" name="children" min="0" max="30" value="{{ old('children',0) }}" required></label>
+<label class="full">Special request<textarea name="special_request" rows="3" maxlength="2000">{{ old('special_request') }}</textarea></label>
+<div class="full"><button type="submit">Check availability & confirm booking</button></div>
+</form>
+</section>
+
 <section class="panel">
 <h2>Confirmed reservations</h2>
 @forelse($reservations as $reservation)
