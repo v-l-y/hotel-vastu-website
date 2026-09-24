@@ -10,7 +10,6 @@ use App\Models\RestaurantOrder;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -59,6 +58,7 @@ class PaymentController extends Controller
     public function store(Request $request, PaymentService $service): RedirectResponse
     {
         $data = $request->validate([
+            'idempotency_key' => ['required', 'uuid'],
             'target_type' => ['required', 'in:reservation,folio,restaurant_order'],
             'target_id' => ['required', 'integer', 'min:1'],
             'method' => ['required', 'in:cash,upi,card,bank_transfer'],
@@ -79,7 +79,7 @@ class PaymentController extends Controller
         }
 
         $payload = [
-            'idempotency_key' => (string) Str::uuid(),
+            'idempotency_key' => $data['idempotency_key'],
             'method' => $data['method'],
             'amount' => $data['amount'],
             'external_reference' => $data['external_reference'] ?? null,
@@ -99,13 +99,14 @@ class PaymentController extends Controller
     public function refund(Request $request, Payment $payment, PaymentService $service): RedirectResponse
     {
         $data = $request->validate([
+            'idempotency_key' => ['required', 'uuid'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:99999999'],
             'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
             $refund = $service->refund($payment, [
-                'idempotency_key' => (string) Str::uuid(),
+                'idempotency_key' => $data['idempotency_key'],
                 'amount' => $data['amount'],
                 'reason' => $data['reason'] ?? null,
             ]);
