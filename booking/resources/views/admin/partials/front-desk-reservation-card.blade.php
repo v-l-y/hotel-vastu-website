@@ -91,7 +91,7 @@
 <form class="grid" method="post" action="{{ route('admin.front-desk.discount',$reservation) }}" style="margin-top:10px">
 @csrf
 <label>Type<select name="discount_type"><option value="fixed" @selected($reservation->discount_type==='fixed')>Fixed amount</option><option value="percent" @selected($reservation->discount_type==='percent')>Percent</option></select></label>
-<label>Value<input type="number" step="0.01" min="0.01" name="discount_value" value="{{ $reservation->discount_source === 'manual' ? $reservation->discount_value : '' }}" required></label>
+<label>Value<input type="number" step="0.01" min="0.01" name="discount_value" value="{{ $reservation->discount_source === 'manual' ? $reservation->discount_value : '' }}" required><span class="front-desk-field-help">A full-value / 100% discount requires Administrator approval.</span></label>
 <label class="full">Reason<input name="discount_reason" maxlength="255" value="{{ $reservation->discount_source === 'manual' ? $reservation->discount_reason : '' }}" placeholder="Manager adjustment / service recovery / negotiated rate" required></label>
 <div class="full"><button type="submit">{{ $reservation->discount_source === 'manual' ? 'Update discount' : 'Apply discount' }}</button></div>
 </form>
