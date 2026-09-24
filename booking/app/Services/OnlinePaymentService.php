@@ -31,62 +31,69 @@ class OnlinePaymentService
 
     public function createOrder(Reservation $reservation): PaymentGatewayOrder
     {
-        $reservation = Reservation::query()->whereKey($reservation->id)->firstOrFail();
-
         if (! $this->enabled()) {
             throw new RuntimeException('Online payment gateway is not configured.');
         }
 
-        if ($reservation->status !== 'confirmed' || $reservation->pricing_status !== 'priced') {
-            throw new RuntimeException('Only confirmed priced reservations can be paid online.');
-        }
+        return DB::transaction(function () use ($reservation) {
+            // Serialize checkout-order creation with manual and provider payment posting.
+            // This prevents two browser requests from creating two live orders for the same due amount.
+            $reservation = Reservation::query()
+                ->whereKey($reservation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $due = round((float) $reservation->total - $this->reservationNetPaid($reservation->id), 2);
-        if ($due <= 0) {
-            throw new RuntimeException('This booking is already fully paid.');
-        }
+            if ($reservation->status !== 'confirmed' || $reservation->pricing_status !== 'priced') {
+                throw new RuntimeException('Only confirmed priced reservations can be paid online.');
+            }
 
-        $amountSubunits = (int) round($due * 100);
-        $existing = PaymentGatewayOrder::query()
-            ->where('provider', 'razorpay')
-            ->where('reservation_id', $reservation->id)
-            ->where('amount_subunits', $amountSubunits)
-            ->where('status', 'created')
-            ->latest('id')
-            ->first();
+            $due = round((float) $reservation->total - $this->reservationNetPaid($reservation->id), 2);
+            if ($due <= 0) {
+                throw new RuntimeException('This booking is already fully paid.');
+            }
 
-        if ($existing !== null) {
-            return $existing;
-        }
+            $amountSubunits = (int) round($due * 100);
+            $existing = PaymentGatewayOrder::query()
+                ->where('provider', 'razorpay')
+                ->where('reservation_id', $reservation->id)
+                ->where('amount_subunits', $amountSubunits)
+                ->where('status', 'created')
+                ->latest('id')
+                ->first();
 
-        PaymentGatewayOrder::query()
-            ->where('provider', 'razorpay')
-            ->where('reservation_id', $reservation->id)
-            ->where('status', 'created')
-            ->update(['status' => 'stale']);
+            if ($existing !== null) {
+                return $existing;
+            }
 
-        $providerOrder = $this->razorpay->createOrder(
-            $amountSubunits,
-            $reservation->booking_number,
-            ['booking_number' => $reservation->booking_number]
-        );
+            PaymentGatewayOrder::query()
+                ->where('provider', 'razorpay')
+                ->where('reservation_id', $reservation->id)
+                ->where('status', 'created')
+                ->update(['status' => 'stale']);
 
-        if (
-            empty($providerOrder['id'])
-            || (int) ($providerOrder['amount'] ?? 0) !== $amountSubunits
-            || ($providerOrder['currency'] ?? '') !== 'INR'
-        ) {
-            throw new RuntimeException('Online payment provider returned an invalid order.');
-        }
+            $providerOrder = $this->razorpay->createOrder(
+                $amountSubunits,
+                $reservation->booking_number,
+                ['booking_number' => $reservation->booking_number]
+            );
 
-        return PaymentGatewayOrder::query()->create([
-            'provider' => 'razorpay',
-            'reservation_id' => $reservation->id,
-            'provider_order_id' => $providerOrder['id'],
-            'amount_subunits' => $amountSubunits,
-            'currency' => 'INR',
-            'status' => 'created',
-        ]);
+            if (
+                empty($providerOrder['id'])
+                || (int) ($providerOrder['amount'] ?? 0) !== $amountSubunits
+                || ($providerOrder['currency'] ?? '') !== 'INR'
+            ) {
+                throw new RuntimeException('Online payment provider returned an invalid order.');
+            }
+
+            return PaymentGatewayOrder::query()->create([
+                'provider' => 'razorpay',
+                'reservation_id' => $reservation->id,
+                'provider_order_id' => $providerOrder['id'],
+                'amount_subunits' => $amountSubunits,
+                'currency' => 'INR',
+                'status' => 'created',
+            ]);
+        }, 3);
     }
 
     public function verifyCheckout(
