@@ -218,6 +218,10 @@ class FrontDeskController extends Controller
             'last_name' => ['nullable', 'string', 'max:100'],
             'phone' => ['required', 'string', 'max:30', 'regex:/^[0-9+() -]{7,30}$/'],
             'email' => ['nullable', 'email:rfc', 'max:190'],
+            'gstin' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z]Z[0-9A-Za-z]$/'],
+            'billing_address' => ['nullable', 'string', 'max:500'],
+            'billing_state' => ['nullable', 'string', 'max:100'],
+            'billing_state_code' => ['nullable', 'digits:2'],
             'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in'],
             'room_type_id' => [
@@ -342,6 +346,36 @@ class FrontDeskController extends Controller
         }
 
         return back()->with('status', 'Guest checked in.');
+    }
+
+    public function billingDetails(Request $request, Stay $stay): RedirectResponse
+    {
+        $stay->loadMissing('reservation.guestLinks.guest');
+
+        if ($stay->status !== 'checked_in') {
+            return back()->withErrors(['front_desk' => 'Billing details can only be changed before checkout.']);
+        }
+
+        $guest = $stay->reservation->guestLinks->first()?->guest;
+        if ($guest === null) {
+            return back()->withErrors(['front_desk' => 'Primary guest record is missing.']);
+        }
+
+        $data = $request->validate([
+            'gstin' => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z]Z[0-9A-Za-z]$/'],
+            'billing_address' => ['nullable', 'string', 'max:500'],
+            'billing_state' => ['nullable', 'string', 'max:100'],
+            'billing_state_code' => ['nullable', 'digits:2'],
+        ]);
+
+        $guest->update([
+            'gstin' => strtoupper(trim((string) ($data['gstin'] ?? ''))) ?: null,
+            'billing_address' => trim((string) ($data['billing_address'] ?? '')) ?: null,
+            'billing_state' => trim((string) ($data['billing_state'] ?? '')) ?: null,
+            'billing_state_code' => trim((string) ($data['billing_state_code'] ?? '')) ?: null,
+        ]);
+
+        return back()->with('status', 'Guest billing details updated for checkout invoice.');
     }
 
     public function transfer(Request $request, Stay $stay, FrontDeskService $service): RedirectResponse
