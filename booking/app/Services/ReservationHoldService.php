@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\RatePlan;
 use App\Models\ReservationHold;
 use App\Models\RoomType;
 use Carbon\CarbonImmutable;
@@ -11,12 +12,15 @@ use RuntimeException;
 
 class ReservationHoldService
 {
-    public function __construct(private AvailabilityService $availability)
-    {
+    public function __construct(
+        private AvailabilityService $availability,
+        private PricingService $pricing
+    ) {
     }
 
     public function create(
         int $roomTypeId,
+        int $ratePlanId,
         CarbonImmutable $checkIn,
         CarbonImmutable $checkOut,
         int $quantity,
@@ -25,6 +29,7 @@ class ReservationHoldService
     ): ReservationHold {
         return DB::transaction(function () use (
             $roomTypeId,
+            $ratePlanId,
             $checkIn,
             $checkOut,
             $quantity,
@@ -33,6 +38,12 @@ class ReservationHoldService
         ) {
             $roomType = RoomType::query()
                 ->whereKey($roomTypeId)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            RatePlan::query()
+                ->whereKey($ratePlanId)
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -51,9 +62,12 @@ class ReservationHoldService
                 throw new RuntimeException('Requested room inventory is no longer available.');
             }
 
+            $this->pricing->quote($roomTypeId, $ratePlanId, $checkIn, $checkOut, $quantity);
+
             return ReservationHold::query()->create([
                 'token' => (string) Str::uuid(),
                 'room_type_id' => $roomTypeId,
+                'rate_plan_id' => $ratePlanId,
                 'check_in_date' => $checkIn->toDateString(),
                 'check_out_date' => $checkOut->toDateString(),
                 'quantity' => $quantity,

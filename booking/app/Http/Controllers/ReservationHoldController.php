@@ -19,6 +19,7 @@ class ReservationHoldController extends Controller
         try {
             $hold = $holdService->create(
                 (int) $data['room_type_id'],
+                (int) $data['rate_plan_id'],
                 CarbonImmutable::parse($data['check_in']),
                 CarbonImmutable::parse($data['check_out']),
                 (int) $data['rooms'],

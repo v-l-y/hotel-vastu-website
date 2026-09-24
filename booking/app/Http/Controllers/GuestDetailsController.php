@@ -12,7 +12,7 @@ class GuestDetailsController extends Controller
         $hold = ReservationHold::query()
             ->active()
             ->where('token', $token)
-            ->with('roomType')
+            ->with(['roomType', 'ratePlan'])
             ->firstOrFail();
 
         return view('booking.guest', ['hold' => $hold]);

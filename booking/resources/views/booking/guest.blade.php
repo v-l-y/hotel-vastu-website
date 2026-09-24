@@ -15,7 +15,7 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <p>Your selected inventory is held until {{ $hold->expires_at->format('d M Y, h:i A') }}.</p>
 
 <div class="summary">
-<div><strong>{{ $hold->roomType->name }}</strong><br>{{ $hold->quantity }} room(s)</div>
+<div><strong>{{ $hold->roomType->name }}</strong><br>{{ $hold->ratePlan->name }} · {{ $hold->quantity }} room(s)</div>
 <div><strong>{{ $hold->check_in_date->format('d M Y') }} → {{ $hold->check_out_date->format('d M Y') }}</strong><br>{{ $hold->adults }} adult(s), {{ $hold->children }} child(ren)</div>
 </div>
 

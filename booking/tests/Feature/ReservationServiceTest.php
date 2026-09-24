@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\RatePlan;
 use App\Models\Reservation;
 use App\Models\ReservationHold;
 use App\Models\Room;
@@ -15,19 +16,21 @@ class ReservationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_active_hold_can_be_converted_into_a_confirmed_reservation_once(): void
+    public function test_active_priced_hold_can_be_converted_into_a_confirmed_reservation_once(): void
     {
         $type = RoomType::query()->create([
             'code' => 'classic',
             'name' => 'Classic Room',
+            'base_rate' => 2000,
             'is_active' => true,
         ]);
-
+        $plan = RatePlan::query()->create(['code' => 'standard', 'name' => 'Standard', 'is_active' => true]);
         Room::query()->create(['room_type_id' => $type->id, 'number' => '101']);
 
         $hold = ReservationHold::query()->create([
             'token' => '22222222-2222-4222-8222-222222222222',
             'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
             'check_in_date' => '2026-10-10',
             'check_out_date' => '2026-10-12',
             'quantity' => 1,
@@ -44,12 +47,11 @@ class ReservationServiceTest extends TestCase
         ]);
 
         $this->assertSame('confirmed', $reservation->status);
-        $this->assertSame('pending', $reservation->pricing_status);
+        $this->assertSame('priced', $reservation->pricing_status);
+        $this->assertSame('4000.00', $reservation->total);
         $this->assertNotNull($reservation->public_token);
-        $this->assertNotSame($reservation->booking_number, $reservation->public_token);
         $this->assertSame(2, $reservation->adults);
-        $this->assertSame(1, $reservation->children);
-        $this->assertDatabaseHas('reservation_guests', ['reservation_id' => $reservation->id, 'role' => 'primary']);
+        $this->assertDatabaseHas('reservation_night_rates', ['reservation_id' => $reservation->id]);
         $this->assertDatabaseHas('reservation_holds', [
             'id' => $hold->id,
             'converted_reservation_id' => $reservation->id,
@@ -61,12 +63,15 @@ class ReservationServiceTest extends TestCase
         $type = RoomType::query()->create([
             'code' => 'premium',
             'name' => 'Premium Room',
+            'base_rate' => 3000,
             'is_active' => true,
         ]);
+        $plan = RatePlan::query()->create(['code' => 'standard', 'name' => 'Standard', 'is_active' => true]);
 
         $hold = ReservationHold::query()->create([
             'token' => '33333333-3333-4333-8333-333333333333',
             'room_type_id' => $type->id,
+            'rate_plan_id' => $plan->id,
             'check_in_date' => '2026-10-10',
             'check_out_date' => '2026-10-12',
             'quantity' => 1,

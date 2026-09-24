@@ -14,6 +14,10 @@ use RuntimeException;
 
 class ReservationService
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function confirmHold(string $token, array $guestData): Reservation
     {
         return DB::transaction(function () use ($token, $guestData) {
@@ -37,6 +41,10 @@ class ReservationService
 
             if ($hold->expires_at->isPast()) {
                 throw new RuntimeException('This room hold has expired. Please search availability again.');
+            }
+
+            if ($hold->rate_plan_id === null) {
+                throw new RuntimeException('This room hold does not have a valid rate plan.');
             }
 
             $guest = Guest::query()->create([
@@ -63,6 +71,7 @@ class ReservationService
             ReservationRoom::query()->create([
                 'reservation_id' => $reservation->id,
                 'room_type_id' => $hold->room_type_id,
+                'rate_plan_id' => $hold->rate_plan_id,
                 'quantity' => $hold->quantity,
                 'nightly_rate' => null,
             ]);
@@ -73,6 +82,7 @@ class ReservationService
                 'role' => 'primary',
             ]);
 
+            $reservation = $this->pricing->priceReservation($reservation);
             $hold->update(['converted_reservation_id' => $reservation->id]);
 
             return $reservation->load(['rooms', 'guestLinks.guest']);
