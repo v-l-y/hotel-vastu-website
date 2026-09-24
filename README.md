@@ -20,6 +20,11 @@ Current verified baseline used by the site:
 
 Do **not** invent phone numbers, WhatsApp numbers, emails, prices, geo coordinates, guest reviews, awards, founding dates or room categories.
 
+## Booking System v1.0
+
+The separate Laravel booking/PMS/restaurant application lives in `booking/`.
+Its v1.0 product scope is frozen in `booking/docs/MASTER_BLUEPRINT.md`. Future v1.0 reviews verify that contract rather than expanding product scope.
+
 ## Structure
 
 - `index.html`
