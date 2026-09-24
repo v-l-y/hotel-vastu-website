@@ -217,6 +217,7 @@ class PaymentEndpointIdempotencyTest extends TestCase
             ->assertOk()
             ->assertSee('Due ₹300.00')
             ->assertSee('name="amount" value="300.00"', false)
+            ->assertSee('name="external_reference"', false)
             ->assertSee('Pay balance');
     }
 
