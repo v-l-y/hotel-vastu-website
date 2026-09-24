@@ -132,4 +132,41 @@ class AdminRbacTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_kitchen_view_hides_order_creation_and_table_controls(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Kitchen View',
+            'email'=>'kitchen-view@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'kitchen',
+            'is_active'=>true,
+        ]);
+
+        $this->withSession(['admin_user_id'=>$user->id])
+            ->get('/admin/restaurant')
+            ->assertOk()
+            ->assertSee('Orders')
+            ->assertDontSee('New order')
+            ->assertDontSee('Restaurant tables');
+    }
+
+    public function test_restaurant_payment_console_hides_hotel_balances_and_refund_capability(): void
+    {
+        $user = AdminUser::query()->create([
+            'name'=>'Restaurant Payments',
+            'email'=>'restaurant-payments@example.com',
+            'password_hash'=>password_hash('test-password-123', PASSWORD_DEFAULT),
+            'role'=>'restaurant',
+            'is_active'=>true,
+        ]);
+
+        $response = $this->withSession(['admin_user_id'=>$user->id])
+            ->get('/admin/payments');
+
+        $response->assertOk();
+        $response->assertViewHas('canRefund', false);
+        $response->assertViewHas('reservations', fn ($rows) => $rows->isEmpty());
+        $response->assertViewHas('folios', fn ($rows) => $rows->isEmpty());
+    }
+
 }
