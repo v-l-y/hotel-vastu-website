@@ -46,7 +46,10 @@ class PaymentController extends Controller
                 ->get(),
             'payments' => Payment::query()
                 ->with(['refunds', 'reservation', 'folio', 'restaurantOrder'])
-                ->when($restaurantOnly, fn ($query) => $query->whereNotNull('restaurant_order_id'))
+                ->when($restaurantOnly, fn ($query) => $query->whereHas(
+                    'restaurantOrder',
+                    fn ($orderQuery) => $orderQuery->whereIn('order_type', ['dine_in', 'takeaway'])
+                ))
                 ->latest('id')
                 ->limit(100)
                 ->get(),
