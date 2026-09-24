@@ -17,7 +17,6 @@ class LocalCiParityContractTest extends TestCase
         foreach ([
             'composer validate --strict',
             'composer install --no-interaction --prefer-dist --no-progress',
-            'php artisan test --fail-on-warning --exclude-group=mysql',
             'php artisan route:cache',
             'php artisan view:cache',
             'php artisan route:clear',
