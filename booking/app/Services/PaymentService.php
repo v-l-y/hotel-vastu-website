@@ -69,6 +69,13 @@ class PaymentService
 
             $externalReference = trim((string) ($data['external_reference'] ?? ''));
             if (
+                in_array($data['method'], ['upi', 'card', 'bank_transfer', 'online_gateway'], true)
+                && $externalReference === ''
+            ) {
+                throw new RuntimeException('A payment reference is required for non-cash payments.');
+            }
+
+            if (
                 $externalReference !== ''
                 && Payment::query()->where('external_reference', $externalReference)->exists()
             ) {
@@ -225,12 +232,25 @@ class PaymentService
             throw new RuntimeException('Refund reason is required.');
         }
 
+        $refundType = trim((string) ($data['refund_type'] ?? 'other'));
+        if (! in_array($refundType, [
+            'overpayment',
+            'duplicate_payment',
+            'cancellation',
+            'rate_adjustment',
+            'service_recovery',
+            'other',
+        ], true)) {
+            throw new RuntimeException('Unsupported refund type.');
+        }
+
         $existing = Refund::query()->where('idempotency_key', $data['idempotency_key'])->first();
         if ($existing !== null) {
             $sameRequest =
                 (int) $existing->payment_id === (int) $payment->id
                 && abs((float) $existing->amount - round((float) $data['amount'], 2)) < 0.009
-                && (string) ($existing->reason ?? '') === (string) ($data['reason'] ?? '');
+                && (string) ($existing->reason ?? '') === (string) ($data['reason'] ?? '')
+                && (string) ($existing->refund_type ?? 'other') === $refundType;
 
             if (! $sameRequest) {
                 throw new RuntimeException('Idempotency key was already used for a different refund request.');
@@ -239,7 +259,7 @@ class PaymentService
             return $existing;
         }
 
-        $refund = DB::transaction(function () use ($payment, $data, $reason) {
+        $refund = DB::transaction(function () use ($payment, $data, $reason, $refundType) {
             $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($payment->status !== 'succeeded') {
@@ -264,6 +284,7 @@ class PaymentService
                 'payment_id' => $payment->id,
                 'amount' => $amount,
                 'status' => $status,
+                'refund_type' => $refundType,
                 'reason' => $reason,
                 'external_reference' => null,
                 'refunded_at' => $status === 'succeeded' ? now() : null,
