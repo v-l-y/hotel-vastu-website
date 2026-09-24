@@ -19,7 +19,7 @@ class PublicInvoiceController extends Controller
         $folio = Folio::query()->where('reservation_id', $reservation->id)->firstOrFail();
         $invoice = Invoice::query()
             ->where('folio_id', $folio->id)
-            ->with(['items', 'creditNotes.items'])
+            ->with(['items', 'creditNotes.items', 'creditNotes.refund'])
             ->latest('id')
             ->firstOrFail();
 
