@@ -102,6 +102,12 @@ class PaymentController extends Controller
             ]
         );
 
+        $invoicedFolioIds = Invoice::query()
+            ->whereIn('folio_id', $payments->pluck('folio_id')->filter()->unique()->values())
+            ->pluck('folio_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         return view('admin.payments', [
             'showHotelPayments' => $showHotelPayments,
             'showRestaurantPayments' => $showRestaurantPayments,
@@ -119,6 +125,7 @@ class PaymentController extends Controller
             'reservationNetPaid' => $reservationNetPaid,
             'reservationOverpaid' => $reservationOverpaid,
             'restaurantOutstanding' => $restaurantOutstanding,
+            'invoicedFolioIds' => $invoicedFolioIds,
         ]);
     }
 
