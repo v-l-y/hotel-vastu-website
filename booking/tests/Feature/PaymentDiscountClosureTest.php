@@ -387,7 +387,7 @@ class PaymentDiscountClosureTest extends TestCase
         $this->assertSame('-150.00', $folio->fresh()->balance);
     }
 
-    public function test_overpayment_return_after_invoice_does_not_create_credit_note(): void
+    public function test_overpayment_return_after_invoice_creates_credit_note_without_reducing_folio_revenue_balance(): void
     {
         $reservation = $this->reservation('HV-PAY-CLOSE-7', 1000);
         $reservation->update(['status' => 'checked_out']);
@@ -434,7 +434,14 @@ class PaymentDiscountClosureTest extends TestCase
         ]);
 
         $this->assertSame('0.00', $folio->fresh()->balance);
-        $this->assertSame(0, CreditNote::query()->count());
+        $this->assertDatabaseHas('credit_notes', [
+            'invoice_id' => Invoice::query()->where('folio_id', $folio->id)->value('id'),
+            'refund_id' => \App\Models\Refund::query()
+                ->where('payment_id', $payment->id)
+                ->where('refund_type', 'overpayment')
+                ->value('id'),
+            'amount' => 200,
+        ]);
     }
 
     public function test_revenue_adjustment_refund_creates_credit_note_without_reopening_folio_balance(): void
