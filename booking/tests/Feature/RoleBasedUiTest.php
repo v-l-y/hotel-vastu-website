@@ -29,7 +29,7 @@ class RoleBasedUiTest extends TestCase
                 'hide' => ['Front Desk', 'Reports', 'Setup', 'Users & Audit'],
             ],
             'kitchen' => [
-                'see' => ['Restaurant', 'Security'],
+                'see' => ['Kitchen KOT', 'Security'],
                 'hide' => ['Front Desk', 'Payments', 'Reports', 'Setup', 'Users & Audit'],
             ],
             'accounts' => [
