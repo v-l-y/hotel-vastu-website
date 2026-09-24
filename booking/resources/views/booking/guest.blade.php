@@ -10,6 +10,7 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 </style>
 </head>
 <body>
+@include('partials.toast')
 <main>
 <p>Hotel Vastu Premium</p>
 <h1>Guest details</h1>
@@ -27,8 +28,6 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <div class="price-row price-total"><span>Stay total</span><span data-price-total>₹{{ number_format((float) $quote['total'], 2) }}</span></div>
 <p class="muted">This is the price for the selected dates, room(s) and rate plan.</p>
 </section>
-
-@if ($errors->any()) <div class="error"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div> @endif
 
 <section class="panel">
 <form class="grid" method="post" action="{{ route('booking.otp.send', ['token' => $hold->token]) }}">@csrf
@@ -84,6 +83,7 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
             reset();
             result.className = 'promo-result bad';
             result.textContent = 'Enter a promo code first.';
+            window.HotelToast?.error('Enter a promo code first.');
             return;
         }
 
@@ -115,10 +115,13 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
             total.textContent = money(payload.total);
             result.className = 'promo-result good';
             result.textContent = payload.code + ' applied · You save ' + money(payload.discount) + '.';
+            window.HotelToast?.success(result.textContent);
         } catch (error) {
             reset();
+            const message = error instanceof Error ? error.message : 'Promo code could not be applied.';
             result.className = 'promo-result bad';
-            result.textContent = error instanceof Error ? error.message : 'Promo code could not be applied.';
+            result.textContent = message;
+            window.HotelToast?.error(message);
         } finally {
             button.disabled = false;
         }
