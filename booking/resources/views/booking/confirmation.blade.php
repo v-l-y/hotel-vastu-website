@@ -16,32 +16,30 @@ body{font-family:system-ui,sans-serif;margin:0;background:#f6f3ef;color:#241f1b}
 <p class="booking">{{ $reservation->booking_number }}</p>
 
 @php($primaryGuest = optional($reservation->guestLinks->first())->guest)
+@php($primaryRoom = $reservation->rooms->first())
 
 @if($reservation->status === 'confirmed')
 <div class="success">
 <strong>Booking confirmed successfully!</strong><br>
-Your room has been booked at Hotel Vastu Premium.
-@if($primaryGuest?->email)
-A confirmation has been sent to your mobile and email.
-@else
-A confirmation has been sent to your mobile.
-@endif
+Your room has been booked at Hotel Vastu Premium. Please keep your booking number for check-in.
 </div>
 @elseif($reservation->status === 'cancelled')
 <div class="warning">
 <strong>This reservation has been cancelled.</strong><br>
-Please refer to the cancellation email sent by the hotel for the latest booking update.
+Please contact the hotel if you need help with cancellation or payment adjustments.
 </div>
 @elseif($reservation->status === 'no_show')
 <div class="warning">
 <strong>This reservation was marked as no-show.</strong><br>
-No refund is processed automatically. Please refer to the no-show email or contact the hotel for any applicable adjustment.
+No refund is processed automatically. Please contact the hotel for any applicable adjustment.
 </div>
 @endif
 
 <section class="panel">
 <div class="grid">
 <div><strong>Guest</strong><br>{{ trim(($primaryGuest->first_name ?? '').' '.($primaryGuest->last_name ?? '')) }}</div>
+<div><strong>Room</strong><br>{{ $primaryRoom?->roomType?->name ?? 'Room' }} · {{ $primaryRoom?->quantity ?? 1 }} room(s)</div>
+<div><strong>Rate plan</strong><br>{{ $primaryRoom?->ratePlan?->name ?? 'Configured rate' }}</div>
 <div><strong>Check-in</strong><br>{{ $reservation->check_in_date->format('d M Y') }}</div>
 <div><strong>Check-out</strong><br>{{ $reservation->check_out_date->format('d M Y') }}</div>
 <div><strong>Guests</strong><br>{{ $reservation->adults }} adult(s), {{ $reservation->children }} child(ren)</div>
