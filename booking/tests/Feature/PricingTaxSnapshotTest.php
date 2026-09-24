@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\RatePlan;
 use App\Models\Reservation;
 use App\Models\ReservationRoom;
+use App\Models\ReservationNightRate;
 use App\Models\RoomType;
 use App\Models\TaxRule;
 use App\Services\PricingService;
@@ -78,19 +79,20 @@ class PricingTaxSnapshotTest extends TestCase
 
         app(PricingService::class)->priceReservation($reservation);
 
-        $this->assertDatabaseHas('reservation_night_rates', [
-            'reservation_id' => $reservation->id,
-            'stay_date' => '2026-10-10 00:00:00',
-            'tax_rate' => 10,
-            'tax_amount' => 100,
-            'gross_total' => 1100,
-        ]);
-        $this->assertDatabaseHas('reservation_night_rates', [
-            'reservation_id' => $reservation->id,
-            'stay_date' => '2026-10-11 00:00:00',
-            'tax_rate' => 20,
-            'tax_amount' => 200,
-            'gross_total' => 1200,
-        ]);
+        $firstNight = ReservationNightRate::query()
+            ->where('reservation_id', $reservation->id)
+            ->whereDate('stay_date', '2026-10-10')
+            ->firstOrFail();
+        $secondNight = ReservationNightRate::query()
+            ->where('reservation_id', $reservation->id)
+            ->whereDate('stay_date', '2026-10-11')
+            ->firstOrFail();
+
+        $this->assertSame('10.0000', $firstNight->tax_rate);
+        $this->assertSame('100.00', $firstNight->tax_amount);
+        $this->assertSame('1100.00', $firstNight->gross_total);
+        $this->assertSame('20.0000', $secondNight->tax_rate);
+        $this->assertSame('200.00', $secondNight->tax_amount);
+        $this->assertSame('1200.00', $secondNight->gross_total);
     }
 }

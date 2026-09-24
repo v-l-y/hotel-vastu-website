@@ -45,7 +45,7 @@ jobs:
       - run: composer validate --strict
       - run: composer install --no-interaction --prefer-dist --no-progress
       - name: SQLite feature suite
-        run: php artisan test --fail-on-warning
+        run: php artisan test --fail-on-warning --exclude-group=mysql
       - name: MySQL production-contract suite
         env:
           DB_CONNECTION: mysql

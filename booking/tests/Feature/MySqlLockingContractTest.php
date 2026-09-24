@@ -7,7 +7,9 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('mysql')]
 class MySqlLockingContractTest extends TestCase
 {
     use RefreshDatabase;
