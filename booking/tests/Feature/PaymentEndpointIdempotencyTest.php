@@ -152,6 +152,12 @@ class PaymentEndpointIdempotencyTest extends TestCase
         ]);
 
         $this->withSession(['admin_user_id' => $admin->id])
+            ->get('/admin/payments')
+            ->assertOk()
+            ->assertSee('Pending refund ₹250.00')
+            ->assertSee('max="750"', false);
+
+        $this->withSession(['admin_user_id' => $admin->id])
             ->post('/admin/payments/refunds/'.$refund->id.'/reconcile')
             ->assertRedirect();
 
