@@ -124,7 +124,7 @@
 </div>
 <div class="payment-amount">₹{{ number_format((float)$folio->balance,2) }} due</div>
 </div>
-<form class="payment-entry-form" method="post" action="{{ route('admin.payments.store') }}">
+<form class="payment-entry-form" data-payment-entry method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <input type="hidden" name="target_type" value="folio">
@@ -140,7 +140,7 @@
 <label>Amount
 <input type="number" step="0.01" min="0.01" max="{{ $folio->balance }}" name="amount" value="{{ $folio->balance }}" inputmode="decimal" required>
 </label>
-<label>Reference <span class="payment-help">Optional for cash; useful for UPI/card/bank reference.</span>
+<label>Reference <span class="payment-help">Optional for cash; required for UPI/card/bank transfer.</span>
 <input name="external_reference" maxlength="190" autocomplete="off" placeholder="Transaction / receipt reference">
 </label>
 <button type="submit">Record payment</button>
@@ -161,6 +161,9 @@
 </div>
 <div class="payments-card-list">
 @forelse($reservations as $reservation)
+@php($reservationDue=(float)($reservationOutstanding[$reservation->id] ?? 0))
+@php($reservationPaid=(float)($reservationNetPaid[$reservation->id] ?? 0))
+@php($reservationExcess=(float)($reservationOverpaid[$reservation->id] ?? 0))
 <article class="payment-target-card {{ $targetedReservation ? 'focused' : '' }}">
 <div class="payment-target-head">
 <div>
@@ -168,14 +171,22 @@
 <strong>{{ $reservation->booking_number }}</strong>
 <span class="status-badge {{ $reservation->payment_status === 'paid' ? 'good' : ($reservation->payment_status === 'partially_paid' ? 'warn' : '') }}">{{ str_replace('_',' ',$reservation->payment_status) }}</span>
 </div>
-<div class="payment-target-meta"><span>Check-in {{ $reservation->check_in_date->format('d M Y') }}</span><span>Check-out {{ $reservation->check_out_date->format('d M Y') }}</span></div>
+<div class="payment-target-meta">
+<span>Check-in {{ $reservation->check_in_date->format('d M Y') }}</span>
+<span>Check-out {{ $reservation->check_out_date->format('d M Y') }}</span>
+<span>Room ₹{{ number_format((float)$reservation->subtotal,2) }}</span>
+@if((float)$reservation->discount > 0)<span>Discount −₹{{ number_format((float)$reservation->discount,2) }}</span>@endif
+<span>Tax ₹{{ number_format((float)$reservation->tax,2) }}</span>
 </div>
-<div class="payment-amount">₹{{ number_format((float)$reservation->total,2) }} total</div>
 </div>
-@if(in_array($reservation->payment_status,['paid','overpaid'],true))
+<div class="payment-ledger-amount"><strong>₹{{ number_format($reservationDue,2) }} due</strong><span class="muted">Total ₹{{ number_format((float)$reservation->total,2) }} · Net paid ₹{{ number_format($reservationPaid,2) }}</span></div>
+</div>
+@if($reservationExcess > 0)
+<div class="error"><strong>Overpayment ₹{{ number_format($reservationExcess,2) }}.</strong> Refund the excess from the payment ledger below.</div>
+@elseif($reservationDue <= 0.009)
 <div class="payment-context-note"><strong>Payment complete.</strong> No additional manual payment is required for this reservation.</div>
 @else
-<form class="payment-entry-form" method="post" action="{{ route('admin.payments.store') }}">
+<form class="payment-entry-form" data-payment-entry method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <input type="hidden" name="target_type" value="reservation">
@@ -189,9 +200,9 @@
 </select>
 </label>
 <label>Amount
-<input type="number" step="0.01" min="0.01" name="amount" inputmode="decimal" placeholder="Enter amount" required>
+<input type="number" step="0.01" min="0.01" max="{{ $reservationDue }}" name="amount" value="{{ number_format($reservationDue,2,'.','') }}" inputmode="decimal" required>
 </label>
-<label>Reference <span class="payment-help">Optional for cash; useful for UPI/card/bank reference.</span>
+<label>Reference <span class="payment-help">Optional for cash; required for UPI/card/bank transfer.</span>
 <input name="external_reference" maxlength="190" autocomplete="off" placeholder="Transaction / receipt reference">
 </label>
 <button type="submit">Record payment</button>
@@ -213,15 +224,16 @@
 </div>
 <div class="payments-card-list">
 @forelse($restaurantOrders as $order)
+@php($orderDue=(float)($restaurantOutstanding[$order->id] ?? 0))
 <article class="payment-target-card">
 <div class="payment-target-head">
 <div>
 <div class="payment-target-title"><strong>{{ $order->order_number }}</strong><span class="status-badge {{ $order->payment_status === 'paid' ? 'good' : 'warn' }}">{{ str_replace('_',' ',$order->payment_status) }}</span></div>
 <div class="payment-target-meta"><span>{{ str_replace('_',' ',$order->order_type) }}</span><span>Served order</span></div>
 </div>
-<div class="payment-amount">₹{{ number_format((float)$order->total,2) }} total</div>
+<div class="payment-ledger-amount"><strong>₹{{ number_format($orderDue,2) }} due</strong><span class="muted">Total ₹{{ number_format((float)$order->total,2) }}</span></div>
 </div>
-<form class="payment-entry-form" method="post" action="{{ route('admin.payments.store') }}">
+<form class="payment-entry-form" data-payment-entry method="post" action="{{ route('admin.payments.store') }}">
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <input type="hidden" name="target_type" value="restaurant_order">
@@ -235,9 +247,9 @@
 </select>
 </label>
 <label>Amount
-<input type="number" step="0.01" min="0.01" name="amount" inputmode="decimal" placeholder="Enter amount" required>
+<input type="number" step="0.01" min="0.01" max="{{ $orderDue }}" name="amount" value="{{ number_format($orderDue,2,'.','') }}" inputmode="decimal" required>
 </label>
-<label>Reference <span class="payment-help">Optional for cash; useful for UPI/card/bank reference.</span>
+<label>Reference <span class="payment-help">Optional for cash; required for UPI/card/bank transfer.</span>
 <input name="external_reference" maxlength="190" autocomplete="off" placeholder="Transaction / receipt reference">
 </label>
 <button type="submit">Record payment</button>
@@ -277,7 +289,7 @@
 <div class="payments-ledger">
 @forelse($payments as $payment)
 @php($refunded=(float)$payment->refunds->where('status','succeeded')->sum('amount'))
-@php($pendingRefunds=(float)$payment->refunds->where('status','pending')->sum('amount'))
+@php($pendingRefunds=(float)$payment->refunds->whereIn('status',['pending','pending_manual'])->sum('amount'))
 @php($refundable=max(0,(float)$payment->amount-$refunded-$pendingRefunds))
 <article class="payment-ledger-card">
 <div class="payment-ledger-head">
@@ -312,12 +324,20 @@
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <label>Refund amount<input type="number" step="0.01" min="0.01" max="{{ $refundable }}" name="amount" inputmode="decimal" placeholder="Amount" required></label>
-<label>Reason <span class="payment-help">Optional</span><input name="reason" maxlength="255" placeholder="Guest adjustment / cancellation / correction"></label>
+<label>Reason <span class="payment-help">Required</span><input name="reason" maxlength="255" minlength="3" placeholder="Cancellation / overpayment / duplicate payment / adjustment" required></label>
 <button class="danger">Refund</button>
 </form>
 @endif
 
 @if($canRefund ?? false)
+@foreach($payment->refunds->where('status','pending_manual') as $pendingRefund)
+<form class="payment-refund-form" method="post" action="{{ route('admin.payments.refunds.confirm-manual',$pendingRefund) }}" style="margin-top:10px">
+@csrf
+<label>External refund reference<input name="external_reference" maxlength="190" placeholder="UPI / card / bank refund reference" required></label>
+<div><span class="status-badge warn">₹{{ number_format((float)$pendingRefund->amount,2) }} pending manual confirmation</span><div class="payment-help">{{ $pendingRefund->reason }}</div></div>
+<button type="submit">Confirm refunded</button>
+</form>
+@endforeach
 @foreach($payment->refunds->where('status','pending') as $pendingRefund)
 <form class="actions" method="post" action="{{ route('admin.payments.refunds.reconcile',$pendingRefund) }}" style="margin-top:10px">
 @csrf
@@ -334,4 +354,19 @@
 </div>
 </section>
 </div>
+<script>
+(() => {
+    document.querySelectorAll('[data-payment-entry]').forEach((form) => {
+        const method = form.querySelector('select[name="method"]');
+        const reference = form.querySelector('input[name="external_reference"]');
+        if (!method || !reference) return;
+
+        const syncReference = () => {
+            reference.required = method.value !== 'cash';
+        };
+        method.addEventListener('change', syncReference);
+        syncReference();
+    });
+})();
+</script>
 @endsection
