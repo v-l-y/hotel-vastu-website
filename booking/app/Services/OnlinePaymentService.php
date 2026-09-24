@@ -33,6 +33,10 @@ class OnlinePaymentService
     {
         $reservation = Reservation::query()->whereKey($reservation->id)->firstOrFail();
 
+        if (! $this->enabled()) {
+            throw new RuntimeException('Online payment gateway is not configured.');
+        }
+
         if ($reservation->status !== 'confirmed' || $reservation->pricing_status !== 'priced') {
             throw new RuntimeException('Only confirmed priced reservations can be paid online.');
         }
@@ -56,6 +60,12 @@ class OnlinePaymentService
         if ($existing !== null) {
             return $existing;
         }
+
+        PaymentGatewayOrder::query()
+            ->where('provider', 'razorpay')
+            ->where('reservation_id', $reservation->id)
+            ->where('status', 'created')
+            ->update(['status' => 'stale']);
 
         $providerOrder = $this->razorpay->createOrder(
             $amountSubunits,
@@ -87,15 +97,23 @@ class OnlinePaymentService
         string $providerPaymentId,
         string $signature
     ): Payment {
-        if (! $this->razorpay->verifyCheckoutSignature($providerOrderId, $providerPaymentId, $signature)) {
-            throw new RuntimeException('Online payment signature verification failed.');
-        }
-
         $gatewayOrder = PaymentGatewayOrder::query()
             ->where('provider', 'razorpay')
             ->where('reservation_id', $reservation->id)
             ->where('provider_order_id', $providerOrderId)
             ->firstOrFail();
+
+        if ($gatewayOrder->status !== 'created' && $gatewayOrder->status !== 'paid') {
+            throw new RuntimeException('This online payment order is no longer valid.');
+        }
+
+        if (! $this->razorpay->verifyCheckoutSignature(
+            $gatewayOrder->provider_order_id,
+            $providerPaymentId,
+            $signature
+        )) {
+            throw new RuntimeException('Online payment signature verification failed.');
+        }
 
         $providerPayment = $this->razorpay->fetchPayment($providerPaymentId);
 
@@ -121,56 +139,88 @@ class OnlinePaymentService
             throw new RuntimeException('Invalid online payment webhook signature.');
         }
 
-        $eventHash = hash('sha256', $rawBody);
-        if (PaymentWebhookEvent::query()->where('event_hash', $eventHash)->exists()) {
-            return;
-        }
-
         $payload = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
-        $eventName = (string) ($payload['event'] ?? '');
-        $providerOrderId = null;
-        $providerPaymentId = null;
+        $eventHash = hash('sha256', $rawBody);
 
-        if ($eventName === 'payment.captured') {
-            $payment = $payload['payload']['payment']['entity'] ?? [];
-            $providerOrderId = $payment['order_id'] ?? null;
-            $providerPaymentId = $payment['id'] ?? null;
+        DB::transaction(function () use ($payload, $eventHash) {
+            $event = PaymentWebhookEvent::query()->firstOrCreate(
+                ['event_hash' => $eventHash],
+                [
+                    'provider' => 'razorpay',
+                    'event_name' => (string) ($payload['event'] ?? 'unknown'),
+                    'processed_at' => now(),
+                ]
+            );
 
-            if (
-                ! is_string($providerOrderId)
-                || ! is_string($providerPaymentId)
-                || ($payment['status'] ?? '') !== 'captured'
-                || ($payment['currency'] ?? '') !== 'INR'
-            ) {
-                throw new RuntimeException('Malformed captured-payment webhook.');
+            if (! $event->wasRecentlyCreated) {
+                return;
             }
 
-            $gatewayOrder = PaymentGatewayOrder::query()
-                ->where('provider', 'razorpay')
-                ->where('provider_order_id', $providerOrderId)
-                ->first();
+            $eventName = (string) ($payload['event'] ?? '');
+            $providerOrderId = null;
+            $providerPaymentId = null;
 
-            if ($gatewayOrder !== null) {
-                if ((int) ($payment['amount'] ?? 0) !== (int) $gatewayOrder->amount_subunits) {
-                    throw new RuntimeException('Webhook payment amount does not match booking order.');
+            if ($eventName === 'payment.captured') {
+                $payment = $payload['payload']['payment']['entity'] ?? [];
+                $providerOrderId = $payment['order_id'] ?? null;
+                $providerPaymentId = $payment['id'] ?? null;
+
+                if (
+                    ! is_string($providerOrderId)
+                    || ! is_string($providerPaymentId)
+                    || ($payment['status'] ?? '') !== 'captured'
+                    || ($payment['currency'] ?? '') !== 'INR'
+                ) {
+                    throw new RuntimeException('Malformed captured-payment webhook.');
                 }
 
-                $this->recordCapturedPayment(
-                    $gatewayOrder,
-                    $providerPaymentId,
-                    (int) $payment['amount']
-                );
-            }
-        }
+                $gatewayOrder = PaymentGatewayOrder::query()
+                    ->where('provider', 'razorpay')
+                    ->where('provider_order_id', $providerOrderId)
+                    ->lockForUpdate()
+                    ->first();
 
-        PaymentWebhookEvent::query()->create([
-            'provider' => 'razorpay',
-            'event_hash' => $eventHash,
-            'event_name' => $eventName !== '' ? $eventName : 'unknown',
-            'provider_order_id' => $providerOrderId,
-            'provider_payment_id' => $providerPaymentId,
-            'processed_at' => now(),
-        ]);
+                if ($gatewayOrder !== null) {
+                    if ((int) ($payment['amount'] ?? 0) !== (int) $gatewayOrder->amount_subunits) {
+                        throw new RuntimeException('Webhook payment amount does not match booking order.');
+                    }
+
+                    if ($gatewayOrder->status === 'stale') {
+                        throw new RuntimeException('Captured payment belongs to a stale booking order and requires manual reconciliation.');
+                    }
+
+                    $this->recordCapturedPayment(
+                        $gatewayOrder,
+                        $providerPaymentId,
+                        (int) $payment['amount']
+                    );
+                }
+            } elseif (in_array($eventName, ['refund.processed', 'refund.failed'], true)) {
+                $refund = $payload['payload']['refund']['entity'] ?? [];
+                $providerRefundId = $refund['id'] ?? null;
+                $providerPaymentId = $refund['payment_id'] ?? null;
+
+                if (! is_string($providerRefundId) || ! is_string($providerPaymentId)) {
+                    throw new RuntimeException('Malformed refund webhook.');
+                }
+
+                if ($eventName === 'refund.processed') {
+                    $this->payments->markProviderRefundProcessed($providerRefundId);
+                } else {
+                    $this->payments->markProviderRefundFailed($providerRefundId);
+                }
+
+                $event->update([
+                    'provider_payment_id' => $providerPaymentId,
+                ]);
+            }
+
+            $event->update([
+                'provider_order_id' => $providerOrderId,
+                'provider_payment_id' => $providerPaymentId,
+                'processed_at' => now(),
+            ]);
+        }, 3);
     }
 
     private function recordCapturedPayment(
@@ -192,6 +242,10 @@ class OnlinePaymentService
             $existing = Payment::query()->where('external_reference', $providerPaymentId)->first();
             if ($existing !== null) {
                 return $existing;
+            }
+
+            if (! in_array($lockedOrder->status, ['created', 'paid'], true)) {
+                throw new RuntimeException('Online payment order is not eligible for capture posting.');
             }
 
             $payment = $this->payments->record([
