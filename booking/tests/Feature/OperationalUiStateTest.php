@@ -31,6 +31,7 @@ class OperationalUiStateTest extends TestCase
             ->assertSee('id="restaurant-order-modal"', false)
             ->assertSee('id="restaurant-order-form"', false)
             ->assertSee('order-modal-footer', false)
+            ->assertSee('data-order-modal-scroll-region', false)
             ->assertSee('order-type-switch', false)
             ->assertSee('data-order-type-option', false)
             ->assertSee('data-line-total', false)

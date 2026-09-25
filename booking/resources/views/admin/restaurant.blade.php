@@ -6,13 +6,14 @@
 .restaurant-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
 .restaurant-heading h1{margin:0 0 6px}.restaurant-heading p{margin:0}.restaurant-heading-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .order-context[hidden]{display:none}.order-summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.restaurant-order-modal{width:min(980px,calc(100vw - 28px));max-height:calc(100vh - 28px);padding:0;border:0;border-radius:22px;background:#fff;color:#241f1b;box-shadow:0 28px 80px rgba(28,20,15,.30);overflow:hidden}
+.restaurant-order-modal{width:min(980px,calc(100vw - 28px));height:min(900px,calc(100vh - 28px));height:min(900px,calc(100dvh - 28px));max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);padding:0;border:0;border-radius:22px;background:#fff;color:#241f1b;box-shadow:0 28px 80px rgba(28,20,15,.30);overflow:hidden}
 .restaurant-order-modal::backdrop{background:rgba(29,22,18,.66);backdrop-filter:blur(3px)}
-.order-modal-shell{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:calc(100vh - 28px)}
+.order-modal-shell{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;overflow:hidden}
+#restaurant-order-form{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden}
 .order-modal-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e8e0d9;background:#fcfaf8}
 .order-modal-head h2{margin:0 0 5px;font-size:1.45rem}.order-modal-head p{margin:0;max-width:640px}
 .order-modal-close{width:42px;height:42px;min-height:42px;padding:0;border-radius:999px;background:#eee8e2;color:#2b211b;font-size:1.35rem;line-height:1;flex:0 0 auto}
-.order-modal-body{overflow:auto;padding:20px 22px}
+.order-modal-body{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:20px 22px;scrollbar-gutter:stable}
 .order-form-stack{display:grid;gap:16px}
 .order-section{border:1px solid #e5ddd6;border-radius:16px;padding:16px;background:#fff}
 .order-section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:13px}.order-section-head h3{margin:0 0 3px}.order-section-head p{margin:0}
@@ -37,7 +38,7 @@
 .order-line-total{display:grid;gap:3px;align-self:center;text-align:right}.order-line-total span{font-size:.75rem;color:#786f67}.order-line-total strong{font-size:.93rem}
 .item-remove{width:42px;height:42px;min-height:42px;padding:0;border-radius:10px;background:#fff2f2;color:#7a1f1f;border:1px solid #efd2d2;font-weight:800}.item-remove:disabled{opacity:.45;cursor:not-allowed}
 .order-item-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}.order-add-item{background:#f3eee9;color:#2c241f;border:1px solid #ddd3ca}
-.order-modal-footer{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 22px;border-top:1px solid #e6ded7;background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}
+.order-modal-footer{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 22px;border-top:1px solid #e6ded7;background:rgba(255,255,255,.98);backdrop-filter:blur(8px);box-shadow:0 -8px 24px rgba(45,34,27,.05)}
 .order-estimate-block{display:grid;gap:3px}.order-estimate-block strong{font-size:1.05rem}.order-footer-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .order-footer-actions .secondary{background:#f0ebe6;color:#2b211b}
 .restaurant-tables-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -51,7 +52,7 @@
 @media(max-width:980px){.restaurant-tables-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.order-items-list .item-row{grid-template-columns:36px minmax(0,1fr) 78px 110px 42px}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:4}.item-remove{grid-column:5}}
 @media(max-width:820px){.order-service-grid{grid-template-columns:1fr}.order-billing-grid{grid-template-columns:1fr}.order-billing-grid .full{grid-column:auto}}
-@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);max-height:calc(100vh - 16px);border-radius:16px}.order-modal-shell{max-height:calc(100vh - 16px)}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-type-switch{grid-template-columns:1fr}.order-type-choice span{min-height:auto}.order-items-list .item-row{grid-template-columns:32px minmax(0,1fr) 70px}.order-items-list .item-row label:nth-of-type(1){grid-column:2/-1}.order-items-list .item-row label:nth-of-type(2){grid-column:2}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:3;grid-row:2;text-align:right}.item-remove{grid-column:3;grid-row:3;justify-self:end}.restaurant-tables-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);height:calc(100vh - 16px);height:calc(100dvh - 16px);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);border-radius:16px}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-type-switch{grid-template-columns:1fr}.order-type-choice span{min-height:auto}.order-items-list .item-row{grid-template-columns:32px minmax(0,1fr) 70px}.order-items-list .item-row label:nth-of-type(1){grid-column:2/-1}.order-items-list .item-row label:nth-of-type(2){grid-column:2}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:3;grid-row:2;text-align:right}.item-remove{grid-column:3;grid-row:3;justify-self:end}.restaurant-tables-grid{grid-template-columns:1fr}}
 </style>
 @endpush
 
@@ -89,7 +90,7 @@ $oldItems = old('items', [['menu_item_id' => '', 'quantity' => 1, 'note' => '']]
 @csrf
 <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
-<div class="order-modal-body">
+<div class="order-modal-body" data-order-modal-scroll-region>
 <div class="order-form-stack">
 <section class="order-section">
 <div class="order-section-head">
