@@ -3,11 +3,19 @@
 
 @push('styles')
 <style>
-.restaurant-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
-.restaurant-heading h1{margin:0 0 6px}.restaurant-heading p{margin:0}.restaurant-heading-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.restaurant-shell{display:grid;gap:18px}
+.restaurant-hero{background:linear-gradient(135deg,#241b16 0%,#3a2a21 100%);color:#fff;border-radius:20px;padding:22px;display:flex;gap:18px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;box-shadow:0 12px 30px rgba(35,30,26,.12)}
+.restaurant-hero h1{margin:0 0 6px;font-size:clamp(1.7rem,3vw,2.35rem)}
+.restaurant-hero p{margin:0;color:#e8ddd4;max-width:720px}
+.restaurant-hero-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.restaurant-hero .button-link{background:#fff;color:#2b211b;border-color:#fff}
+.restaurant-hero .status-badge{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18)}
+.restaurant-section{background:#fff;border:1px solid #e1dad3;border-radius:18px;padding:18px}
+.restaurant-section-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.restaurant-section-head h2{margin:0 0 4px}.restaurant-section-head p{margin:0}
 .order-context[hidden]{display:none}.order-summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.restaurant-order-modal{width:min(980px,calc(100vw - 28px));height:min(900px,calc(100vh - 28px));height:min(900px,calc(100dvh - 28px));max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);padding:0;border:0;border-radius:22px;background:#fff;color:#241f1b;box-shadow:0 28px 80px rgba(28,20,15,.30);overflow:hidden}
-.restaurant-order-modal::backdrop{background:rgba(29,22,18,.66);backdrop-filter:blur(3px)}
+.restaurant-order-modal{width:min(920px,calc(100vw - 32px));height:min(860px,calc(100vh - 32px));height:min(860px,calc(100dvh - 32px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);padding:0;border:0;border-radius:20px;background:#fff;color:#231e1a;box-shadow:0 24px 70px rgba(20,14,10,.28);overflow:hidden}
+.restaurant-order-modal::backdrop{background:rgba(26,20,16,.62);backdrop-filter:blur(2px)}
 .order-modal-shell{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;overflow:hidden}
 #restaurant-order-form{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden}
 .order-modal-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e8e0d9;background:#fcfaf8}
@@ -52,23 +60,24 @@
 @media(max-width:980px){.restaurant-tables-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.order-items-list .item-row{grid-template-columns:36px minmax(0,1fr) 78px 110px 42px}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:4}.item-remove{grid-column:5}}
 @media(max-width:820px){.order-service-grid{grid-template-columns:1fr}.order-billing-grid{grid-template-columns:1fr}.order-billing-grid .full{grid-column:auto}}
-@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);height:calc(100vh - 16px);height:calc(100dvh - 16px);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);border-radius:16px}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-type-switch{grid-template-columns:1fr}.order-type-choice span{min-height:auto}.order-items-list .item-row{grid-template-columns:32px minmax(0,1fr) 70px}.order-items-list .item-row label:nth-of-type(1){grid-column:2/-1}.order-items-list .item-row label:nth-of-type(2){grid-column:2}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:3;grid-row:2;text-align:right}.item-remove{grid-column:3;grid-row:3;justify-self:end}.restaurant-tables-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-hero{padding:18px;border-radius:16px}.restaurant-hero-actions{width:100%}.restaurant-hero-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);height:calc(100vh - 16px);height:calc(100dvh - 16px);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);border-radius:16px}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-type-switch{grid-template-columns:1fr}.order-type-choice span{min-height:auto}.order-items-list .item-row{grid-template-columns:32px minmax(0,1fr) 70px}.order-items-list .item-row label:nth-of-type(1){grid-column:2/-1}.order-items-list .item-row label:nth-of-type(2){grid-column:2}.order-items-list .item-row label:nth-of-type(3){grid-column:2/-1}.order-line-total{grid-column:3;grid-row:2;text-align:right}.item-remove{grid-column:3;grid-row:3;justify-self:end}.restaurant-tables-grid{grid-template-columns:1fr}}
 </style>
 @endpush
 
 @section('content')
-<div class="restaurant-heading">
+<div class="restaurant-shell">
+<section class="restaurant-hero">
 <div>
 <h1>{{ ($kitchenOnly ?? false) ? 'Kitchen KOT' : 'Restaurant & KOT' }}</h1>
-<p class="muted">{{ ($kitchenOnly ?? false) ? 'Oldest active tickets appear first. Update only the kitchen stages shown on each ticket.' : 'Create restaurant orders, follow KOT progress, settle bills, and keep table status in sync.' }}</p>
+<p>{{ ($kitchenOnly ?? false) ? 'Work the active KOT queue in order and update only the kitchen stages available on each ticket.' : 'Create orders, manage table service, follow KOT progress and settle restaurant bills from one operational workspace.' }}</p>
 </div>
-<div class="restaurant-heading-actions">
+<div class="restaurant-hero-actions">
 <?php if (!($kitchenOnly ?? false)): ?>
-<button type="button" class="button-link primary" data-open-order-modal>+ New order</button>
+<button type="button" class="button-link" data-open-order-modal>+ New order</button>
 <?php endif; ?>
-<span class="status-badge {{ $activeOrders->isEmpty() ? 'good' : 'warn' }}">{{ $activeOrders->count() }} active</span>
+<span class="status-badge">{{ $activeOrders->count() }} active</span>
 </div>
-</div>
+</section>
 
 <?php if (!($kitchenOnly ?? false)): ?>
 <?php
@@ -242,11 +251,11 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </div>
 </dialog>
 
-<section class="panel">
-<div class="toolbar">
+<section class="restaurant-section">
+<div class="restaurant-section-head">
 <div class="section-title">
 @include('admin.partials.icon',['name'=>'restaurant-table'])
-<div><h2 style="margin:0">Restaurant tables</h2><span class="muted">Occupied tables release on cancellation or after a served bill is fully paid.</span></div>
+<div><h2>Restaurant tables</h2><p class="muted">Occupied tables release on cancellation or after a served bill is fully paid.</p></div>
 </div>
 </div>
 <div class="restaurant-tables-grid">
@@ -275,9 +284,13 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </section>
 <?php endif; ?>
 
-<section class="panel">
-<div class="toolbar">
-<div><h2 style="margin:0">{{ ($kitchenOnly ?? false) ? 'Active Orders / KOT queue' : 'Active orders & KOT' }}</h2><span class="muted">Oldest waiting order is shown first.</span></div>
+<section class="restaurant-section">
+<div class="restaurant-section-head">
+<div class="section-title">
+@include('admin.partials.icon',['name'=>'restaurant'])
+<div><h2>{{ ($kitchenOnly ?? false) ? 'Active Orders / KOT queue' : 'Active orders & KOT' }}</h2><p class="muted">Oldest waiting order is shown first.</p></div>
+</div>
+<span class="status-badge {{ $activeOrders->isEmpty() ? 'good' : 'warn' }}">{{ $activeOrders->count() }} active</span>
 </div>
 
 <?php if ($activeOrders->isEmpty()): ?>
@@ -350,11 +363,11 @@ if ($kitchenOnly ?? false) {
 </section>
 
 <?php if (!($kitchenOnly ?? false)): ?>
-<section class="panel" id="restaurant-history">
-<div class="toolbar">
+<section class="restaurant-section" id="restaurant-history">
+<div class="restaurant-section-head">
 <div class="section-title">
 @include('admin.partials.icon',['name'=>'table'])
-<div><h2 style="margin:0">Completed order history</h2><span class="muted">Served and cancelled orders, newest first.</span></div>
+<div><h2>Completed order history</h2><p class="muted">Served and cancelled orders, newest first.</p></div>
 </div>
 <span class="status-badge">{{ $historyOrders->total() }} total</span>
 </div>
@@ -450,6 +463,7 @@ $outstanding = max(0, round((float) $order->total - $succeededPayments + $succee
 <?php endif; ?>
 </section>
 <?php endif; ?>
+</div>
 
 <script>
 (() => {
