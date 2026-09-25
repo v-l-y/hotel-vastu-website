@@ -10,6 +10,9 @@
 @case('restaurant')
 <svg viewBox="0 0 24 24"><path d="M7 3v8M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 11v10M15 3v18M15 3c3 2 4 5 4 8h-4"/></svg>
 @break
+@case('restaurant-table')
+<svg viewBox="0 0 24 24"><path d="M8 8h8v8H8zM10 5h4M10 19h4M5 10v4M19 10v4M9 3h6v2H9zM9 19h6v2H9zM3 9h2v6H3zM19 9h2v6h-2z"/></svg>
+@break
 @case('payments')
 <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 9h16M8 15h3"/></svg>
 @break

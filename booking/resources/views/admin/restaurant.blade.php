@@ -30,9 +30,17 @@
 .order-modal-footer{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;padding:16px 22px;border-top:1px solid #e6ded7;background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}
 .order-estimate-block{display:grid;gap:3px}.order-estimate-block strong{font-size:1.05rem}.order-footer-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .order-footer-actions .secondary{background:#f0ebe6;color:#2b211b}
+.restaurant-tables-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.restaurant-table-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;border:1px solid #e3dcd5;border-radius:16px;padding:14px;background:#fff;min-height:88px}
+.restaurant-table-card.available{background:#f8fcf8;border-color:#c7ddcb}.restaurant-table-card.occupied{background:#fffaf2;border-color:#ead2a8}
+.restaurant-table-card .ui-icon-box{width:46px;height:46px;min-width:46px;border-radius:13px}
+.restaurant-table-card-main{min-width:0}.restaurant-table-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.restaurant-table-name{font-size:1rem;font-weight:800}.restaurant-table-capacity{display:flex;align-items:center;gap:6px;margin-top:6px;color:#6c645d;font-size:.9rem}
+.restaurant-table-capacity svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .kot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.kot-card{border:1px solid #ddd6cf;border-radius:14px;padding:16px;background:#fff}.kot-card-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.kot-card h3{margin:0}.kot-meta{display:flex;gap:8px 14px;flex-wrap:wrap;margin:8px 0 14px;color:#5f5750}.kot-items{display:grid;gap:8px;margin:12px 0}.kot-item{padding:9px 10px;border-radius:9px;background:#f8f5f1}.kot-note{display:block;margin-top:4px;font-weight:700;color:#7a4a08}.kot-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.status-badge.accepted,.status-badge.preparing{background:#fff2df;color:#7a4a08}.status-badge.ready,.status-badge.served{background:#e8f5ea;color:#245d2d}.status-badge.cancelled{background:#fff0f0;color:#771717}.restaurant-history td{min-width:110px}.restaurant-history td:nth-child(2){min-width:180px}.empty-state{padding:22px;text-align:center;border:1px dashed #cfc5bc;border-radius:12px;color:#6f675f}
+@media(max-width:980px){.restaurant-tables-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:820px){.order-service-grid{grid-template-columns:1fr}.order-items-list .item-row{grid-template-columns:minmax(0,1fr) 82px}.order-items-list .item-row label:nth-child(3){grid-column:1/-1}.order-items-list .item-row .item-remove{grid-column:2;grid-row:2;justify-self:end}.order-billing-grid{grid-template-columns:1fr}.order-billing-grid .full{grid-column:auto}}
-@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);max-height:calc(100vh - 16px);border-radius:16px}.order-modal-shell{max-height:calc(100vh - 16px)}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-items-list .item-row{grid-template-columns:minmax(0,1fr) 76px}}
+@media(max-width:760px){.kot-grid{grid-template-columns:1fr}.restaurant-heading{align-items:stretch}.restaurant-heading-actions{width:100%}.restaurant-heading-actions .button-link{flex:1}.menu-toolbar label{min-width:100%}.restaurant-order-modal{width:calc(100vw - 16px);max-height:calc(100vh - 16px);border-radius:16px}.order-modal-shell{max-height:calc(100vh - 16px)}.order-modal-head,.order-modal-body,.order-modal-footer{padding-left:16px;padding-right:16px}.order-modal-footer{align-items:stretch}.order-estimate-block{width:100%}.order-footer-actions{width:100%}.order-footer-actions>*{flex:1}.order-items-list .item-row{grid-template-columns:minmax(0,1fr) 76px}.restaurant-tables-grid{grid-template-columns:1fr}}
 </style>
 @endpush
 
@@ -209,16 +217,31 @@ Folio #{{ $folio->id }} · Reservation #{{ $folio->reservation_id }}<?php if ($f
 </dialog>
 
 <section class="panel">
-<div class="toolbar"><h2 style="margin:0">Restaurant tables</h2><span class="muted">Occupied tables release on cancellation or after a served bill is fully paid.</span></div>
-<div class="cards">
+<div class="toolbar">
+<div class="section-title">
+@include('admin.partials.icon',['name'=>'restaurant-table'])
+<div><h2 style="margin:0">Restaurant tables</h2><span class="muted">Occupied tables release on cancellation or after a served bill is fully paid.</span></div>
+</div>
+</div>
+<div class="restaurant-tables-grid">
 <?php if ($tables->isEmpty()): ?>
 <div class="empty-state full">No active restaurant tables configured.</div>
 <?php else: ?>
 <?php foreach ($tables as $table): ?>
-<div class="card">
-<strong>{{ $table->name }}</strong>
+<div class="restaurant-table-card {{ $table->status === 'available' ? 'available' : 'occupied' }}" data-table-card>
+@include('admin.partials.icon',['name'=>'restaurant-table'])
+<div class="restaurant-table-card-main">
+<div class="restaurant-table-card-head">
+<span class="restaurant-table-name">{{ $table->name }}</span>
 <span class="status-badge {{ $table->status === 'available' ? 'good' : 'warn' }}">{{ ucfirst($table->status) }}</span>
-<?php if ($table->capacity): ?><br><span class="muted">Capacity {{ $table->capacity }}</span><?php endif; ?>
+</div>
+<?php if ($table->capacity): ?>
+<div class="restaurant-table-capacity">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20v-1c0-3 2-5 5-5M21 20v-1c0-3-2-5-5-5M9 20h6"/></svg>
+<span>Seats {{ $table->capacity }}</span>
+</div>
+<?php endif; ?>
+</div>
 </div>
 <?php endforeach; ?>
 <?php endif; ?>

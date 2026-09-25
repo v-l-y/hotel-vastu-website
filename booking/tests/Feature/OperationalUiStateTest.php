@@ -43,6 +43,19 @@ class OperationalUiStateTest extends TestCase
             ->assertDontSee('id="restaurant-order-modal"', false);
     }
 
+    public function test_restaurant_table_cards_use_table_and_chair_visuals(): void
+    {
+        $restaurant = $this->admin('restaurant', 'restaurant-table-icons@example.com');
+
+        $this->withSession($this->sessionFor($restaurant))
+            ->get('/admin/restaurant')
+            ->assertOk()
+            ->assertSee('restaurant-tables-grid', false)
+            ->assertSee('data-table-card', false)
+            ->assertSee('Seats 2')
+            ->assertSee('Seats 8');
+    }
+
     public function test_restaurant_status_ui_only_offers_valid_next_transitions(): void
     {
         $restaurant = $this->admin('restaurant', 'restaurant-state@example.com');
